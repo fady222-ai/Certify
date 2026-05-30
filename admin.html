@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة التحكم — نظام التواصل الداخلي</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg:      #0a0a0a;
+      --card:    #1a1a1a;
+      --side:    #111111;
+      --accent:  #E81123;
+      --accent-dark: #C50F1F;
+      --green:   #3aef7a;
+      --red:     #E81123;
+      --yellow:  #efc53a;
+      --border:  rgba(255,255,255,0.08);
+      --text:    #f0f0f0;
+      --sub:     #999999;
+      --font: 'Tajawal','Segoe UI',Tahoma,sans-serif;
+      --r8: 8px; --r12: 12px; --r16: 16px;
+      --tr: .15s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; direction: rtl;
+    }
+
+    /* ── Login ── */
+    #login-wrap {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 40px; width: 380px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .login-logo { font-size: 48px; text-align: center; margin-bottom: 12px; }
+    .login-title { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+    .login-sub { font-size: 13px; color: var(--sub); text-align: center; margin-bottom: 24px; }
+
+    /* ── App Layout ── */
+    #app-wrap { display: none; min-height: 100vh; }
+
+    .topbar {
+      background: var(--side); border-bottom: 1px solid var(--border);
+      padding: 0 24px; height: 56px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .topbar-logo { font-size: 20px; }
+    .topbar-title { font-size: 16px; font-weight: 700; flex: 1; }
+    .topbar-version { font-size: 12px; color: var(--sub); }
+
+    .main-layout {
+      display: flex; min-height: calc(100vh - 56px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px; background: var(--side);
+      border-left: 1px solid var(--border);
+      padding: 16px 0; flex-shrink: 0;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 20px; cursor: pointer; border: none;
+      background: none; color: var(--sub); width: 100%;
+      font-size: 14px; font-family: inherit; text-align: right;
+      border-right: 3px solid transparent;
+      transition: color .15s, background .15s;
+    }
+    .nav-item:hover { background: var(--bg); color: var(--text); }
+    .nav-item.active { color: var(--accent); border-right-color: var(--accent); background: rgba(58,91,239,0.08); }
+    .nav-icon { font-size: 18px; flex-shrink: 0; }
+    .nav-sep { height: 1px; background: var(--border); margin: 8px 16px; }
+
+    /* Content */
+    .content { flex: 1; padding: 28px; overflow-y: auto; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px; margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+    }
+    .stat-label { font-size: 12px; color: var(--sub); margin-bottom: 8px; }
+    .stat-value { font-size: 32px; font-weight: 700; }
+    .stat-sub   { font-size: 12px; color: var(--sub); margin-top: 4px; }
+    .stat-card.green .stat-value { color: var(--green); }
+    .stat-card.blue  .stat-value { color: var(--accent); }
+    .stat-card.yellow .stat-value { color: var(--yellow); }
+    .stat-card.purple .stat-value { color: #b03aef; }
+
+    /* Online indicators */
+    .online-list {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; margin-bottom: 28px;
+    }
+    .section-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+    .online-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+    }
+    .online-item:last-child { border-bottom: none; }
+    .status-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .status-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-dot.offline { background: var(--sub); }
+    .online-name { flex: 1; font-size: 14px; }
+    .online-type { font-size: 11px; color: var(--sub); }
+    .online-time { font-size: 11px; color: var(--sub); }
+
+    /* Table */
+    .table-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .table-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      background: var(--side); text-align: right;
+      padding: 12px 16px; font-size: 12px; color: var(--sub);
+      font-weight: 600; letter-spacing: .5px;
+    }
+    td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .badge-type {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 600;
+    }
+    .badge-branch { background: rgba(58,91,239,0.15); color: var(--accent); }
+    .badge-store  { background: rgba(58,239,122,0.15); color: var(--green); }
+    .badge-on  { background: rgba(58,239,122,0.15); color: var(--green); font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .badge-off { background: rgba(136,136,170,0.15); color: var(--sub); font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .badge-disabled { background: rgba(239,58,58,0.15); color: var(--red); font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+
+    .action-btns { display: flex; gap: 6px; align-items: center; }
+    .btn-icon {
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--sub); border-radius: 6px; width: 30px; height: 30px;
+      font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: color .15s, border-color .15s;
+    }
+    .btn-icon:hover { color: var(--text); border-color: var(--text); }
+    .btn-icon.danger:hover { color: var(--red); border-color: var(--red); }
+    .btn-icon.warning:hover { color: var(--yellow); border-color: var(--yellow); }
+
+    /* Forms */
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-group label { font-size: 13px; color: var(--sub); font-weight: 500; }
+    .form-group input, .form-group select {
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-family: var(--font);
+      font-size: 14px; padding: 10px 14px; outline: none; direction: rtl;
+      transition: border-color var(--tr), background var(--tr);
+    }
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--accent);
+      background: rgba(255,255,255,0.07);
+    }
+    .form-group select option { background: var(--card); }
+
+    /* Buttons */
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; padding: 10px 20px; font-family: var(--font);
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: background var(--tr), transform var(--tr), box-shadow var(--tr);
+      box-shadow: 0 2px 8px rgba(232,17,35,0.3);
+    }
+    .btn-primary:hover { background: var(--accent-dark); box-shadow: 0 4px 16px rgba(232,17,35,0.4); }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.06); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 20px; font-family: var(--font); font-size: 14px; cursor: pointer;
+      transition: background var(--tr);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+    .btn-danger {
+      background: rgba(232,17,35,0.12); color: var(--red);
+      border: 1px solid rgba(232,17,35,0.35); border-radius: 8px;
+      padding: 10px 20px; font-family: var(--font); font-size: 14px; cursor: pointer;
+      transition: background var(--tr);
+    }
+    .btn-danger:hover { background: rgba(232,17,35,0.22); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; backdrop-filter: blur(4px);
+    }
+    .modal-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px; width: 420px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* Settings */
+    .settings-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; margin-bottom: 16px; max-width: 480px;
+    }
+    .settings-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+    .backup-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(58,91,239,0.15); color: var(--accent);
+      border: 1px solid var(--accent); border-radius: 8px;
+      padding: 10px 20px; font-family: inherit; font-size: 14px;
+      cursor: pointer; text-decoration: none;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text); padding: 10px 24px; border-radius: 20px;
+      font-size: 13px; box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+      z-index: 9999; opacity: 0; transition: opacity .3s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+
+    /* Error */
+    .error-msg { color: var(--red); font-size: 13px; margin-top: 8px; text-align: center; }
+
+    /* Logout */
+    #logout-btn {
+      background: none; border: 1px solid var(--border); color: var(--sub);
+      border-radius: 8px; padding: 6px 14px; cursor: pointer;
+      font-size: 13px; font-family: inherit;
+      transition: color var(--tr), border-color var(--tr);
+    }
+    #logout-btn:hover { color: var(--red); border-color: var(--red); }
+
+    /* ── Focus indicators ── */
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .main-layout { flex-direction: column; }
+      .sidebar {
+        width: 100%; border-left: none;
+        border-bottom: 1px solid var(--border);
+        display: flex; padding: 0; overflow-x: auto;
+      }
+      .nav-item {
+        padding: 10px 14px; white-space: nowrap;
+        border-right: none; border-bottom: 3px solid transparent;
+      }
+      .nav-item.active { border-right-color: transparent; border-bottom-color: var(--accent); }
+      .nav-sep { display: none; }
+      .content { padding: 16px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .table-card { overflow-x: auto; }
+      table { min-width: 600px; }
+      .modal-card { width: 92vw; padding: 24px 16px; }
+      .login-card { width: 92vw; }
+    }
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .topbar-title { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     شاشة تسجيل الدخول
+════════════════════════════════════════ -->
+<div id="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">⚙️</div>
+    <div class="login-title">لوحة التحكم</div>
+    <div class="login-sub">نظام التواصل الداخلي</div>
+    <div class="form-group">
+      <label>🔒 كلمة مرور الأدمن</label>
+      <input type="password" id="admin-pass" placeholder="••••••••" />
+    </div>
+    <button class="btn-primary" id="admin-login-btn" style="width:100%">دخول</button>
+    <div class="error-msg" id="login-error" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     التطبيق الرئيسي
+════════════════════════════════════════ -->
+<div id="app-wrap">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">⚙️</div>
+    <div class="topbar-title">لوحة التحكم — نظام التواصل الداخلي</div>
+    <div class="topbar-version" id="admin-version"></div>
+    <button id="logout-btn">خروج 🚪</button>
+  </div>
+
+  <div class="main-layout">
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <button class="nav-item active" data-page="overview">
+        <span class="nav-icon">📊</span> نظرة عامة
+      </button>
+      <button class="nav-item" data-page="users">
+        <span class="nav-icon">👥</span> الفروع والمخازن
+      </button>
+      <div class="nav-sep"></div>
+      <button class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙️</span> الإعدادات
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+      <!-- ── صفحة نظرة عامة ── -->
+      <div class="page active" id="page-overview">
+        <div class="page-title">📊 نظرة عامة</div>
+
+        <div class="stats-grid">
+          <div class="stat-card green">
+            <div class="stat-label">متصلون الآن</div>
+            <div class="stat-value" id="stat-online">—</div>
+            <div class="stat-sub">من أصل <span id="stat-total">—</span></div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">رسائل اليوم</div>
+            <div class="stat-value" id="stat-msgs">—</div>
+          </div>
+          <div class="stat-card yellow">
+            <div class="stat-label">ملفات اليوم</div>
+            <div class="stat-value" id="stat-files">—</div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-label">إجمالي الكيانات</div>
+            <div class="stat-value" id="stat-entities">—</div>
+          </div>
+        </div>
+
+        <div class="online-list">
+          <div class="section-title">🟢 حالة الكيانات الآن</div>
+          <div id="online-list-items">جاري التحميل...</div>
+        </div>
+      </div>
+
+      <!-- ── صفحة المستخدمين ── -->
+      <div class="page" id="page-users">
+        <div class="table-card">
+          <div class="table-header">
+            <div class="page-title" style="margin:0">👥 الفروع والمخازن</div>
+            <button class="btn-primary" id="add-user-btn">+ إضافة جديد</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>النوع</th>
+                <th>الحالة</th>
+                <th>الرسائل المرسلة</th>
+                <th>اليوم</th>
+                <th>آخر دخول</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body">
+              <tr><td colspan="7" style="text-align:center;color:var(--sub);padding:40px">جاري التحميل...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── صفحة الإعدادات ── -->
+      <div class="page" id="page-settings">
+        <div class="page-title">⚙️ الإعدادات</div>
+
+        <!-- تفعيل السيرفر -->
+        <div class="settings-card" id="activation-card">
+          <div class="settings-title">🔑 تفعيل الاشتراك</div>
+          <div id="server-status-display" style="margin-bottom:16px"></div>
+          <div class="form-group">
+            <label>رابط سيرفر التراخيص المركزي</label>
+            <input type="url" id="central-url" placeholder="https://your-central.railway.app"
+              style="direction:ltr;font-family:monospace" />
+            <small style="color:var(--sub);font-size:11px">رابط السيرفر المركزي الذي أرسله لك المطور</small>
+          </div>
+          <div class="form-group">
+            <label>كود التفعيل</label>
+            <input type="text" id="activation-key" placeholder="PRO-XXXX-XXXX-YYYY"
+              style="font-family:monospace;letter-spacing:2px;text-transform:uppercase" />
+          </div>
+          <button class="btn-primary" id="activate-btn">تفعيل السيرفر</button>
+        </div>
+
+        <!-- حالة الباقة وحد الفروع -->
+        <div class="settings-card" id="plan-status-card">
+          <div class="settings-title">📊 حالة الباقة وحد الفروع</div>
+          <div id="plan-status-display" style="margin-bottom:12px;font-size:13px">جاري التحميل...</div>
+          <button class="btn-secondary" id="plan-refresh-btn" style="margin-right:8px">↻ تحديث</button>
+          <button class="btn-primary" id="plan-enforce-btn" style="display:none">⚠️ تطبيق الحد الآن (طرد الفروع الزائدة)</button>
+        </div>
+
+        <!-- تشخيص التواصل الخارجي (Federation) -->
+        <div class="settings-card" id="diagnostics-card">
+          <div class="settings-title">🩺 تشخيص التواصل الخارجي</div>
+          <div id="diagnostics-display" style="margin-bottom:12px;font-size:13px;color:var(--sub)">جاري التحميل...</div>
+          <button class="btn-secondary" id="resync-btn">🔄 إعادة المزامنة مع المركزي</button>
+          <button class="btn-secondary" id="diagnostics-refresh-btn" style="margin-right:8px">↻ تحديث</button>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">🔒 تغيير كلمة مرور الأدمن</div>
+          <div class="form-group">
+            <label>كلمة المرور الجديدة</label>
+            <input type="password" id="new-admin-pass" placeholder="6 أحرف على الأقل" />
+          </div>
+          <div class="form-group">
+            <label>تأكيد كلمة المرور</label>
+            <input type="password" id="confirm-admin-pass" placeholder="أعد الكتابة" />
+          </div>
+          <button class="btn-primary" id="change-pass-btn">حفظ كلمة المرور</button>
+        </div>
+
+        <div class="settings-card">
+          <div class="settings-title">💾 نسخة احتياطية مشفَّرة</div>
+          <p style="font-size:13px;color:var(--sub);margin-bottom:12px">
+            تُشفَّر النسخة بـ AES-256-GCM بكلمة مرور تختارها أنت — احتفظ بها في مكان آمن (لا يمكن استرجاع الملف بدونها).
+          </p>
+          <div class="form-group">
+            <label>كلمة مرور تشفير النسخة (8 أحرف على الأقل)</label>
+            <input type="password" id="backup-passphrase" placeholder="اختر كلمة مرور قوية"
+              style="direction:ltr;font-family:monospace" />
+          </div>
+          <button class="btn-primary" id="backup-download-btn">⬇️ توليد وتنزيل النسخة المشفَّرة</button>
+
+          <div style="height:1px;background:var(--b1);margin:18px 0"></div>
+
+          <div class="settings-title" style="font-size:14px">♻️ استعادة من نسخة احتياطية</div>
+          <p style="font-size:12px;color:var(--sub);margin-bottom:8px">
+            ⚠️ تحذير: ستحلّ النسخة محل قاعدة البيانات الحالية. تأكد قبل المتابعة.
+          </p>
+          <div class="form-group">
+            <label>ملف النسخة المشفَّرة (.bcbackup)</label>
+            <input type="file" id="restore-file" accept=".bcbackup,.enc,.db" />
+          </div>
+          <div class="form-group">
+            <label>كلمة مرور التشفير</label>
+            <input type="password" id="restore-passphrase" style="direction:ltr;font-family:monospace" />
+          </div>
+          <div class="form-group">
+            <label>بيانات meta (من header X-Backup-Meta عند التنزيل)</label>
+            <input type="text" id="restore-meta" placeholder="base64..." style="direction:ltr;font-family:monospace;font-size:11px" />
+          </div>
+          <button class="btn-secondary" id="restore-btn">♻️ استعادة</button>
+        </div>
+
+        <!-- سجل الأمان -->
+        <div class="settings-card">
+          <div class="settings-title">🛡️ سجل الأمان (آخر 50 عملية)</div>
+          <button class="btn-secondary" id="audit-refresh-btn" style="margin-bottom:10px">↻ تحديث</button>
+          <div id="audit-display" style="font-family:monospace;font-size:12px;max-height:340px;overflow:auto;background:var(--bg-1);border:1px solid var(--b1);border-radius:8px;padding:10px"></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main-layout -->
+</div><!-- /app-wrap -->
+
+<!-- Modal إضافة/تعديل مستخدم -->
+<div class="modal-overlay" id="user-modal" style="display:none">
+  <div class="modal-card">
+    <div class="modal-title" id="modal-title">إضافة كيان جديد</div>
+    <input type="hidden" id="modal-user-id" value="" />
+    <div class="form-group">
+      <label>الاسم</label>
+      <input type="text" id="modal-name" placeholder="مثال: الراعي فرع العباسية" />
+    </div>
+    <div class="form-group" id="modal-type-group">
+      <label>النوع</label>
+      <select id="modal-type">
+        <option value="branch">🏪 فرع بيع</option>
+        <option value="store">🏭 مخزن</option>
+      </select>
+    </div>
+    <div class="form-group" id="modal-pass-group">
+      <label id="modal-pass-label">كلمة المرور</label>
+      <input type="password" id="modal-pass" placeholder="••••••" />
+      <span style="font-size:11px;color:var(--sub);margin-top:4px">اتركها فارغة للإبقاء على الحالية (عند التعديل)</span>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="modal-cancel">إلغاء</button>
+      <button class="btn-primary" id="modal-save">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal تأكيد الحذف -->
+<div class="modal-overlay" id="delete-modal" style="display:none">
+  <div class="modal-card">
+    <div class="modal-title">⚠️ تأكيد الحذف</div>
+    <p style="font-size:14px;color:var(--sub);margin-bottom:20px">
+      سيتم حذف <strong id="delete-name"></strong> وكل رسائله نهائياً. هذا الإجراء لا يمكن التراجع عنه.
+    </p>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="delete-cancel">إلغاء</button>
+      <button class="btn-danger" id="delete-confirm">حذف نهائياً</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  let token = sessionStorage.getItem('admin_token') || '';
+  let allUsers = [];
+  let onlineSet = new Set();
+  let deleteTargetId = null;
+  let editTargetId   = null;
+  let refreshInterval = null;
+
+  const SERVER = window.location.origin;
+
+  // ── utils ──
+  function $(id) { return document.getElementById(id); }
+  const toast = $('toast');
+  function showToast(msg, ms = 2500) {
+    toast.textContent = msg; toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), ms);
+  }
+
+  function api(endpoint, opts = {}) {
+    const { extraHeaders = {}, ...restOpts } = opts;
+    return fetch(SERVER + endpoint, {
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': token, ...extraHeaders },
+      ...restOpts,
+    }).then(async r => {
+      const data = await r.json();
+      if (r.status === 401) { logout(); return {}; }
+      return data;
+    });
+  }
+
+  function fmtDate(d) {
+    if (!d) return 'لم يدخل بعد';
+    const date = new Date(d);
+    return date.toLocaleDateString('ar-SA') + ' ' + date.toLocaleTimeString('ar-SA', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  // ── Login ──
+  $('admin-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  $('admin-login-btn').addEventListener('click', doLogin);
+
+  async function doLogin() {
+    const pass = $('admin-pass').value;
+    if (!pass) return;
+    // حفظ License Key إن كان موجوداً في URL
+    const urlKey = new URLSearchParams(window.location.search).get('license');
+    if (urlKey) sessionStorage.setItem('entity_license_key', urlKey);
+    $('admin-login-btn').textContent = '⏳...';
+    $('admin-login-btn').disabled = true;
+    $('login-error').style.display = 'none';
+
+    try {
+      const data = await fetch(SERVER + '/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pass }),
+      }).then(r => r.json());
+
+      if (data.error) {
+        $('login-error').textContent = data.error;
+        $('login-error').style.display = 'block';
+        return;
+      }
+
+      token = data.token;
+      sessionStorage.setItem('admin_token', token);
+      showApp();
+    } catch {
+      $('login-error').textContent = 'تعذّر الاتصال بالسيرفر';
+      $('login-error').style.display = 'block';
+    } finally {
+      $('admin-login-btn').textContent = 'دخول';
+      $('admin-login-btn').disabled = false;
+    }
+  }
+
+  // ── App ──
+  async function showApp() {
+    $('login-wrap').style.display = 'none';
+    $('app-wrap').style.display   = 'block';
+
+    await loadServerStatus();
+    await loadStats();
+    await loadUsers();
+    loadAudit();
+    loadPlanStatus();
+
+    // تحديث كل 30 ثانية
+    refreshInterval = setInterval(async () => {
+      await loadStats();
+      await loadUsers();
+    }, 30000);
+  }
+
+  // ── النسخة الاحتياطية المشفَّرة ──
+  $('backup-download-btn')?.addEventListener('click', async () => {
+    const passphrase = $('backup-passphrase').value;
+    if (!passphrase || passphrase.length < 8) {
+      showToast('⚠️ كلمة مرور التشفير 8 أحرف على الأقل');
+      return;
+    }
+    const btn = $('backup-download-btn');
+    btn.disabled = true; btn.textContent = '⏳ جاري التوليد والتشفير...';
+    try {
+      // 1) /prepare → ticket + fileName
+      const prep = await api('/api/admin/backup/prepare', {
+        method: 'POST',
+        body:   JSON.stringify({ passphrase }),
+      });
+      if (!prep.ok) { showToast('⚠️ ' + (prep.error || 'فشل التوليد')); return; }
+
+      // 2) /download بالـ ticket — fetch لقراءة header X-Backup-Meta
+      const dlRes = await fetch(SERVER + '/api/admin/backup/download?ticket=' + encodeURIComponent(prep.ticket));
+      if (!dlRes.ok) { showToast('⚠️ ticket غير صالح'); return; }
+      const meta = dlRes.headers.get('X-Backup-Meta') || '';
+      const blob = await dlRes.blob();
+
+      // 3) تحفيز التنزيل
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = prep.fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+
+      // 4) عرض الـ meta للأدمن (يحتاجها للاسترجاع)
+      if (meta) {
+        await navigator.clipboard.writeText(meta).catch(()=>{});
+        showToast('✅ تم التنزيل — meta للاسترجاع نُسخت للحافظة');
+      } else {
+        showToast('✅ تم التنزيل');
+      }
+      $('backup-passphrase').value = '';
+      loadAudit();
+    } catch (e) {
+      showToast('⚠️ ' + (e.message || 'فشل'));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⬇️ توليد وتنزيل النسخة المشفَّرة';
+    }
+  });
+
+  // ── الاستعادة ──
+  $('restore-btn')?.addEventListener('click', async () => {
+    const file       = $('restore-file').files?.[0];
+    const passphrase = $('restore-passphrase').value;
+    const meta       = $('restore-meta').value.trim();
+    if (!file)       { showToast('⚠️ اختر ملف النسخة'); return; }
+    if (!passphrase) { showToast('⚠️ كلمة المرور مطلوبة'); return; }
+    if (!meta)       { showToast('⚠️ بيانات meta مطلوبة'); return; }
+
+    if (!confirm('⚠️ هذه العملية ستحلّ النسخة محل قاعدة البيانات الحالية. متأكد؟')) return;
+
+    const btn = $('restore-btn');
+    btn.disabled = true; btn.textContent = '⏳ جاري الاستعادة...';
+    try {
+      const prep = await api('/api/admin/backup/restore-prepare', {
+        method: 'POST',
+        body:   JSON.stringify({ passphrase, meta }),
+      });
+      if (!prep.ok) { showToast('⚠️ ' + (prep.error || 'فشل')); return; }
+
+      const fd = new FormData();
+      fd.append('file', file);
+      const resp = await fetch(SERVER + '/api/admin/backup/restore-execute?ticket=' + encodeURIComponent(prep.ticket), {
+        method:  'POST',
+        headers: { 'x-admin-token': token },
+        body:    fd,
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.ok) { showToast('⚠️ ' + (data.error || 'فشل الاستعادة')); return; }
+      showToast('✅ تمت الاستعادة — أعد تشغيل السيرفر');
+      $('restore-file').value = ''; $('restore-passphrase').value = ''; $('restore-meta').value = '';
+      loadAudit();
+    } catch (e) { showToast('⚠️ ' + (e.message || 'فشل')); }
+    finally {
+      btn.disabled = false;
+      btn.textContent = '♻️ استعادة';
+    }
+  });
+
+  // ── سجل الأمان ──
+  function fmtTime(s) {
+    try { return new Date(s + 'Z').toLocaleString('ar-EG', { hour12: false }); } catch { return s; }
+  }
+  async function loadAudit() {
+    const el = $('audit-display');
+    if (!el) return;
+    el.innerHTML = 'جاري التحميل...';
+    try {
+      const rows = await api('/api/admin/audit');
+      if (!Array.isArray(rows) || !rows.length) { el.innerHTML = '<em style="color:var(--sub)">لا توجد سجلات</em>'; return; }
+      const colorOf = a => a.includes('fail') || a === 'logout' ? 'var(--sub)' : 'var(--text)';
+      const iconOf  = (a, s) => s ? '✅' : '❌';
+      el.innerHTML = rows.map(r => `
+        <div style="padding:6px 0;border-bottom:1px solid var(--b1);display:flex;justify-content:space-between;gap:8px">
+          <div style="flex:1;min-width:0">
+            <span>${iconOf(r.action, r.success)}</span>
+            <strong style="color:${colorOf(r.action)}">${r.action}</strong>
+            <span style="color:var(--sub);font-size:11px;direction:ltr">${r.ip || '?'}</span>
+          </div>
+          <div style="color:var(--sub);font-size:11px;white-space:nowrap">${fmtTime(r.created_at)}</div>
+        </div>
+      `).join('');
+    } catch { el.innerHTML = '⚠️ تعذّر التحميل'; }
+  }
+  $('audit-refresh-btn')?.addEventListener('click', loadAudit);
+
+  // ── حالة الباقة وحد الفروع ──
+  async function loadPlanStatus() {
+    const el = $('plan-status-display');
+    if (!el) return;
+    try {
+      const d = await api('/api/admin/plan-status');
+      const planNames = { free: 'مجاني', pro: 'احترافي' };
+      const limitTxt  = d.limit >= 999 ? 'لا نهائي' : d.limit;
+      const overWarn  = d.over_limit
+        ? `<div style="color:var(--red);font-weight:700;margin-top:8px">⚠️ تجاوز: ${d.active} فرع نشط بينما الحد ${d.limit}</div>`
+        : '';
+      el.innerHTML = `
+        <div style="display:grid;gap:6px">
+          <div>الباقة الحالية: <strong>${planNames[d.plan] || d.plan || '—'}</strong></div>
+          <div>حد الفروع: <strong>${limitTxt}</strong></div>
+          <div>فروع نشطة الآن: <strong style="color:${d.over_limit?'var(--red)':'var(--green)'}">${d.active}</strong></div>
+          <div>فروع معطَّلة: <strong>${d.disabled}</strong></div>
+          ${overWarn}
+        </div>`;
+      $('plan-enforce-btn').style.display = d.over_limit ? 'inline-block' : 'none';
+    } catch { el.innerHTML = '⚠️ تعذّر التحميل'; }
+  }
+  $('plan-refresh-btn')?.addEventListener('click', loadPlanStatus);
+  $('plan-enforce-btn')?.addEventListener('click', async () => {
+    if (!confirm('سيتم تعطيل الفروع الأحدث الزائدة عن الحد وطرد جلساتها. متأكد؟')) return;
+    const btn = $('plan-enforce-btn');
+    btn.disabled = true; btn.textContent = '⏳ جاري التطبيق...';
+    try {
+      const res = await api('/api/admin/enforce-plan', { method: 'POST' });
+      if (res.ok) {
+        showToast(`✅ تم تعطيل ${res.deactivated.length} فرع`);
+        await loadPlanStatus();
+        await loadUsers();
+        loadAudit();
+      } else { showToast('⚠️ ' + (res.error || 'فشل')); }
+    } catch { showToast('⚠️ تعذّر الاتصال'); }
+    finally {
+      btn.disabled = false;
+      btn.textContent = '⚠️ تطبيق الحد الآن (طرد الفروع الزائدة)';
+    }
+  });
+
+  async function logout() {
+    try { await api('/api/admin/logout', { method: 'POST' }); } catch {}
+    sessionStorage.removeItem('admin_token');
+    token = '';
+    clearInterval(refreshInterval);
+    $('app-wrap').style.display   = 'none';
+    $('login-wrap').style.display = 'flex';
+    $('admin-pass').value = '';
+  }
+  $('logout-btn').addEventListener('click', logout);
+
+  // ── Navigation ──
+  document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      $('page-' + btn.dataset.page).classList.add('active');
+    });
+  });
+
+  // ── Stats ──
+  async function loadStats() {
+    try {
+      const data = await api('/api/admin/stats');
+      $('stat-online').textContent   = data.online   ?? '—';
+      $('stat-msgs').textContent     = data.messages ?? '—';
+      $('stat-files').textContent    = data.files    ?? '—';
+      $('stat-total').textContent    = data.users    ?? '—';
+      $('stat-entities').textContent = data.users    ?? '—';
+    } catch {}
+  }
+
+  // ── Users ──
+  async function loadUsers() {
+    try {
+      const users = await api('/api/admin/users');
+      allUsers = users;
+      onlineSet = new Set(users.filter(u => u.online).map(u => u.id));
+      renderUsersTable(users);
+      renderOnlineList(users);
+    } catch {}
+  }
+
+  function renderOnlineList(users) {
+    const el = $('online-list-items');
+    if (!users.length) { el.textContent = 'لا يوجد كيانات'; return; }
+    el.innerHTML = users.map(u => `
+      <div class="online-item">
+        <div class="status-dot ${u.online ? 'online' : 'offline'}"></div>
+        <div class="online-name">${u.name}</div>
+        <div class="online-type">${u.type === 'branch' ? '🏪 فرع' : '🏭 مخزن'}</div>
+        <div class="online-time">${u.online ? 'متصل الآن' : 'آخر دخول: ' + fmtDate(u.last_seen)}</div>
+      </div>`).join('');
+  }
+
+  function renderUsersTable(users) {
+    const tbody = $('users-table-body');
+    if (!users.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--sub);padding:40px">لا يوجد كيانات</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td><strong>${u.name}</strong></td>
+        <td><span class="badge-type ${u.type === 'branch' ? 'badge-branch' : 'badge-store'}">${u.type === 'branch' ? '🏪 فرع' : '🏭 مخزن'}</span></td>
+        <td>
+          ${u.is_active === 0
+            ? '<span class="badge-disabled">معطّل</span>'
+            : u.online
+              ? '<span class="badge-on">● متصل</span>'
+              : '<span class="badge-off">○ غير متصل</span>'}
+        </td>
+        <td>${u.activity?.sent ?? 0}</td>
+        <td>${u.activity?.today ?? 0}</td>
+        <td style="font-size:12px;color:var(--sub)">${fmtDate(u.last_seen)}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-icon warning" title="تعديل" onclick="editUser(${u.id})">✏️</button>
+            <button class="btn-icon" title="${u.is_active === 0 ? 'تفعيل' : 'تعطيل'}" onclick="toggleUser(${u.id}, ${u.is_active === 0 ? 1 : 0})">
+              ${u.is_active === 0 ? '✅' : '🚫'}
+            </button>
+            <button class="btn-icon danger" title="حذف" onclick="confirmDelete(${u.id}, '${u.name.replace(/'/g,"\\'")}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── Add/Edit User Modal ──
+  $('add-user-btn').addEventListener('click', () => {
+    editTargetId = null;
+    $('modal-title').textContent      = 'إضافة كيان جديد';
+    $('modal-user-id').value          = '';
+    $('modal-name').value             = '';
+    $('modal-pass').value             = '';
+    $('modal-pass').placeholder       = '••••••';
+    $('modal-type-group').style.display = 'block';
+    $('modal-pass-label').textContent = 'كلمة المرور';
+    $('user-modal').style.display     = 'flex';
+    $('modal-name').focus();
+  });
+
+  window.editUser = function(id) {
+    const u = allUsers.find(u => u.id === id);
+    if (!u) return;
+    editTargetId = id;
+    $('modal-title').textContent       = 'تعديل: ' + u.name;
+    $('modal-user-id').value           = id;
+    $('modal-name').value              = u.name;
+    $('modal-pass').value              = '';
+    $('modal-pass').placeholder        = 'اتركها فارغة للإبقاء';
+    $('modal-type-group').style.display = 'none';
+    $('modal-pass-label').textContent  = 'كلمة المرور الجديدة (اختياري)';
+    $('user-modal').style.display      = 'flex';
+    $('modal-name').focus();
+  };
+
+  $('modal-cancel').addEventListener('click', () => { $('user-modal').style.display = 'none'; });
+
+  $('modal-save').addEventListener('click', async () => {
+    const name = $('modal-name').value.trim();
+    const pass = $('modal-pass').value;
+    const type = $('modal-type').value;
+
+    if (!name) { showToast('⚠️ يرجى إدخال الاسم'); return; }
+
+    $('modal-save').disabled = true;
+    $('modal-save').textContent = '⏳';
+
+    try {
+      let res;
+      if (editTargetId) {
+        // تعديل
+        const body = { name };
+        if (pass) body.password = pass;
+        res = await api('/api/admin/users/' + editTargetId, { method:'PUT', body: JSON.stringify(body) });
+      } else {
+        // إضافة
+        if (!pass) { showToast('⚠️ كلمة المرور مطلوبة'); return; }
+        res = await api('/api/admin/users', { method:'POST', body: JSON.stringify({ name, type, password: pass }) });
+      }
+
+      if (res.error) { showToast('⚠️ ' + res.error); return; }
+
+      showToast(editTargetId ? '✅ تم التعديل' : '✅ تمت الإضافة');
+      $('user-modal').style.display = 'none';
+      await loadUsers();
+      await loadStats();
+    } finally {
+      $('modal-save').disabled = false;
+      $('modal-save').textContent = 'حفظ';
+    }
+  });
+
+  // ── Toggle Active ──
+  window.toggleUser = async function(id, active) {
+    const res = await api('/api/admin/users/' + id, { method:'PUT', body: JSON.stringify({ is_active: active }) });
+    if (res.ok) { showToast(active ? '✅ تم التفعيل' : '🚫 تم التعطيل'); await loadUsers(); }
+    else showToast('⚠️ ' + (res.error || 'خطأ'));
+  };
+
+  // ── Delete ──
+  window.confirmDelete = function(id, name) {
+    deleteTargetId = id;
+    $('delete-name').textContent = name;
+    $('delete-modal').style.display = 'flex';
+  };
+
+  $('delete-cancel').addEventListener('click', () => { $('delete-modal').style.display = 'none'; });
+
+  $('delete-confirm').addEventListener('click', async () => {
+    if (!deleteTargetId) return;
+    $('delete-confirm').disabled = true;
+    const res = await api('/api/admin/users/' + deleteTargetId, { method:'DELETE' });
+    $('delete-confirm').disabled = false;
+    $('delete-modal').style.display = 'none';
+    if (res.ok) { showToast('✅ تم الحذف'); await loadUsers(); await loadStats(); }
+    else showToast('⚠️ ' + (res.error || 'خطأ'));
+  });
+
+  // ── Change Admin Password ──
+  $('change-pass-btn').addEventListener('click', async () => {
+    const np = $('new-admin-pass').value;
+    const cp = $('confirm-admin-pass').value;
+    if (!np || np.length < 6) { showToast('⚠️ كلمة المرور 6 أحرف على الأقل'); return; }
+    if (np !== cp) { showToast('⚠️ كلمتا المرور غير متطابقتين'); return; }
+    const res = await api('/api/admin/change-password', { method:'POST', body: JSON.stringify({ newPassword: np }) });
+    if (res.ok) {
+      showToast('✅ تم تغيير كلمة المرور');
+      $('new-admin-pass').value = '';
+      $('confirm-admin-pass').value = '';
+    } else { showToast('⚠️ ' + (res.error || 'خطأ')); }
+  });
+
+  // ── تفعيل السيرفر ──
+  async function loadServerStatus() {
+    try {
+      const status = await api('/api/server/status');
+      const el     = $('server-status-display');
+      if (!el) return;
+
+      if (status.activated) {
+        const exp = status.expires_at
+          ? 'تنتهي: ' + new Date(status.expires_at).toLocaleDateString('ar-SA')
+          : 'لا تنتهي ♾️';
+        const planNames = { free:'مجاني', pro:'احترافي' };
+        const maxTxt    = status.max_branches >= 999 ? 'لا نهائي' : status.max_branches;
+        el.innerHTML = `
+          <div style="background:rgba(58,239,122,0.08);border:1px solid var(--green);border-radius:8px;padding:12px">
+            <div style="color:var(--green);font-weight:700;margin-bottom:4px">✅ السيرفر مفعَّل</div>
+            <div style="font-size:13px;color:var(--sub)">
+              الكيان: <strong style="color:var(--text)">${status.entity_name}</strong><br>
+              الباقة: <strong style="color:var(--text)">${planNames[status.plan] || status.plan}</strong>
+              — ${maxTxt} فرع/مخزن<br>
+              ${exp}
+            </div>
+          </div>`;
+        if ($('activation-key')) $('activation-key').value = '';
+      } else {
+        el.innerHTML = `
+          <div style="background:rgba(232,17,35,0.08);border:1px solid var(--red);border-radius:8px;padding:12px">
+            <div style="color:var(--red);font-weight:700">⚠️ السيرفر غير مفعَّل</div>
+            <div style="font-size:13px;color:var(--sub);margin-top:4px">أدخل كود التفعيل أدناه</div>
+          </div>`;
+      }
+    } catch {}
+  }
+
+  $('activate-btn')?.addEventListener('click', async () => {
+    const key        = $('activation-key')?.value?.trim().toUpperCase();
+    const centralUrl = $('central-url')?.value?.trim().replace(/\/$/, '');
+    if (!centralUrl) { showToast('⚠️ أدخل رابط السيرفر المركزي'); return; }
+    if (!key)        { showToast('⚠️ أدخل كود التفعيل'); return; }
+
+    $('activate-btn').disabled    = true;
+    $('activate-btn').textContent = '⏳ جاري التفعيل...';
+
+    try {
+      const res = await api('/api/server/activate', {
+        method: 'POST',
+        body:   JSON.stringify({ key, central_url: centralUrl }),
+      });
+      if (res.ok) {
+        showToast('✅ تم تفعيل السيرفر بنجاح!');
+        await loadServerStatus();
+      } else {
+        showToast('⚠️ ' + (res.error || 'فشل التفعيل'));
+      }
+    } catch {
+      showToast('⚠️ تعذّر الاتصال');
+    } finally {
+      $('activate-btn').disabled    = false;
+      $('activate-btn').textContent = 'تفعيل السيرفر';
+    }
+  });
+
+  // ── تشخيص التواصل الخارجي ──
+  function badge(ok, text) {
+    const color = ok ? 'var(--green)' : 'var(--red)';
+    const icon  = ok ? '✅' : '❌';
+    return `<span style="color:${color};font-weight:700">${icon} ${text}</span>`;
+  }
+
+  async function loadDiagnostics() {
+    const el = $('diagnostics-display');
+    if (!el) return;
+    el.innerHTML = 'جاري الفحص...';
+    try {
+      const d = await api('/api/server/diagnostics');
+      const rows = [
+        ['السيرفر مفعَّل',         d.activated],
+        ['معرّف الكيان موجود',     d.entity_id_present, d.entity_id ? `(${d.entity_id})` : ''],
+        ['المركزي متاح',           d.central_reachable, d.central_url ? '' : '(لم يُضبط CENTRAL_SERVER_URL)'],
+        ['الرابط مسجَّل في المركزي', d.server_url_registered],
+        ['جاهز لتوليد أكواد التواصل', d.can_generate_codes],
+      ];
+      el.innerHTML = `
+        <div style="display:grid;gap:6px">
+          ${rows.map(([label, ok, extra]) => `
+            <div style="display:flex;justify-content:space-between;gap:8px">
+              <span>${label}</span>
+              <span>${badge(!!ok, ok ? 'نعم' : 'لا')} <small style="color:var(--sub)">${extra||''}</small></span>
+            </div>`).join('')}
+          <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--b1);font-size:11px;color:var(--sub)">
+            رابطك الحالي: <code style="direction:ltr">${d.server_url_local || '—'}</code>
+          </div>
+        </div>`;
+    } catch (e) { el.innerHTML = '⚠️ تعذّر جلب التشخيص'; }
+  }
+
+  $('diagnostics-refresh-btn')?.addEventListener('click', loadDiagnostics);
+  $('resync-btn')?.addEventListener('click', async () => {
+    const btn = $('resync-btn');
+    btn.disabled = true; btn.textContent = '⏳ جاري المزامنة...';
+    try {
+      const res = await api('/api/server/resync', { method: 'POST' });
+      if (res.ok) {
+        showToast(res.changed ? '✅ تمت المزامنة — تحدّثت بيانات الكيان' : '✅ المزامنة ناجحة');
+        await loadServerStatus();
+        await loadDiagnostics();
+      } else { showToast('⚠️ ' + (res.error || 'فشل المزامنة')); }
+    } catch { showToast('⚠️ تعذّر الاتصال'); }
+    finally {
+      btn.disabled = false;
+      btn.textContent = '🔄 إعادة المزامنة مع المركزي';
+    }
+  });
+
+  // أول تحميل للتشخيص عند فتح الإعدادات
+  const _origShowApp = typeof showApp === 'function' ? showApp : null;
+  setTimeout(() => { if (token) loadDiagnostics(); }, 500);
+
+  // ── Auto-login if token exists ──
+  if (token) showApp();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>إرسال ملف — نظام التواصل الداخلي</title>
+  <style>
+    
+    :root {
+      --bg:      #0a0a0a;
+      --card:    #1c1c1c;
+      --accent:  #E81123;
+      --green:   #3aef7a;
+      --red:     #E81123;
+      --border:  rgba(255,255,255,0.10);
+      --text:    #ffffff;
+      --sub:     #ababab;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .logo { font-size: 48px; margin-bottom: 12px; }
+
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+
+    .chat-info {
+      background: rgba(58,91,239,0.12);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .chat-info .from { color: var(--sub); font-size: 12px; }
+    .chat-info .to   { font-size: 15px; font-weight: 700; margin-top: 4px; }
+
+    /* منطقة السحب والإفلات / الاختيار */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 32px 16px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      margin: 20px 0;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(58,91,239,0.08);
+    }
+    .drop-zone input {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon  { font-size: 40px; margin-bottom: 10px; }
+    .drop-text  { font-size: 14px; color: var(--sub); }
+    .drop-hint  { font-size: 12px; color: var(--sub); margin-top: 6px; opacity: .7; }
+
+    /* معاينة الملف */
+    #preview-wrap { display: none; margin: 16px 0; }
+
+    #preview-img {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 10px;
+      object-fit: contain;
+      border: 1px solid var(--border);
+    }
+
+    .file-info-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: right;
+    }
+    .file-info-icon { font-size: 32px; flex-shrink: 0; }
+    .file-info-name { font-size: 13px; font-weight: 600; word-break: break-all; }
+    .file-info-size { font-size: 11px; color: var(--sub); margin-top: 3px; }
+
+    /* حقل التعليق */
+    #caption-input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 14px;
+      resize: none;
+      outline: none;
+      margin-bottom: 16px;
+      direction: rtl;
+    }
+    #caption-input:focus { border-color: var(--accent); }
+
+    /* أزرار */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity .2s;
+      margin-bottom: 10px;
+    }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary  { background: var(--accent); color: #fff; }
+    .btn-secondary { background: rgba(255,255,255,0.08); color: var(--text); }
+    .btn:hover:not(:disabled) { opacity: .88; }
+
+    /* شريط التقدم */
+    #progress-wrap { display: none; margin: 12px 0; }
+    #progress-bg {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      width: 0%;
+      transition: width .15s;
+    }
+    #progress-label {
+      font-size: 12px;
+      color: var(--sub);
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    /* حالات النتيجة */
+    #result-wrap { display: none; text-align: center; padding: 16px 0; }
+    .result-icon { font-size: 56px; margin-bottom: 12px; }
+    .result-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .result-sub   { font-size: 14px; color: var(--sub); }
+
+    /* خطأ */
+    #error-msg {
+      display: none;
+      background: rgba(239,58,58,0.12);
+      border: 1px solid var(--red);
+      color: var(--red);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    /* انتهاء الصلاحية */
+    #expired-wrap {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    /* العداد التنازلي */
+    #timer {
+      font-size: 12px;
+      color: var(--sub);
+      margin-top: 8px;
+    }
+    #timer.warning { color: #ef9c3a; }
+    #timer.danger  { color: var(--red); }
+
+    /* ── Touch & mobile improvements ── */
+    .btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    .drop-zone:active {
+      border-color: var(--accent);
+      background: rgba(58,91,239,0.08);
+    }
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    @media (max-width: 420px) {
+      .card { padding: 24px 16px; }
+      h1 { font-size: 18px; }
+      .btn { padding: 12px; font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">📱</div>
+
+  <!-- انتهت الصلاحية -->
+  <div id="expired-wrap">
+    <div style="font-size:56px">⏰</div>
+    <h1 style="margin-top:12px">انتهت صلاحية الرابط</h1>
+    <p style="color:var(--sub);margin-top:8px;font-size:14px">
+      امسح QR Code جديداً من البرنامج
+    </p>
+  </div>
+
+  <!-- المحتوى الرئيسي -->
+  <div id="main-wrap">
+    <h1>إرسال ملف للدردشة</h1>
+
+    <div class="chat-info">
+      <div class="from">إلى المحادثة مع:</div>
+      <div class="to" id="chat-to-name">جاري التحميل...</div>
+      <div class="from" style="margin-top:4px">من: <span id="chat-from-name"></span></div>
+    </div>
+
+    <div id="timer"></div>
+
+    <!-- منطقة الاختيار -->
+    <div id="drop-zone" class="drop-zone">
+      <input type="file" id="file-input"
+             accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+             capture="environment" />
+      <div class="drop-icon">📎</div>
+      <div class="drop-text">اضغط لاختيار صورة أو ملف</div>
+      <div class="drop-hint">JPG, PNG, PDF, Word, Excel — حتى 5 MB</div>
+    </div>
+
+    <!-- معاينة -->
+    <div id="preview-wrap">
+      <img id="preview-img" src="" alt="" style="display:none" />
+      <div id="file-info-card" class="file-info-card" style="display:none">
+        <div class="file-info-icon" id="file-icon"></div>
+        <div>
+          <div class="file-info-name" id="file-name"></div>
+          <div class="file-info-size" id="file-size"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- تعليق اختياري -->
+    <textarea id="caption-input" rows="2"
+              placeholder="أضف تعليقاً (اختياري)..."
+              style="display:none"></textarea>
+
+    <!-- خطأ -->
+    <div id="error-msg"></div>
+
+    <!-- شريط التقدم -->
+    <div id="progress-wrap">
+      <div id="progress-bg"><div id="progress-bar"></div></div>
+      <div id="progress-label">جاري الإرسال...</div>
+    </div>
+
+    <!-- أزرار -->
+    <button id="send-btn" class="btn btn-primary" style="display:none" disabled>
+      ➤ إرسال
+    </button>
+    <button id="change-btn" class="btn btn-secondary" style="display:none">
+      تغيير الملف
+    </button>
+  </div>
+
+  <!-- نتيجة الإرسال -->
+  <div id="result-wrap"></div>
+</div>
+
+<script>
+(function () {
+  const MAX_SIZE = 5 * 1024 * 1024;
+
+  const FILE_ICONS = {
+    pdf: '📄', doc: '📝', docx: '📝',
+    xls: '📊', xlsx: '📊', txt: '📃', default: '📎',
+  };
+
+  function getIcon(name) {
+    const ext = (name || '').split('.').pop().toLowerCase();
+    return FILE_ICONS[ext] || FILE_ICONS.default;
+  }
+
+  function formatSize(b) {
+    if (b < 1024)        return b + ' B';
+    if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+    return (b / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  // قراءة token من الرابط
+  const params   = new URLSearchParams(window.location.search);
+  const token    = params.get('token');
+  const serverUrl = window.location.origin;
+
+  const mainWrap    = document.getElementById('main-wrap');
+  const expiredWrap = document.getElementById('expired-wrap');
+  const resultWrap  = document.getElementById('result-wrap');
+  const errorMsg    = document.getElementById('error-msg');
+  const dropZone    = document.getElementById('drop-zone');
+  const fileInput   = document.getElementById('file-input');
+  const previewWrap = document.getElementById('preview-wrap');
+  const previewImg  = document.getElementById('preview-img');
+  const fileInfoCard = document.getElementById('file-info-card');
+  const fileIcon    = document.getElementById('file-icon');
+  const fileName    = document.getElementById('file-name');
+  const fileSize    = document.getElementById('file-size');
+  const captionInput = document.getElementById('caption-input');
+  const sendBtn     = document.getElementById('send-btn');
+  const changeBtn   = document.getElementById('change-btn');
+  const progressWrap = document.getElementById('progress-wrap');
+  const progressBar  = document.getElementById('progress-bar');
+  const progressLbl  = document.getElementById('progress-label');
+  const timerEl     = document.getElementById('timer');
+  const toName      = document.getElementById('chat-to-name');
+  const fromName    = document.getElementById('chat-from-name');
+
+  let selectedFile  = null;
+  let sessionData   = null;
+  let timerInterval = null;
+
+  // ── تحقق من الـ token ──────────────────────────────────────
+  async function loadSession() {
+    if (!token) { showExpired(); return; }
+
+    try {
+      const res  = await fetch(`${serverUrl}/api/qr/session/${token}`);
+      const data = await res.json();
+
+      if (!res.ok || data.error || data.expired) { showExpired(); return; }
+
+      sessionData = data;
+      toName.textContent   = data.to_name;
+      fromName.textContent = data.from_name;
+
+      startTimer(data.expires_at);
+    } catch {
+      showExpired();
+    }
+  }
+
+  function startTimer(expiresAt) {
+    function tick() {
+      const remaining = Math.floor((new Date(expiresAt) - Date.now()) / 1000);
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        showExpired();
+        return;
+      }
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      timerEl.textContent = `⏱ ينتهي خلال ${m}:${s.toString().padStart(2, '0')}`;
+      timerEl.className   = remaining < 60 ? 'danger' : remaining < 120 ? 'warning' : '';
+    }
+    tick();
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function showExpired() {
+    clearInterval(timerInterval);
+    mainWrap.style.display    = 'none';
+    expiredWrap.style.display = 'block';
+  }
+
+  // ── اختيار الملف ──────────────────────────────────────────
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    handleFile(file);
+  });
+
+  // Drag & Drop
+  dropZone.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', ()  => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop',      (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  function handleFile(file) {
+    hideError();
+
+    if (file.size > MAX_SIZE) {
+      showError('حجم الملف يتجاوز 5 MB');
+      return;
+    }
+
+    selectedFile = file;
+
+    // معاينة
+    previewWrap.style.display = 'block';
+    captionInput.style.display = 'block';
+    sendBtn.style.display    = 'block';
+    sendBtn.disabled         = false;
+    changeBtn.style.display  = 'block';
+    dropZone.style.display   = 'none';
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src            = e.target.result;
+        previewImg.style.display  = 'block';
+        fileInfoCard.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    } else {
+      previewImg.style.display   = 'none';
+      fileInfoCard.style.display = 'flex';
+      fileIcon.textContent       = getIcon(file.name);
+      fileName.textContent       = file.name;
+      fileSize.textContent       = formatSize(file.size);
+    }
+  }
+
+  // تغيير الملف
+  changeBtn.addEventListener('click', () => {
+    selectedFile             = null;
+    fileInput.value          = '';
+    previewWrap.style.display  = 'none';
+    captionInput.style.display = 'none';
+    captionInput.value         = '';
+    sendBtn.style.display    = 'none';
+    changeBtn.style.display  = 'none';
+    dropZone.style.display   = 'block';
+    hideError();
+  });
+
+  // ── إرسال الملف ───────────────────────────────────────────
+  sendBtn.addEventListener('click', sendFile);
+
+  async function sendFile() {
+    if (!selectedFile || !sessionData) return;
+
+    sendBtn.disabled          = true;
+    changeBtn.style.display   = 'none';
+    progressWrap.style.display = 'block';
+    hideError();
+
+    const formData = new FormData();
+    formData.append('file',    selectedFile);
+    formData.append('token',   token);
+    formData.append('caption', captionInput.value.trim());
+
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width  = pct + '%';
+          progressLbl.textContent  = `جاري الإرسال... ${pct}%`;
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        progressWrap.style.display = 'none';
+        try {
+          const data = JSON.parse(xhr.responseText);
+          if (xhr.status === 200 && data.ok) {
+            clearInterval(timerInterval);
+            showSuccess(selectedFile.type.startsWith('image/') ? 'image' : 'file');
+          } else {
+            showError(data.error || 'فشل الإرسال');
+            sendBtn.disabled        = false;
+            changeBtn.style.display = 'block';
+          }
+        } catch {
+          showError('حدث خطأ غير متوقع');
+          sendBtn.disabled = false;
+        }
+        resolve();
+      });
+
+      xhr.addEventListener('error', () => {
+        progressWrap.style.display = 'none';
+        showError('انقطع الاتصال، حاول مجدداً');
+        sendBtn.disabled        = false;
+        changeBtn.style.display = 'block';
+        resolve();
+      });
+
+      xhr.open('POST', `${serverUrl}/api/qr/upload`);
+      xhr.send(formData);
+    });
+  }
+
+  function showSuccess(type) {
+    mainWrap.style.display   = 'none';
+    resultWrap.style.display = 'block';
+    resultWrap.innerHTML     = `
+      <div class="result-icon">${type === 'image' ? '🖼️' : '📄'}</div>
+      <div class="result-title">تم الإرسال بنجاح! ✅</div>
+      <div class="result-sub">
+        وصلت ${type === 'image' ? 'الصورة' : 'الملف'} إلى<br>
+        <strong>${sessionData.to_name}</strong>
+      </div>
+      <div class="result-sub" style="margin-top:12px;font-size:12px">
+        يمكنك إغلاق هذه الصفحة
+      </div>
+    `;
+  }
+
+  function showError(msg) {
+    errorMsg.textContent    = '⚠️ ' + msg;
+    errorMsg.style.display  = 'block';
+  }
+  function hideError() {
+    errorMsg.style.display  = 'none';
+  }
+
+  // ── بدء التشغيل ───────────────────────────────────────────
+  loadSession();
+})();
+</script>
+</body>
+</html>
