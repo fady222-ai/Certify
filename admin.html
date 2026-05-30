@@ -419,18 +419,22 @@
 
         <!-- حالة الباقة وحد الفروع -->
         <div class="settings-card" id="plan-status-card">
-          <div class="settings-title">📊 حالة الباقة وحد الفروع</div>
+          <div class="settings-title">
+            📊 حالة الباقة وحد الفروع
+            <span style="font-size:11px;color:var(--sub);font-weight:400;margin-right:8px">يُحدَّث تلقائياً</span>
+          </div>
           <div id="plan-status-display" style="margin-bottom:12px;font-size:13px">جاري التحميل...</div>
-          <button class="btn-secondary" id="plan-refresh-btn" style="margin-right:8px">↻ تحديث</button>
           <button class="btn-primary" id="plan-enforce-btn" style="display:none">⚠️ تطبيق الحد الآن (طرد الفروع الزائدة)</button>
         </div>
 
         <!-- تشخيص التواصل الخارجي (Federation) -->
         <div class="settings-card" id="diagnostics-card">
-          <div class="settings-title">🩺 تشخيص التواصل الخارجي</div>
+          <div class="settings-title">
+            🩺 تشخيص التواصل الخارجي
+            <span style="font-size:11px;color:var(--sub);font-weight:400;margin-right:8px">يُحدَّث تلقائياً</span>
+          </div>
           <div id="diagnostics-display" style="margin-bottom:12px;font-size:13px;color:var(--sub)">جاري التحميل...</div>
           <button class="btn-secondary" id="resync-btn">🔄 إعادة المزامنة مع المركزي</button>
-          <button class="btn-secondary" id="diagnostics-refresh-btn" style="margin-right:8px">↻ تحديث</button>
         </div>
 
         <div class="settings-card">
@@ -481,8 +485,10 @@
 
         <!-- سجل الأمان -->
         <div class="settings-card">
-          <div class="settings-title">🛡️ سجل الأمان (آخر 50 عملية)</div>
-          <button class="btn-secondary" id="audit-refresh-btn" style="margin-bottom:10px">↻ تحديث</button>
+          <div class="settings-title">
+            🛡️ سجل الأمان (آخر 50 عملية)
+            <span style="font-size:11px;color:var(--sub);font-weight:400;margin-right:8px">يُحدَّث تلقائياً</span>
+          </div>
           <div id="audit-display" style="font-family:monospace;font-size:12px;max-height:340px;overflow:auto;background:var(--bg-1);border:1px solid var(--b1);border-radius:8px;padding:10px"></div>
         </div>
       </div>
@@ -623,11 +629,16 @@
     await loadUsers();
     loadAudit();
     loadPlanStatus();
+    loadDiagnostics();
 
-    // تحديث كل 30 ثانية
+    // تحديث تلقائي كل 30 ثانية لكل البيانات الحيّة
     refreshInterval = setInterval(async () => {
       await loadStats();
       await loadUsers();
+      loadServerStatus();
+      loadPlanStatus();
+      loadDiagnostics();
+      loadAudit();
     }, 30000);
   }
 
@@ -742,7 +753,7 @@
       `).join('');
     } catch { el.innerHTML = '⚠️ تعذّر التحميل'; }
   }
-  $('audit-refresh-btn')?.addEventListener('click', loadAudit);
+  // (تم إزالة زر التحديث — التحديث تلقائي كل 30 ثانية من setInterval في showApp)
 
   // ── حالة الباقة وحد الفروع ──
   async function loadPlanStatus() {
@@ -766,7 +777,6 @@
       $('plan-enforce-btn').style.display = d.over_limit ? 'inline-block' : 'none';
     } catch { el.innerHTML = '⚠️ تعذّر التحميل'; }
   }
-  $('plan-refresh-btn')?.addEventListener('click', loadPlanStatus);
   $('plan-enforce-btn')?.addEventListener('click', async () => {
     if (!confirm('سيتم تعطيل الفروع الأحدث الزائدة عن الحد وطرد جلساتها. متأكد؟')) return;
     const btn = $('plan-enforce-btn');
@@ -1076,7 +1086,6 @@
     } catch (e) { el.innerHTML = '⚠️ تعذّر جلب التشخيص'; }
   }
 
-  $('diagnostics-refresh-btn')?.addEventListener('click', loadDiagnostics);
   $('resync-btn')?.addEventListener('click', async () => {
     const btn = $('resync-btn');
     btn.disabled = true; btn.textContent = '⏳ جاري المزامنة...';
@@ -1093,10 +1102,6 @@
       btn.textContent = '🔄 إعادة المزامنة مع المركزي';
     }
   });
-
-  // أول تحميل للتشخيص عند فتح الإعدادات
-  const _origShowApp = typeof showApp === 'function' ? showApp : null;
-  setTimeout(() => { if (token) loadDiagnostics(); }, 500);
 
   // ── Auto-login if token exists ──
   if (token) showApp();
