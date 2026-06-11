@@ -156,19 +156,19 @@ export default function CertificatesPage() {
             <div className="divide-y">
               {certs.map((c) => (
                 <div key={c.id} className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-surface-2/60">
-                  <div className="flex min-w-0 items-center gap-3">
+                  <Link href={`/dashboard/certificates/${c.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                     <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl font-display font-black ${
                       c.status === "revoked" ? "bg-red-50 text-red-400" : "bg-brand-50 text-brand-600"
                     }`}>
                       {c.recipient_name.charAt(0)}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate font-bold text-ink">{c.recipient_name}</p>
+                      <p className="truncate font-bold text-ink hover:text-brand-700">{c.recipient_name}</p>
                       <p className="truncate text-xs text-ink-muted">
                         {c.course_name ?? "—"} · <span className="font-mono">{c.verification_code}</span>
                       </p>
                     </div>
-                  </div>
+                  </Link>
                   <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                     {c.status === "revoked" ? (
                       <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">ملغاة</span>

@@ -19,6 +19,7 @@ export function SiteFooter() {
             <ul className="space-y-2 text-sm text-ink-soft">
               <li><a href="/#features" className="hover:text-brand-700">المميزات</a></li>
               <li><a href="/#pricing" className="hover:text-brand-700">الأسعار</a></li>
+              <li><Link href="/help" className="hover:text-brand-700">مركز المساعدة</Link></li>
               <li><Link href="/verify/CERT-SMOK-0001" className="hover:text-brand-700">التحقق من شهادة</Link></li>
             </ul>
           </div>

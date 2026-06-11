@@ -83,6 +83,7 @@ export async function getCertificate(req, res) {
     expiry_date: cert.expiryDate ? new Date(cert.expiryDate).toISOString().slice(0, 10) : null,
     downloaded_count: cert.downloadedCount,
     shared_count: cert.sharedCount,
+    linkedin_added: cert.linkedinAdded,
     revoked_at: cert.revokedAt,
     revoked_reason: cert.revokedReason,
     template: cert.template ?? null,
