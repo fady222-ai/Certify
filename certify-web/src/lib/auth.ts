@@ -75,6 +75,16 @@ export async function login(input: {
   return profile;
 }
 
+/** Re-fetch the profile from /auth/me and update local storage. */
+export async function refreshProfile(): Promise<AuthUser | null> {
+  const res = await authedFetch("auth/me");
+  if (!res.ok) return null;
+  const profile = (await res.json()) as AuthUser;
+  const token = getToken();
+  if (token) persist(token, profile);
+  return profile;
+}
+
 /** Fetch wrapper that attaches the bearer token. */
 export async function authedFetch(path: string, init: RequestInit = {}) {
   const token = getToken();

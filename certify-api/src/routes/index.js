@@ -25,8 +25,15 @@ import {
   getBilling,
   changePlan,
 } from "../controllers/billingController.js";
+import {
+  getOrganization,
+  updateOrganization,
+  uploadBranding,
+  deleteBranding,
+} from "../controllers/organizationController.js";
 import { requireAuth } from "../middleware/auth.js";
 import { uploadFile } from "../middleware/upload.js";
+import { uploadImage } from "../middleware/uploadImage.js";
 
 export const apiRouter = Router();
 
@@ -55,6 +62,16 @@ apiRouter.delete("/templates/:id", requireAuth, deleteTemplate);
 
 apiRouter.get("/billing", requireAuth, getBilling);
 apiRouter.post("/billing/plan", requireAuth, changePlan);
+
+apiRouter.get("/organization", requireAuth, getOrganization);
+apiRouter.patch("/organization", requireAuth, updateOrganization);
+apiRouter.post("/organization/branding/:kind", requireAuth, (req, res, next) => {
+  uploadImage(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    next();
+  });
+}, uploadBranding);
+apiRouter.delete("/organization/branding/:kind", requireAuth, deleteBranding);
 
 apiRouter.get("/batches", requireAuth, listBatches);
 apiRouter.post("/batches", requireAuth, (req, res, next) => {

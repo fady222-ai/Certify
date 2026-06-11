@@ -7,8 +7,8 @@ import { Logo } from "@/components/Logo";
 import { IssueCertificateModal } from "@/components/IssueCertificateModal";
 import { getToken, getStoredUser, logout, authedFetch, type AuthUser } from "@/lib/auth";
 import {
-  IconBadge, IconUpload, IconPalette, IconChart, IconUsers,
-  IconArrow, IconCheck, IconQr, IconBolt,
+  IconBadge, IconUpload, IconPalette, IconChart, IconBolt as IconBoltNav,
+  IconArrow, IconCheck, IconQr, IconBolt, IconSettings,
 } from "@/components/icons";
 
 type Stats = {
@@ -32,7 +32,8 @@ const nav = [
   { label: "الشهادات", icon: IconBadge, href: "/dashboard/certificates" },
   { label: "القوالب", icon: IconPalette, href: "/dashboard/templates" },
   { label: "الإصدار الجماعي", icon: IconUpload, href: "/dashboard/bulk" },
-  { label: "الفريق", icon: IconUsers, href: "/dashboard" },
+  { label: "الباقة والفوترة", icon: IconBoltNav, href: "/dashboard/billing" },
+  { label: "إعدادات المنظمة", icon: IconSettings, href: "/dashboard/settings" },
 ];
 
 export default function DashboardPage() {

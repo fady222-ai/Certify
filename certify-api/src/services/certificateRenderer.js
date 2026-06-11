@@ -56,6 +56,13 @@ export function verifyUrl(verificationCode) {
   return `${config.verifyBaseUrl.replace(/\/$/, "")}/verify/${verificationCode}`;
 }
 
+/** Resolve a stored asset path to an absolute URL Chrome can fetch. */
+function assetUrl(url) {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${config.appUrl.replace(/\/$/, "")}/storage/${url}`;
+}
+
 function issueDateLabel(date) {
   return new Intl.DateTimeFormat("ar", {
     day: "numeric",
@@ -103,8 +110,8 @@ export async function buildHtml(cert) {
     verificationCode: cert.verificationCode,
     qrSvg,
     primaryColor: org?.primaryColor ?? "#4f46e5",
-    logoUrl: org?.logoUrl ?? null,
-    signatureUrl: org?.signatureUrl ?? null,
+    logoUrl: assetUrl(org?.logoUrl),
+    signatureUrl: assetUrl(org?.signatureUrl),
   });
 }
 

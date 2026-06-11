@@ -1,0 +1,243 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Logo } from "@/components/Logo";
+import { getToken, refreshProfile } from "@/lib/auth";
+import {
+  getOrganization, updateOrganization, uploadBranding, deleteBranding,
+  type Organization,
+} from "@/lib/organization";
+import { IconCheck, IconBadge, IconTrash, IconUpload } from "@/components/icons";
+
+const PRESET_COLORS = ["#4f46e5", "#0ea5e9", "#059669", "#d97706", "#dc2626", "#7c3aed", "#db2777", "#0f172a"];
+
+export default function SettingsPage() {
+  const router = useRouter();
+  const [org, setOrg] = useState<Organization | null>(null);
+  const [name, setName] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#4f46e5");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const logoRef = useRef<HTMLInputElement>(null);
+  const sigRef = useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const o = await getOrganization();
+      setOrg(o);
+      setName(o.name);
+      setPrimaryColor(o.primary_color || "#4f46e5");
+    } catch {
+      router.push("/login");
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!getToken()) { router.push("/login"); return; }
+    load();
+  }, [router, load]);
+
+  async function saveDetails(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const updated = await updateOrganization({ name, primaryColor });
+      setOrg(updated);
+      await refreshProfile();
+      setNotice("تم حفظ التغييرات.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذّر الحفظ.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function onUpload(kind: "logo" | "signature", file?: File | null) {
+    if (!file) return;
+    setError(null);
+    setNotice(null);
+    try {
+      const updated = await uploadBranding(kind, file);
+      setOrg(updated);
+      await refreshProfile();
+      setNotice(kind === "logo" ? "تم تحديث الشعار." : "تم تحديث التوقيع.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذّر الرفع.");
+    }
+  }
+
+  async function onDelete(kind: "logo" | "signature") {
+    try {
+      const updated = await deleteBranding(kind);
+      setOrg(updated);
+      await refreshProfile();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذّر الحذف.");
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-surface-2/40">
+      <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-6 py-3.5">
+        <div className="flex items-center gap-4">
+          <Logo />
+          <span className="hidden text-sm font-bold text-ink-muted sm:inline">/ إعدادات المنظمة</span>
+        </div>
+        <Link href="/dashboard" className="btn-ghost">لوحة التحكم</Link>
+      </header>
+
+      <main className="mx-auto max-w-3xl space-y-6 p-6">
+        <div>
+          <h1 className="font-display text-2xl font-black text-ink">إعدادات المنظمة</h1>
+          <p className="mt-1 text-sm text-ink-soft">حدّد هوية منظمتك — تظهر على كل شهادة تُصدرها.</p>
+        </div>
+
+        {notice && (
+          <div className="rounded-xl bg-verify-50 px-4 py-3 text-sm font-bold text-verify-700 ring-1 ring-verify-100">
+            {notice}
+          </div>
+        )}
+        {error && (
+          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600 ring-1 ring-red-100">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <p className="py-12 text-center text-sm text-ink-muted">جارٍ التحميل…</p>
+        ) : (
+          <>
+            {/* Details */}
+            <form onSubmit={saveDetails} className="card space-y-5 p-6">
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-bold text-ink">اسم المنظمة</span>
+                <input value={name} onChange={(e) => setName(e.target.value)} className="input" required />
+              </label>
+
+              <div>
+                <span className="mb-2 block text-sm font-bold text-ink">اللون الأساسي</span>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {PRESET_COLORS.map((c) => (
+                    <button key={c} type="button" onClick={() => setPrimaryColor(c)}
+                      className={`h-9 w-9 rounded-full ring-2 ring-offset-2 transition ${
+                        primaryColor.toLowerCase() === c ? "ring-ink" : "ring-transparent"
+                      }`}
+                      style={{ background: c }} aria-label={c} />
+                  ))}
+                  <label className="flex items-center gap-2 rounded-lg border border-surface-3 px-2 py-1.5">
+                    <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0" />
+                    <span className="font-mono text-xs text-ink-muted">{primaryColor}</span>
+                  </label>
+                </div>
+              </div>
+
+              <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
+                {saving ? "جارٍ الحفظ…" : "حفظ التغييرات"}
+              </button>
+            </form>
+
+            {/* Branding assets */}
+            <div className="grid gap-5 sm:grid-cols-2">
+              <AssetCard
+                title="الشعار"
+                hint="PNG شفاف يُفضّل · حتى 2MB"
+                url={org?.logo_url ?? null}
+                inputRef={logoRef}
+                onPick={(f) => onUpload("logo", f)}
+                onRemove={() => onDelete("logo")}
+                bg="#ffffff"
+              />
+              <AssetCard
+                title="التوقيع"
+                hint="صورة توقيع المُصدر · حتى 2MB"
+                url={org?.signature_url ?? null}
+                inputRef={sigRef}
+                onPick={(f) => onUpload("signature", f)}
+                onRemove={() => onDelete("signature")}
+                bg="#f8fafc"
+              />
+            </div>
+
+            {/* Live preview swatch */}
+            <div className="card p-6">
+              <p className="mb-3 text-sm font-bold text-ink-soft">معاينة الهوية</p>
+              <div className="overflow-hidden rounded-xl border" style={{ borderColor: `${primaryColor}55` }}>
+                <div className="flex items-center gap-3 px-5 py-4 text-white" style={{ background: primaryColor }}>
+                  {org?.logo_url ? (
+                    <Image src={org.logo_url} alt="" width={120} height={40} className="max-h-9 w-auto object-contain" unoptimized />
+                  ) : (
+                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/15">
+                      <IconBadge className="h-5 w-5" />
+                    </span>
+                  )}
+                  <span className="font-display font-extrabold">{name || "اسم المنظمة"}</span>
+                </div>
+                <div className="bg-white px-5 py-4 text-center">
+                  <p className="text-xs text-ink-muted">شهادة إتمام</p>
+                  <p className="mt-1 font-display text-lg font-black" style={{ color: primaryColor }}>
+                    اسم المتدرب
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function AssetCard({
+  title, hint, url, inputRef, onPick, onRemove, bg,
+}: {
+  title: string;
+  hint: string;
+  url: string | null;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  onPick: (file: File | null) => void;
+  onRemove: () => void;
+  bg: string;
+}) {
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="font-extrabold text-ink">{title}</h3>
+        {url && (
+          <button onClick={onRemove} className="rounded-lg p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600" title="حذف">
+            <IconTrash className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-ink-muted">{hint}</p>
+
+      <div
+        onClick={() => inputRef.current?.click()}
+        className="mt-4 flex h-28 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-surface-3 hover:border-brand-400"
+        style={{ background: bg }}
+      >
+        <input ref={inputRef} type="file" accept="image/*" className="hidden"
+          onChange={(e) => { onPick(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+        {url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt={title} className="max-h-20 max-w-[80%] object-contain" />
+        ) : (
+          <span className="flex flex-col items-center gap-1.5 text-ink-muted">
+            <IconUpload className="h-6 w-6" />
+            <span className="text-xs font-bold">رفع صورة</span>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
