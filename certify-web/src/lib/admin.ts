@@ -1,4 +1,4 @@
-import { apiFetch } from "./api";
+import { authedFetch } from "./auth";
 
 export type AdminOrg = {
   id: string;
@@ -22,22 +22,35 @@ export type AdminStats = {
   recent_organizations: AdminOrg[];
 };
 
+async function json<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message ?? "تعذّر تنفيذ الطلب.");
+  }
+  return res.json() as Promise<T>;
+}
+
 export async function getAdminStats(): Promise<AdminStats> {
-  return apiFetch("/admin/stats");
+  return json(await authedFetch("admin/stats"));
 }
 
 export async function listAdminOrganizations(search?: string): Promise<{ data: AdminOrg[] }> {
   const q = search ? `?search=${encodeURIComponent(search)}` : "";
-  return apiFetch(`/admin/organizations${q}`);
+  return json(await authedFetch(`admin/organizations${q}`));
 }
 
 export async function adminChangePlan(orgId: string, slug: string): Promise<{ message: string }> {
-  return apiFetch(`/admin/organizations/${orgId}/plan`, {
-    method: "PATCH",
-    body: JSON.stringify({ slug }),
-  });
+  return json(
+    await authedFetch(`admin/organizations/${orgId}/plan`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug }),
+    })
+  );
 }
 
-export async function adminToggleSuspend(orgId: string): Promise<{ message: string; organization: AdminOrg }> {
-  return apiFetch(`/admin/organizations/${orgId}/suspend`, { method: "PATCH" });
+export async function adminToggleSuspend(
+  orgId: string
+): Promise<{ message: string; organization: AdminOrg }> {
+  return json(await authedFetch(`admin/organizations/${orgId}/suspend`, { method: "PATCH" }));
 }

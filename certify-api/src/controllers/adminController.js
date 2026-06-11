@@ -102,6 +102,9 @@ export async function adminChangePlan(req, res) {
   const plan = await prisma.plan.findUnique({ where: { slug } });
   if (!plan) return res.status(404).json({ message: "الباقة غير موجودة." });
 
+  const exists = await prisma.organization.findUnique({ where: { id } });
+  if (!exists) return res.status(404).json({ message: "المنظمة غير موجودة." });
+
   const org = await prisma.organization.update({
     where: { id },
     data: { planId: plan.id },
@@ -117,6 +120,12 @@ export async function adminToggleSuspend(req, res) {
 
   const org = await prisma.organization.findUnique({ where: { id } });
   if (!org) return res.status(404).json({ message: "المنظمة غير موجودة." });
+
+  // Guard against self-lockout: suspending your own org would block requireAuth
+  // for every request — including the admin panel — with no way back in.
+  if (org.ownerId === req.user.id) {
+    return res.status(400).json({ message: "لا يمكنك إيقاف منظمتك الخاصة." });
+  }
 
   const updated = await prisma.organization.update({
     where: { id },
