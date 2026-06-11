@@ -90,6 +90,8 @@
 | `ADMIN_EMAIL` | بريد دخولك كمدير المنصة (مثل `owner@yourdomain.com`) |
 | `ADMIN_PASSWORD` | كلمة مرور قوية لحساب المدير (٨ أحرف على الأقل) |
 | `ADMIN_NAME` | اسمك (مثل `مدير المنصة`) |
+| `TAP_SECRET_KEY` | مفتاح Tap السري — من **https://dashboard.tap.company** → API Keys |
+| `TAP_WEBHOOK_SECRET` | سر الـ Webhook من Tap (اختياري للبداية) |
 
    > **مهم:** احفظ قيمة APP_KEY في مكان آمن — لا تغيّرها أبداً لاحقاً
    >

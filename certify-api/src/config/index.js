@@ -57,4 +57,8 @@ export const config = {
     // Set to "false" to disable sending entirely.
     enabled: (process.env.EMAIL_ENABLED ?? "true") !== "false",
   },
+
+  // Tap Payments — leave empty in dev to skip real charges.
+  tapSecretKey: process.env.TAP_SECRET_KEY ?? "",
+  tapWebhookSecret: process.env.TAP_WEBHOOK_SECRET ?? "",
 };

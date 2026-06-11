@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import { showVerification, trackEvent } from "../controllers/verificationController.js";
 import { registerHandler, loginHandler, meHandler } from "../controllers/authController.js";
 import {
@@ -24,6 +24,10 @@ import {
 import {
   listPlans,
   getBilling,
+  createCheckout,
+  handleCallback,
+  handleWebhook,
+  cancelSubscription,
   changePlan,
 } from "../controllers/billingController.js";
 import {
@@ -70,6 +74,15 @@ apiRouter.put("/templates/:id", requireAuth, updateTemplate);
 apiRouter.delete("/templates/:id", requireAuth, deleteTemplate);
 
 apiRouter.get("/billing", requireAuth, getBilling);
+apiRouter.post("/billing/checkout", requireAuth, createCheckout);
+apiRouter.get("/billing/callback", handleCallback);
+apiRouter.post(
+  "/billing/webhook",
+  express.raw({ type: "application/json" }),
+  (req, _res, next) => { if (Buffer.isBuffer(req.body)) req.rawBody = req.body.toString(); next(); },
+  handleWebhook,
+);
+apiRouter.post("/billing/cancel", requireAuth, cancelSubscription);
 apiRouter.post("/billing/plan", requireAuth, changePlan);
 
 apiRouter.get("/organization", requireAuth, getOrganization);

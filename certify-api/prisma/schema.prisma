@@ -200,18 +200,23 @@ model CertificateUsage {
 }
 
 model Subscription {
-  id                  String       @id @default(uuid())
-  organizationId      String       @map("organization_id")
-  planId              Int          @map("plan_id")
-  stripeSubscriptionId String?     @map("stripe_subscription_id")
-  status              String       @default("active")
-  currentPeriodStart  DateTime?    @map("current_period_start")
-  currentPeriodEnd    DateTime?    @map("current_period_end")
-  trialEndsAt         DateTime?    @map("trial_ends_at")
-  createdAt           DateTime     @default(now()) @map("created_at")
+  id                 String       @id @default(uuid())
+  organizationId     String       @unique @map("organization_id")
+  planId             Int          @map("plan_id")
+  tapChargeId        String?      @map("tap_charge_id")
+  tapCustomerId      String?      @map("tap_customer_id")
+  status             String       @default("inactive") // inactive | active | past_due | cancelled
+  interval           String       @default("monthly")  // monthly | annual
+  amount             Float?
+  currency           String       @default("SAR")
+  currentPeriodStart DateTime?    @map("current_period_start")
+  currentPeriodEnd   DateTime?    @map("current_period_end")
+  cancelledAt        DateTime?    @map("cancelled_at")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
 
-  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  plan                Plan         @relation(fields: [planId], references: [id])
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan               Plan         @relation(fields: [planId], references: [id])
 
   @@map("subscriptions")
 }
