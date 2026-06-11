@@ -10,7 +10,7 @@ import {
   type CertificateDetail,
 } from "@/lib/certificates";
 import {
-  IconCheck, IconArrow, IconQr, IconBadge, IconMail, IconBan,
+  IconCheck, IconArrow, IconQr, IconMail, IconBan,
   IconDownload, IconLinkedin, IconClock,
 } from "@/components/icons";
 

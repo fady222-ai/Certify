@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { getToken, authedFetch } from "@/lib/auth";
-import { IconCheck, IconArrow, IconBadge } from "@/components/icons";
+import { IconCheck, IconArrow } from "@/components/icons";
 
 type BatchDetail = {
   id: string;

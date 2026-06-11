@@ -10,7 +10,7 @@ import {
   getOrganization, updateOrganization, uploadBranding, deleteBranding,
   type Organization,
 } from "@/lib/organization";
-import { IconCheck, IconBadge, IconTrash, IconUpload } from "@/components/icons";
+import { IconBadge, IconTrash, IconUpload } from "@/components/icons";
 
 const PRESET_COLORS = ["#4f46e5", "#0ea5e9", "#059669", "#d97706", "#dc2626", "#7c3aed", "#db2777", "#0f172a"];
 

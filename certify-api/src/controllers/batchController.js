@@ -153,7 +153,7 @@ function parseFile(file) {
       if (!name) return null;
       return {
         recipientName: name,
-        recipientEmail: norm["email"] || norm["البريد"] || null || undefined,
+        recipientEmail: norm["email"] || norm["البريد"] || undefined,
         courseName:
           norm["course_name"] ||
           norm["course"] ||

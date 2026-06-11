@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { getToken, authedFetch } from "@/lib/auth";
 import { listTemplates, type Template } from "@/lib/templates";
-import { IconUpload, IconBadge, IconCheck, IconArrow } from "@/components/icons";
+import { IconUpload, IconCheck, IconArrow } from "@/components/icons";
 
 type BatchStatus = {
   id: string;

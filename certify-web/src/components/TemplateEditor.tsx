@@ -352,11 +352,12 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
                     <p className="mb-1 text-xs font-bold text-ink-muted">المتغيّر</p>
                     <select
                       value={selected.variableKey}
-                      onChange={(e) => {
-                        updateSelected({ text: `«${variableLabel(e.target.value)}»` });
-                        selected.variableKey = e.target.value;
-                        rerender();
-                      }}
+                      onChange={(e) =>
+                        updateSelected({
+                          text: `«${variableLabel(e.target.value)}»`,
+                          variableKey: e.target.value,
+                        })
+                      }
                       className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm">
                       {VARIABLE_OPTIONS.map((v) => <option key={v.key} value={v.key}>{v.label}</option>)}
                     </select>
