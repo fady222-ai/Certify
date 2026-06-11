@@ -1,0 +1,215 @@
+// Certify data model — mirrors the platform spec (organizations, templates,
+// certificates, batches, events, plans, subscriptions, usage).
+// Dev uses SQLite; switch `provider` to "postgresql" + DATABASE_URL for prod.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String               @id @default(uuid())
+  email         String               @unique
+  name          String
+  passwordHash  String?              @map("password_hash")
+  locale        String               @default("ar")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  ownedOrgs     Organization[]       @relation("OrgOwner")
+  memberships   OrganizationMember[]
+
+  @@map("users")
+}
+
+model Plan {
+  id                   Int            @id @default(autoincrement())
+  slug                 String         @unique
+  name                 String
+  priceMonthly         Float          @default(0) @map("price_monthly")
+  priceYearly          Float          @default(0) @map("price_yearly")
+  certificatesPerMonth Int            @default(10) @map("certificates_per_month")
+  templatesLimit       Int?           @map("templates_limit")
+  teamMembersLimit     Int            @default(1) @map("team_members_limit")
+  features             String?        // JSON string
+  hasApi               Boolean        @default(false) @map("has_api")
+  hasWhiteLabel        Boolean        @default(false) @map("has_white_label")
+  isActive             Boolean        @default(true) @map("is_active")
+
+  organizations        Organization[]
+  subscriptions        Subscription[]
+
+  @@map("plans")
+}
+
+model Organization {
+  id             String               @id @default(uuid())
+  ownerId        String               @map("owner_id")
+  name           String
+  slug           String               @unique
+  logoUrl        String?              @map("logo_url")
+  primaryColor   String               @default("#4f46e5") @map("primary_color")
+  secondaryColor String?              @map("secondary_color")
+  signatureUrl   String?              @map("signature_url")
+  verifyDomain   String?              @map("verify_domain")
+  planId         Int?                 @map("plan_id")
+  settings       String?              // JSON string
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  owner          User                 @relation("OrgOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  plan           Plan?                @relation(fields: [planId], references: [id])
+  members        OrganizationMember[]
+  templates      Template[]
+  certificates   Certificate[]
+  batches        Batch[]
+  usage          CertificateUsage[]
+  subscriptions  Subscription[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  userId         String       @map("user_id")
+  role           String       @default("member") // owner/admin/member
+  joinedAt       DateTime     @default(now()) @map("joined_at")
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+model Template {
+  id             String        @id @default(uuid())
+  organizationId String?       @map("organization_id")
+  name           String
+  description    String?
+  category       String        @default("completion")
+  designData     String?       @map("design_data") // JSON string
+  orientation    String        @default("landscape")
+  dimensions     String?       // JSON string
+  language       String        @default("ar")
+  isPublic       Boolean       @default(false) @map("is_public")
+  thumbnailUrl   String?       @map("thumbnail_url")
+  createdBy      String?       @map("created_by")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  certificates   Certificate[]
+  batches        Batch[]
+
+  @@map("templates")
+}
+
+model Batch {
+  id             String        @id @default(uuid())
+  organizationId String        @map("organization_id")
+  name           String
+  templateId     String?       @map("template_id")
+  totalCount     Int           @default(0) @map("total_count")
+  successCount   Int           @default(0) @map("success_count")
+  failedCount    Int           @default(0) @map("failed_count")
+  status         String        @default("processing")
+  csvUrl         String?       @map("csv_url")
+  createdBy      String?       @map("created_by")
+  completedAt    DateTime?     @map("completed_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template       Template?     @relation(fields: [templateId], references: [id])
+  certificates   Certificate[]
+
+  @@map("batches")
+}
+
+model Certificate {
+  id               String              @id @default(uuid())
+  organizationId   String              @map("organization_id")
+  templateId       String?             @map("template_id")
+  batchId          String?             @map("batch_id")
+  recipientName    String              @map("recipient_name")
+  recipientEmail   String?             @map("recipient_email")
+  recipientPhone   String?             @map("recipient_phone")
+  courseName       String?             @map("course_name")
+  issueDate        DateTime            @map("issue_date")
+  expiryDate       DateTime?           @map("expiry_date")
+  customFields     String?             @map("custom_fields") // JSON string
+  status           String              @default("active") // active/revoked/expired
+  verificationCode String              @unique @map("verification_code")
+  verificationHash String              @map("verification_hash")
+  pdfUrl           String?             @map("pdf_url")
+  thumbnailUrl     String?             @map("thumbnail_url")
+  linkedinAdded    Boolean             @default(false) @map("linkedin_added")
+  openedCount      Int                 @default(0) @map("opened_count")
+  downloadedCount  Int                 @default(0) @map("downloaded_count")
+  sharedCount      Int                 @default(0) @map("shared_count")
+  revokedAt        DateTime?           @map("revoked_at")
+  revokedReason    String?             @map("revoked_reason")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+
+  organization     Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template         Template?           @relation(fields: [templateId], references: [id])
+  batch            Batch?              @relation(fields: [batchId], references: [id])
+  events           CertificateEvent[]
+
+  @@index([verificationCode])
+  @@index([organizationId, status])
+  @@map("certificates")
+}
+
+model CertificateEvent {
+  id            String      @id @default(uuid())
+  certificateId String      @map("certificate_id")
+  eventType     String      @map("event_type") // issued/opened/downloaded/shared/added_to_linkedin/revoked
+  ipAddress     String?     @map("ip_address")
+  userAgent     String?     @map("user_agent")
+  referrer      String?
+  country       String?
+  metadata      String?     // JSON string
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  certificate   Certificate @relation(fields: [certificateId], references: [id], onDelete: Cascade)
+
+  @@index([certificateId, eventType])
+  @@map("certificate_events")
+}
+
+model CertificateUsage {
+  id                 String       @id @default(uuid())
+  organizationId     String       @map("organization_id")
+  month              String       // YYYY-MM
+  certificatesIssued Int          @default(0) @map("certificates_issued")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, month])
+  @@map("certificate_usage")
+}
+
+model Subscription {
+  id                  String       @id @default(uuid())
+  organizationId      String       @map("organization_id")
+  planId              Int          @map("plan_id")
+  stripeSubscriptionId String?     @map("stripe_subscription_id")
+  status              String       @default("active")
+  currentPeriodStart  DateTime?    @map("current_period_start")
+  currentPeriodEnd    DateTime?    @map("current_period_end")
+  trialEndsAt         DateTime?    @map("trial_ends_at")
+  createdAt           DateTime     @default(now()) @map("created_at")
+
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan                Plan         @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
