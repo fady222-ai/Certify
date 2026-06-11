@@ -111,7 +111,7 @@ export default function DashboardPage() {
           <p className="mt-1 text-xs text-brand-100">
             {remaining != null ? `${remaining} شهادة متبقية هذا الشهر` : "إصدار غير محدود"}
           </p>
-          <Link href="/#pricing" className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white/15 px-3 py-2 text-xs font-bold hover:bg-white/25">
+          <Link href="/dashboard/billing" className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white/15 px-3 py-2 text-xs font-bold hover:bg-white/25">
             ترقية الباقة
           </Link>
         </div>

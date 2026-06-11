@@ -20,6 +20,11 @@ import {
   listBatches,
   getBatch,
 } from "../controllers/batchController.js";
+import {
+  listPlans,
+  getBilling,
+  changePlan,
+} from "../controllers/billingController.js";
 import { requireAuth } from "../middleware/auth.js";
 import { uploadFile } from "../middleware/upload.js";
 
@@ -30,6 +35,7 @@ apiRouter.get("/health", (_req, res) => res.json({ status: "ok" }));
 // --- Public ---
 apiRouter.get("/verify/:code", showVerification);
 apiRouter.post("/verify/:code/track", trackEvent);
+apiRouter.get("/plans", listPlans);
 apiRouter.post("/auth/register", registerHandler);
 apiRouter.post("/auth/login", loginHandler);
 
@@ -46,6 +52,9 @@ apiRouter.post("/templates", requireAuth, createTemplate);
 apiRouter.get("/templates/:id", requireAuth, getTemplate);
 apiRouter.put("/templates/:id", requireAuth, updateTemplate);
 apiRouter.delete("/templates/:id", requireAuth, deleteTemplate);
+
+apiRouter.get("/billing", requireAuth, getBilling);
+apiRouter.post("/billing/plan", requireAuth, changePlan);
 
 apiRouter.get("/batches", requireAuth, listBatches);
 apiRouter.post("/batches", requireAuth, (req, res, next) => {
