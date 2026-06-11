@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { prisma } from "../db/prisma.js";
 import { computeHash, toDateOnly } from "./certificateHasher.js";
 import { renderPdf } from "./certificateRenderer.js";
+import { sendCertificateEmail } from "./certificateMailer.js";
 
 /** Error thrown when an organization exceeds its monthly plan limit. */
 export class PlanLimitError extends Error {
@@ -74,8 +75,10 @@ async function incrementUsage(organizationId) {
  * @param {object} organization Prisma organization record
  * @param {object} data         { recipientName, recipientEmail?, courseName?, issueDate?, ... }
  * @param {boolean} render
+ * @param {object} [options]     { sendMail?: boolean } — email the recipient (default true)
  */
-export async function issueCertificate(organization, data, render = true) {
+export async function issueCertificate(organization, data, render = true, options = {}) {
+  const { sendMail = true } = options;
   await assertWithinPlanLimit(organization);
 
   const id = crypto.randomUUID();
@@ -118,6 +121,13 @@ export async function issueCertificate(organization, data, render = true) {
   if (render) {
     const relPath = await renderPdf(cert);
     cert.pdfUrl = relPath; // reflect the rendered PDF on the returned record
+  }
+
+  // Email the recipient (best-effort, non-blocking) once the PDF link exists.
+  if (sendMail && cert.recipientEmail) {
+    sendCertificateEmail(cert).catch((e) =>
+      console.error(`[mailer] failed for ${cert.verificationCode}:`, e.message)
+    );
   }
 
   return cert;

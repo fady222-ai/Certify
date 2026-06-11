@@ -6,6 +6,7 @@ import {
   createCertificate,
   getCertificate,
   revokeCertificate,
+  resendCertificateEmail,
   dashboardStats,
 } from "../controllers/certificateController.js";
 import {
@@ -53,6 +54,7 @@ apiRouter.get("/certificates", requireAuth, listCertificates);
 apiRouter.post("/certificates", requireAuth, createCertificate);
 apiRouter.get("/certificates/:id", requireAuth, getCertificate);
 apiRouter.post("/certificates/:id/revoke", requireAuth, revokeCertificate);
+apiRouter.post("/certificates/:id/resend-email", requireAuth, resendCertificateEmail);
 
 apiRouter.get("/templates", requireAuth, listTemplates);
 apiRouter.post("/templates", requireAuth, createTemplate);

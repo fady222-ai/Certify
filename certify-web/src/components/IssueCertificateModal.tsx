@@ -72,6 +72,9 @@ export function IssueCertificateModal({
             <h2 className="mt-5 font-display text-xl font-black text-ink">تم إصدار الشهادة! 🎉</h2>
             <p className="mt-2 text-sm text-ink-soft">رمز التحقق:</p>
             <p className="mt-1 font-mono text-sm font-bold text-brand-700">{done}</p>
+            {form.recipientEmail && (
+              <p className="mt-3 text-xs text-ink-muted">📧 تم إرسال نسخة إلى {form.recipientEmail}</p>
+            )}
             <div className="mt-6 flex gap-3">
               <a href={`/verify/${done}`} target="_blank" rel="noreferrer" className="btn-ghost flex-1">
                 عرض صفحة التحقق

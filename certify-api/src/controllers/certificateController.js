@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "../db/prisma.js";
 import { config } from "../config/index.js";
 import { issueCertificate, PlanLimitError } from "../services/certificateIssuer.js";
+import { sendCertificateEmail } from "../services/certificateMailer.js";
 
 const issueSchema = z.object({
   recipientName: z.string().trim().min(2, "اسم المتدرب مطلوب.").max(160),
@@ -150,6 +151,26 @@ export async function createCertificate(req, res, next) {
     }
     next(e);
   }
+}
+
+/** POST /api/certificates/:id/resend-email — re-send the certificate email. */
+export async function resendCertificateEmail(req, res) {
+  if (!req.organization) return res.status(404).json({ message: "غير موجود." });
+
+  const cert = await prisma.certificate.findFirst({
+    where: { id: req.params.id, organizationId: req.organization.id },
+    include: { organization: true },
+  });
+  if (!cert) return res.status(404).json({ message: "الشهادة غير موجودة." });
+  if (!cert.recipientEmail) {
+    return res.status(422).json({ message: "لا يوجد بريد إلكتروني لهذه الشهادة." });
+  }
+
+  const result = await sendCertificateEmail(cert);
+  if (!result.ok) {
+    return res.status(502).json({ message: "تعذّر إرسال البريد.", transport: result.transport });
+  }
+  return res.json({ message: "تم إرسال البريد.", transport: result.transport });
 }
 
 /** GET /api/me/stats — dashboard summary for the current organization. */

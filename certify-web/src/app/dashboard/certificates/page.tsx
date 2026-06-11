@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { getToken, authedFetch } from "@/lib/auth";
 import {
-  IconBadge, IconCheck, IconArrow, IconSearch, IconBan, IconDownload,
+  IconBadge, IconCheck, IconArrow, IconSearch, IconBan, IconDownload, IconMail,
 } from "@/components/icons";
 
 type Certificate = {
@@ -33,6 +33,8 @@ export default function CertificatesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [resending, setResending] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,6 +62,21 @@ export default function CertificatesPage() {
     const t = setTimeout(load, 300);
     return () => clearTimeout(t);
   }, [load]);
+
+  async function resend(id: string) {
+    setResending(id);
+    setToast(null);
+    try {
+      const res = await authedFetch(`certificates/${id}/resend-email`, { method: "POST" });
+      const data = await res.json();
+      setToast(res.ok ? data.message : data.message ?? "تعذّر الإرسال.");
+    } catch {
+      setToast("تعذّر الإرسال.");
+    } finally {
+      setResending(null);
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
 
   async function revoke(id: string) {
     const reason = prompt("سبب الإلغاء (اختياري):") ?? "";
@@ -92,6 +109,12 @@ export default function CertificatesPage() {
           <h1 className="font-display text-2xl font-black text-ink">إدارة الشهادات</h1>
           <p className="mt-1 text-sm text-ink-soft">ابحث عن الشهادات الصادرة وتحقق منها أو ألغِها.</p>
         </div>
+
+        {toast && (
+          <div className="rounded-xl bg-brand-50 px-4 py-3 text-sm font-bold text-brand-700 ring-1 ring-brand-100">
+            {toast}
+          </div>
+        )}
 
         {/* Search + filter */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -159,6 +182,12 @@ export default function CertificatesPage() {
                         className="hidden rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700 sm:inline-flex" title="تحميل PDF">
                         <IconDownload className="h-4 w-4" />
                       </a>
+                    )}
+                    {c.recipient_email && c.status !== "revoked" && (
+                      <button onClick={() => resend(c.id)} disabled={resending === c.id}
+                        className="hidden rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700 disabled:opacity-50 sm:inline-flex" title="إعادة إرسال البريد">
+                        <IconMail className="h-4 w-4" />
+                      </button>
                     )}
                     <Link href={`/verify/${c.verification_code}`} target="_blank"
                       className="text-sm font-bold text-brand-700 hover:underline">

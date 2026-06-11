@@ -26,4 +26,12 @@ export const config = {
 
   // Where generated PDFs are stored on disk (served at /storage).
   storageDir: process.env.CERTIFY_STORAGE_DIR ?? "storage",
+
+  // Email — uses Resend when RESEND_API_KEY is set, otherwise logs to console.
+  email: {
+    resendApiKey: process.env.RESEND_API_KEY || null,
+    from: process.env.EMAIL_FROM ?? "Certify <onboarding@resend.dev>",
+    // Set to "false" to disable sending entirely.
+    enabled: (process.env.EMAIL_ENABLED ?? "true") !== "false",
+  },
 };
