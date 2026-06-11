@@ -36,16 +36,87 @@ function presentCertificate(c) {
 export async function listCertificates(req, res) {
   if (!req.organization) return res.json({ data: [], total: 0 });
 
+  const search = (req.query.search ?? "").toString().trim();
+  const status = (req.query.status ?? "").toString().trim();
+
+  const where = { organizationId: req.organization.id };
+  if (status && ["active", "revoked", "expired"].includes(status)) {
+    where.status = status;
+  }
+  if (search) {
+    where.OR = [
+      { recipientName: { contains: search } },
+      { recipientEmail: { contains: search } },
+      { courseName: { contains: search } },
+      { verificationCode: { contains: search } },
+    ];
+  }
+
   const [data, total] = await Promise.all([
     prisma.certificate.findMany({
-      where: { organizationId: req.organization.id },
+      where,
       orderBy: { createdAt: "desc" },
-      take: 50,
+      take: 100,
     }),
-    prisma.certificate.count({ where: { organizationId: req.organization.id } }),
+    prisma.certificate.count({ where }),
   ]);
 
   res.json({ data: data.map(presentCertificate), total });
+}
+
+/** GET /api/certificates/:id — single certificate detail with recent events. */
+export async function getCertificate(req, res) {
+  if (!req.organization) return res.status(404).json({ message: "غير موجود." });
+
+  const cert = await prisma.certificate.findFirst({
+    where: { id: req.params.id, organizationId: req.organization.id },
+    include: {
+      events: { orderBy: { createdAt: "desc" }, take: 25 },
+      template: { select: { id: true, name: true } },
+    },
+  });
+  if (!cert) return res.status(404).json({ message: "الشهادة غير موجودة." });
+
+  return res.json({
+    ...presentCertificate(cert),
+    expiry_date: cert.expiryDate ? new Date(cert.expiryDate).toISOString().slice(0, 10) : null,
+    downloaded_count: cert.downloadedCount,
+    shared_count: cert.sharedCount,
+    revoked_at: cert.revokedAt,
+    revoked_reason: cert.revokedReason,
+    template: cert.template ?? null,
+    events: cert.events.map((e) => ({
+      type: e.eventType,
+      at: e.createdAt,
+    })),
+  });
+}
+
+/** POST /api/certificates/:id/revoke — revoke a certificate with a reason. */
+export async function revokeCertificate(req, res) {
+  if (!req.organization) return res.status(404).json({ message: "غير موجود." });
+
+  const cert = await prisma.certificate.findFirst({
+    where: { id: req.params.id, organizationId: req.organization.id },
+  });
+  if (!cert) return res.status(404).json({ message: "الشهادة غير موجودة." });
+  if (cert.status === "revoked") {
+    return res.status(409).json({ message: "الشهادة ملغاة بالفعل." });
+  }
+
+  const reason = (req.body?.reason ?? "").toString().trim() || null;
+
+  const updated = await prisma.certificate.update({
+    where: { id: cert.id },
+    data: {
+      status: "revoked",
+      revokedAt: new Date(),
+      revokedReason: reason,
+      events: { create: { eventType: "revoked", metadata: reason ? JSON.stringify({ reason }) : null } },
+    },
+  });
+
+  return res.json(presentCertificate(updated));
 }
 
 /** POST /api/certificates — issue a single certificate (renders the PDF). */

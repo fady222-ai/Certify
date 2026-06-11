@@ -29,9 +29,9 @@ type Certificate = {
 
 const nav = [
   { label: "نظرة عامة", icon: IconChart, href: "/dashboard", active: true },
-  { label: "الشهادات", icon: IconBadge, href: "/dashboard" },
+  { label: "الشهادات", icon: IconBadge, href: "/dashboard/certificates" },
   { label: "القوالب", icon: IconPalette, href: "/dashboard/templates" },
-  { label: "الإصدار الجماعي", icon: IconUpload, href: "/dashboard" },
+  { label: "الإصدار الجماعي", icon: IconUpload, href: "/dashboard/bulk" },
   { label: "الفريق", icon: IconUsers, href: "/dashboard" },
 ];
 

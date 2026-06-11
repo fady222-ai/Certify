@@ -57,6 +57,18 @@ export const IconMail = (p: IconProps) => (
 export const IconLock = (p: IconProps) => (
   <svg {...base(p)}><rect x="4" y="11" width="16" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
 );
+export const IconSearch = (p: IconProps) => (
+  <svg {...base(p)}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+);
+export const IconTrash = (p: IconProps) => (
+  <svg {...base(p)}><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6" /></svg>
+);
+export const IconBan = (p: IconProps) => (
+  <svg {...base(p)}><circle cx="12" cy="12" r="9" /><path d="m5.6 5.6 12.8 12.8" /></svg>
+);
+export const IconDownload = (p: IconProps) => (
+  <svg {...base(p)}><path d="M12 4v12M8 12l4 4 4-4" /><path d="M4 18v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" /></svg>
+);
 export const IconGoogle = (p: IconProps) => (
   <svg viewBox="0 0 24 24" {...p}>
     <path fill="#4285F4" d="M22 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.6a4.8 4.8 0 0 1-2 3.2v2.6h3.3c1.9-1.8 3-4.4 3-7.6Z" />

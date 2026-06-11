@@ -4,6 +4,8 @@ import { registerHandler, loginHandler, meHandler } from "../controllers/authCon
 import {
   listCertificates,
   createCertificate,
+  getCertificate,
+  revokeCertificate,
   dashboardStats,
 } from "../controllers/certificateController.js";
 import {
@@ -35,6 +37,8 @@ apiRouter.get("/auth/me", requireAuth, meHandler);
 apiRouter.get("/me/stats", requireAuth, dashboardStats);
 apiRouter.get("/certificates", requireAuth, listCertificates);
 apiRouter.post("/certificates", requireAuth, createCertificate);
+apiRouter.get("/certificates/:id", requireAuth, getCertificate);
+apiRouter.post("/certificates/:id/revoke", requireAuth, revokeCertificate);
 
 apiRouter.get("/templates", requireAuth, listTemplates);
 apiRouter.post("/templates", requireAuth, createTemplate);
