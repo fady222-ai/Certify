@@ -2,7 +2,8 @@ import crypto from "node:crypto";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { parse as parseCsv } from "csv-parse/sync";
 import { prisma } from "../db/prisma.js";
 import { issueCertificate, PlanLimitError } from "../services/certificateIssuer.js";
 
@@ -29,7 +30,7 @@ export async function createBatch(req, res) {
       return res.status(400).json({ message: "يرجى رفع ملف Excel أو CSV." });
     }
 
-    const rows = parseFile(req.file);
+    const rows = await parseFile(req.file);
     if (rows.length === 0) {
       return res.status(400).json({ message: "الملف فارغ أو لا يحتوي على بيانات صالحة." });
     }
@@ -133,16 +134,23 @@ export async function getBatch(req, res) {
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-function parseFile(file) {
-  const wb = XLSX.read(file.buffer, { type: "buffer" });
-  const sheet = wb.Sheets[wb.SheetNames[0]];
-  const raw = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+/**
+ * Parse an uploaded xlsx or csv file into normalised row objects.
+ * Uses exceljs (xlsx) and csv-parse (csv) — both free of the Prototype
+ * Pollution / ReDoS vulnerabilities present in the old `xlsx` package.
+ */
+async function parseFile(file) {
+  const isCsv =
+    file.mimetype === "text/csv" ||
+    file.mimetype === "application/csv" ||
+    file.originalname.match(/\.csv$/i);
+
+  const raw = isCsv ? parseCsvBuffer(file.buffer) : await parseXlsxBuffer(file.buffer);
 
   return raw
     .map((row) => {
-      // Normalize column names
       const norm = Object.fromEntries(
-        Object.entries(row).map(([k, v]) => [k.trim().toLowerCase(), String(v).trim()])
+        Object.entries(row).map(([k, v]) => [String(k).trim().toLowerCase(), String(v ?? "").trim()])
       );
       const name =
         norm["name"] ||
@@ -163,6 +171,57 @@ function parseFile(file) {
       };
     })
     .filter(Boolean);
+}
+
+/** Read the first sheet of an xlsx buffer; return array of plain objects. */
+async function parseXlsxBuffer(buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return [];
+
+  const rows = [];
+  let headers = null;
+
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    // ExcelJS row.values is 1-indexed; index 0 is always null.
+    const vals = row.values.slice(1).map(cellText);
+    if (rowNumber === 1) {
+      headers = vals;
+    } else if (headers) {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = vals[i] ?? ""; });
+      rows.push(obj);
+    }
+  });
+
+  return rows;
+}
+
+/** Safely stringify an ExcelJS cell value (handles rich text, formulas, dates). */
+function cellText(v) {
+  if (v == null) return "";
+  if (typeof v === "object") {
+    if (v.result !== undefined) return String(v.result); // formula result
+    if (Array.isArray(v.richText)) return v.richText.map((r) => r.text).join(""); // rich text
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+  }
+  return String(v).trim();
+}
+
+/** Parse a CSV buffer; return array of plain objects keyed by header row. */
+function parseCsvBuffer(buffer) {
+  try {
+    return parseCsv(buffer, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+      relax_column_count: true,
+    });
+  } catch (e) {
+    console.warn("[parseCsvBuffer] parse error:", e.message);
+    return [];
+  }
 }
 
 async function processBatchAsync(batchId, rows, organization, defaultCourse, templateId) {
