@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { verifyCertificate } from "@/lib/api";
+import { CertificateActions } from "@/components/CertificateActions";
 import {
-  IconCheck, IconShield, IconBadge, IconQr, IconLinkedin, IconArrow,
+  IconCheck, IconShield, IconBadge, IconArrow,
 } from "@/components/icons";
 
 type Params = { params: Promise<{ code: string }> };
@@ -148,18 +149,14 @@ function CertificateCard({
         </div>
 
         {/* إجراءات */}
-        <div className="mt-7 flex flex-wrap gap-3">
-          {c.pdf_url && (
-            <a href={c.pdf_url} target="_blank" rel="noreferrer" className="btn-primary">
-              <IconQr className="h-4 w-4" />
-              عرض الشهادة (PDF)
-            </a>
-          )}
-          <button className="btn-ghost" type="button">
-            <IconLinkedin className="h-4 w-4 text-[#0a66c2]" />
-            إضافة إلى لينكدإن
-          </button>
-        </div>
+        <CertificateActions
+          code={c.verification_code}
+          pdfUrl={c.pdf_url}
+          courseName={c.course_name}
+          orgName={org.name}
+          issueDate={c.issue_date}
+          expiryDate={c.expiry_date}
+        />
       </div>
     </div>
   );

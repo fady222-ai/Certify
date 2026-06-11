@@ -87,3 +87,51 @@ export async function showVerification(req, res) {
     },
   });
 }
+
+// Public event types that may be tracked from the verification page → DB column.
+const TRACKABLE = {
+  downloaded: "downloadedCount",
+  shared: "sharedCount",
+  added_to_linkedin: null, // logged as event only; also flips linkedinAdded
+};
+
+/**
+ * Track a public interaction with a certificate (download / share / LinkedIn).
+ * POST /api/verify/:code/track  { type }
+ * Fire-and-forget from the client; always returns 204 quickly.
+ */
+export async function trackEvent(req, res) {
+  const { code } = req.params;
+  const type = (req.body?.type ?? "").toString();
+
+  if (!Object.prototype.hasOwnProperty.call(TRACKABLE, type)) {
+    return res.status(400).json({ message: "نوع حدث غير معروف." });
+  }
+
+  const cert = await prisma.certificate.findUnique({
+    where: { verificationCode: code },
+    select: { id: true },
+  });
+  if (!cert) return res.status(404).json({ message: "غير موجود." });
+
+  const data = {
+    eventType: type,
+    certificateId: cert.id,
+    ipAddress: req.ip,
+    userAgent: req.get("user-agent") ?? null,
+    referrer: req.get("referer") ?? null,
+  };
+
+  // Log event + bump the matching counter (and linkedinAdded flag).
+  prisma.certificateEvent.create({ data }).catch(() => {});
+
+  const counterField = TRACKABLE[type];
+  const update = {};
+  if (counterField) update[counterField] = { increment: 1 };
+  if (type === "added_to_linkedin") update.linkedinAdded = true;
+  if (Object.keys(update).length > 0) {
+    prisma.certificate.update({ where: { id: cert.id }, data: update }).catch(() => {});
+  }
+
+  return res.status(204).end();
+}

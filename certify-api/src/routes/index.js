@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { showVerification } from "../controllers/verificationController.js";
+import { showVerification, trackEvent } from "../controllers/verificationController.js";
 import { registerHandler, loginHandler, meHandler } from "../controllers/authController.js";
 import {
   listCertificates,
@@ -29,6 +29,7 @@ apiRouter.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // --- Public ---
 apiRouter.get("/verify/:code", showVerification);
+apiRouter.post("/verify/:code/track", trackEvent);
 apiRouter.post("/auth/register", registerHandler);
 apiRouter.post("/auth/login", loginHandler);
 
