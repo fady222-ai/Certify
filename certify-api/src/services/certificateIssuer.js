@@ -116,7 +116,8 @@ export async function issueCertificate(organization, data, render = true) {
   await incrementUsage(organization.id);
 
   if (render) {
-    await renderPdf(cert);
+    const relPath = await renderPdf(cert);
+    cert.pdfUrl = relPath; // reflect the rendered PDF on the returned record
   }
 
   return cert;
