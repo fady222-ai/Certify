@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.env
+.env.*
+!.env.example
+storage/certificates
+storage/branding
+storage/uploads
+prisma/dev.db
+prisma/dev.db-journal
+*.log
+.git

@@ -6,6 +6,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Self-contained server output for container/Railway deployments.
+  output: "standalone",
 };
 
 export default nextConfig;
