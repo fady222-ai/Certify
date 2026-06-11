@@ -62,7 +62,7 @@ function renderElement(el, vars, qrSvg) {
     }
     case "image": {
       const h = el.height != null ? `height:${num(el.height)}px;` : "";
-      return `<img class="el el-image" style="${base}${h}" src="${escapeAttr(el.src ?? "")}" />`;
+      return `<img class="el el-image" style="${base}${h}" src="${escapeAttr(safeImageSrc(el.src))}" />`;
     }
     case "rect": {
       const style =
@@ -104,6 +104,32 @@ function renderElement(el, vars, qrSvg) {
 function num(v) {
   const n = Number(v);
   return Number.isFinite(n) ? Math.round(n * 100) / 100 : 0;
+}
+
+// Hostnames headless Chrome must never fetch when rendering a user-supplied
+// template image — prevents SSRF to internal services / cloud metadata.
+const BLOCKED_HOST =
+  /^(localhost$|127\.|0\.0\.0\.0$|10\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1\]?$|metadata)/i;
+
+/**
+ * Sanitize a template image `src`. Allows inline data:image URIs and relative
+ * paths; for absolute URLs, only public http(s) hosts are permitted. Anything
+ * pointing at a private/internal/metadata host (SSRF) is dropped.
+ */
+function safeImageSrc(src) {
+  const s = String(src ?? "").trim();
+  if (!s) return "";
+  if (/^data:image\//i.test(s)) return s; // inline raster — no network fetch
+  if (/^https?:\/\//i.test(s)) {
+    try {
+      const host = new URL(s).hostname;
+      return BLOCKED_HOST.test(host) ? "" : s;
+    } catch {
+      return "";
+    }
+  }
+  if (/^[./]/.test(s) && !s.includes(":")) return s; // relative path on our origin
+  return ""; // unknown scheme (javascript:, file:, etc.) — reject
 }
 
 function escapeHtml(str) {

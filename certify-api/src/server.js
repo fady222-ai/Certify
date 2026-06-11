@@ -27,6 +27,18 @@ app.use(
   rateLimit({ windowMs: 60 * 1000, max: 120, standardHeaders: true, legacyHeaders: false }),
 );
 
+// Stricter limiter on credential endpoints to blunt brute-force / credential
+// stuffing (login + register). 10 attempts per IP per minute.
+const authLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
+});
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/register", authLimiter);
+
 app.use("/api", apiRouter);
 
 // 404 + error handlers
@@ -34,7 +46,11 @@ app.use((req, res) => res.status(404).json({ message: "Not found" }));
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   const status = err.statusCode ?? 500;
-  if (status >= 500) console.error(err);
+  // Never leak internal error details to clients on 5xx — log server-side only.
+  if (status >= 500) {
+    console.error(err);
+    return res.status(status).json({ message: "حدث خطأ في الخادم." });
+  }
   res.status(status).json({ message: err.message ?? "Server error" });
 });
 

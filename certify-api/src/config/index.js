@@ -2,6 +2,23 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const DEFAULT_APP_KEY = "dev-insecure-key-change-me";
+const appKey = process.env.APP_KEY ?? DEFAULT_APP_KEY;
+
+// In production the signing key protects both JWT auth and the certificate
+// tamper-evidence HMAC. A missing/default/weak key would let anyone forge
+// tokens and "verified" certificates — refuse to boot rather than run insecure.
+if (process.env.NODE_ENV === "production") {
+  if (!process.env.APP_KEY || appKey === DEFAULT_APP_KEY) {
+    throw new Error(
+      "APP_KEY is required in production. Set a strong random secret (32+ chars).",
+    );
+  }
+  if (appKey.length < 32) {
+    throw new Error("APP_KEY is too weak in production; use at least 32 characters.");
+  }
+}
+
 export const config = {
   port: parseInt(process.env.PORT ?? "8000", 10),
   appUrl: process.env.APP_URL ?? "http://localhost:8000",
@@ -12,8 +29,8 @@ export const config = {
     process.env.WEB_URL ??
     "http://localhost:3000",
 
-  // Secret key for the tamper-evidence HMAC (set a strong value in prod).
-  appKey: process.env.APP_KEY ?? "dev-insecure-key-change-me",
+  // Secret key for the tamper-evidence HMAC (validated above for production).
+  appKey,
 
   // CORS allowed origins for the web frontend.
   corsOrigins: (process.env.CORS_ALLOWED_ORIGINS ??

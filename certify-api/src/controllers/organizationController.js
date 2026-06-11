@@ -64,7 +64,7 @@ export async function updateOrganization(req, res) {
   res.json(presentOrganization(org));
 }
 
-const EXT = { "image/png": "png", "image/jpeg": "jpg", "image/svg+xml": "svg", "image/webp": "webp" };
+const EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
 /**
  * POST /api/organization/branding/:kind  (kind = logo | signature)
