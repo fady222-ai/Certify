@@ -22,8 +22,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!checked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950">
-        <div className="w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-surface-2/40">
+        <div className="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -34,12 +34,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="min-h-screen flex bg-gray-950 text-white" dir="rtl">
+    <div className="min-h-screen flex bg-surface-2/40 text-ink" dir="rtl">
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 bg-gray-900 border-l border-gray-800 flex flex-col">
-        <div className="px-5 py-6 border-b border-gray-800">
-          <span className="text-lg font-bold text-indigo-400">Certify</span>
-          <span className="text-xs text-gray-500 block mt-0.5">لوحة المدير</span>
+      <aside className="w-56 flex-shrink-0 bg-white border-l border-line flex flex-col shadow-sm">
+        <div className="px-5 py-6 border-b border-line">
+          <span className="text-lg font-bold text-brand-600">Certify</span>
+          <span className="text-xs text-ink-muted block mt-0.5">لوحة المدير</span>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
           {nav.map((item) => {
@@ -48,10 +48,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
-                    ? "bg-indigo-600 text-white"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                    ? "bg-brand-600 text-white shadow-[0_4px_12px_rgba(79,70,229,0.2)]"
+                    : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"
                 }`}
               >
                 <span>{item.icon}</span>
@@ -60,10 +60,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             );
           })}
         </nav>
-        <div className="px-5 py-4 border-t border-gray-800">
+        <div className="px-5 py-4 border-t border-line">
           <Link
             href="/dashboard"
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-xs text-ink-muted hover:text-brand-600 transition-colors"
           >
             ← العودة للداشبورد
           </Link>
