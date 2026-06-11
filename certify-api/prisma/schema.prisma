@@ -58,6 +58,7 @@ model Organization {
   verifyDomain   String?              @map("verify_domain")
   planId         Int?                 @map("plan_id")
   settings       String?              // JSON string
+  suspendedAt    DateTime?            @map("suspended_at")
   createdAt      DateTime             @default(now()) @map("created_at")
   updatedAt      DateTime             @updatedAt @map("updated_at")
 

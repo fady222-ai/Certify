@@ -6,13 +6,14 @@ const TOKEN_KEY = "certify_token";
 const USER_KEY = "certify_user";
 
 export type AuthUser = {
-  user: { id: string; name: string; email: string; locale: string };
+  user: { id: string; name: string; email: string; locale: string; is_admin?: boolean };
   organization: {
     id: string;
     name: string;
     slug: string;
     primary_color: string;
     logo_url: string | null;
+    suspended?: boolean;
     plan: { slug: string; name: string; certificates_per_month: number } | null;
   } | null;
 };

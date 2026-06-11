@@ -25,6 +25,10 @@ export async function requireAuth(req, res, next) {
       orderBy: { createdAt: "asc" },
     });
 
+    if (organization?.suspendedAt) {
+      return res.status(403).json({ message: "هذا الحساب موقوف. تواصل مع الدعم." });
+    }
+
     req.user = user;
     req.organization = organization;
     next();

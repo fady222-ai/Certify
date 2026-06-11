@@ -32,7 +32,14 @@ import {
   uploadBranding,
   deleteBranding,
 } from "../controllers/organizationController.js";
+import {
+  getAdminStats,
+  listAdminOrganizations,
+  adminChangePlan,
+  adminToggleSuspend,
+} from "../controllers/adminController.js";
 import { requireAuth } from "../middleware/auth.js";
+import { requireAdmin } from "../middleware/requireAdmin.js";
 import { uploadFile } from "../middleware/upload.js";
 import { uploadImage } from "../middleware/uploadImage.js";
 
@@ -83,3 +90,9 @@ apiRouter.post("/batches", requireAuth, (req, res, next) => {
   });
 }, createBatch);
 apiRouter.get("/batches/:id", requireAuth, getBatch);
+
+// --- Admin (platform owner only) ---
+apiRouter.get("/admin/stats", requireAuth, requireAdmin, getAdminStats);
+apiRouter.get("/admin/organizations", requireAuth, requireAdmin, listAdminOrganizations);
+apiRouter.patch("/admin/organizations/:id/plan", requireAuth, requireAdmin, adminChangePlan);
+apiRouter.patch("/admin/organizations/:id/suspend", requireAuth, requireAdmin, adminToggleSuspend);

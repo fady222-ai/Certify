@@ -44,6 +44,9 @@ export const config = {
   // Where generated PDFs are stored on disk (served at /storage).
   storageDir: process.env.CERTIFY_STORAGE_DIR ?? "storage",
 
+  // Super-admin email — the account with this email gets full platform admin access.
+  adminEmail: (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase(),
+
   // Email — uses Resend when RESEND_API_KEY is set, otherwise logs to console.
   email: {
     resendApiKey: process.env.RESEND_API_KEY || null,

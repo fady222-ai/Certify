@@ -116,6 +116,16 @@ export default function DashboardPage() {
             ترقية الباقة
           </Link>
         </div>
+        {profile?.user?.is_admin && (
+          <div className="m-3 mt-0">
+            <Link
+              href="/admin"
+              className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 text-xs font-bold text-amber-400 hover:bg-gray-800 transition-colors"
+            >
+              <span>⚙️</span> لوحة الإدارة
+            </Link>
+          </div>
+        )}
       </aside>
 
       {/* المحتوى */}

@@ -36,7 +36,13 @@ export function verifyToken(token) {
 /** Shape the user + their primary organization for API responses. */
 export function presentUser(user, org) {
   return {
-    user: { id: user.id, name: user.name, email: user.email, locale: user.locale },
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      locale: user.locale,
+      is_admin: config.adminEmail ? user.email.toLowerCase() === config.adminEmail : false,
+    },
     organization: org
       ? {
           id: org.id,
@@ -44,6 +50,7 @@ export function presentUser(user, org) {
           slug: org.slug,
           primary_color: org.primaryColor,
           logo_url: org.logoUrl,
+          suspended: !!org.suspendedAt,
           plan: org.plan
             ? { slug: org.plan.slug, name: org.plan.name, certificates_per_month: org.plan.certificatesPerMonth }
             : null,
