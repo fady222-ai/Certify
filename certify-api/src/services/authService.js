@@ -41,7 +41,7 @@ export function presentUser(user, org) {
       name: user.name,
       email: user.email,
       locale: user.locale,
-      is_admin: config.adminEmail ? user.email.toLowerCase() === config.adminEmail : false,
+      is_admin: user.role === "admin",
     },
     organization: org
       ? {

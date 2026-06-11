@@ -44,8 +44,11 @@ export const config = {
   // Where generated PDFs are stored on disk (served at /storage).
   storageDir: process.env.CERTIFY_STORAGE_DIR ?? "storage",
 
-  // Super-admin email — the account with this email gets full platform admin access.
+  // Super-admin account — provisioned automatically on startup from these vars.
+  // The account always has role="admin"; its password is whatever you set here.
   adminEmail: (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase(),
+  adminPassword: process.env.ADMIN_PASSWORD ?? "",
+  adminName: (process.env.ADMIN_NAME ?? "مدير المنصة").trim(),
 
   // Email — uses Resend when RESEND_API_KEY is set, otherwise logs to console.
   email: {

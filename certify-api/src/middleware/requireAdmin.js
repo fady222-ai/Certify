@@ -1,14 +1,10 @@
-import { config } from "../config/index.js";
-
 /**
- * Must run after requireAuth. Allows only the account whose email matches
- * the ADMIN_EMAIL environment variable — the platform super-admin.
+ * Must run after requireAuth. Allows only accounts whose role is "admin"
+ * (provisioned from ADMIN_EMAIL / ADMIN_PASSWORD). Role lives in the database,
+ * so admin access can't be obtained through public registration.
  */
 export function requireAdmin(req, res, next) {
-  if (!config.adminEmail) {
-    return res.status(503).json({ message: "لم يُضبط بريد المدير (ADMIN_EMAIL)." });
-  }
-  if (req.user?.email?.toLowerCase() !== config.adminEmail) {
+  if (req.user?.role !== "admin") {
     return res.status(403).json({ message: "غير مصرح." });
   }
   next();

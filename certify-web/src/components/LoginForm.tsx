@@ -17,8 +17,8 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
     try {
-      await login({ email, password });
-      router.push("/dashboard");
+      const profile = await login({ email, password });
+      router.push(profile.user?.is_admin ? "/admin" : "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ ما.");
       setLoading(false);

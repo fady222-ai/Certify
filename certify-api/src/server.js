@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import path from "node:path";
 import { config } from "./config/index.js";
 import { apiRouter } from "./routes/index.js";
+import { ensureAdmin } from "./services/ensureAdmin.js";
 
 const app = express();
 
@@ -62,4 +63,6 @@ process.on("unhandledRejection", (reason) => {
 
 app.listen(config.port, "0.0.0.0", () => {
   console.log(`Certify API listening on http://0.0.0.0:${config.port}`);
+  // Provision the super-admin from env (idempotent, best-effort).
+  ensureAdmin().catch((e) => console.error("[admin] provisioning failed:", e.message));
 });
