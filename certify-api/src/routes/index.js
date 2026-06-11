@@ -6,7 +6,20 @@ import {
   createCertificate,
   dashboardStats,
 } from "../controllers/certificateController.js";
+import {
+  listTemplates,
+  getTemplate,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
+} from "../controllers/templateController.js";
+import {
+  createBatch,
+  listBatches,
+  getBatch,
+} from "../controllers/batchController.js";
 import { requireAuth } from "../middleware/auth.js";
+import { uploadFile } from "../middleware/upload.js";
 
 export const apiRouter = Router();
 
@@ -22,3 +35,18 @@ apiRouter.get("/auth/me", requireAuth, meHandler);
 apiRouter.get("/me/stats", requireAuth, dashboardStats);
 apiRouter.get("/certificates", requireAuth, listCertificates);
 apiRouter.post("/certificates", requireAuth, createCertificate);
+
+apiRouter.get("/templates", requireAuth, listTemplates);
+apiRouter.post("/templates", requireAuth, createTemplate);
+apiRouter.get("/templates/:id", requireAuth, getTemplate);
+apiRouter.put("/templates/:id", requireAuth, updateTemplate);
+apiRouter.delete("/templates/:id", requireAuth, deleteTemplate);
+
+apiRouter.get("/batches", requireAuth, listBatches);
+apiRouter.post("/batches", requireAuth, (req, res, next) => {
+  uploadFile(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    next();
+  });
+}, createBatch);
+apiRouter.get("/batches/:id", requireAuth, getBatch);

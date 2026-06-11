@@ -38,6 +38,12 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ message: err.message ?? "Server error" });
 });
 
+// Keep the server alive if an async dependency (e.g. headless Chrome) emits an
+// error outside a request's try/catch; log it instead of crashing the process.
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
+});
+
 app.listen(config.port, "0.0.0.0", () => {
   console.log(`Certify API listening on http://0.0.0.0:${config.port}`);
 });

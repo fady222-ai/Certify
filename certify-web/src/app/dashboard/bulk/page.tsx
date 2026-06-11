@@ -1,0 +1,269 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Logo } from "@/components/Logo";
+import { getToken, authedFetch } from "@/lib/auth";
+import { listTemplates, type Template } from "@/lib/templates";
+import { IconUpload, IconBadge, IconCheck, IconArrow } from "@/components/icons";
+
+type BatchStatus = {
+  id: string;
+  name: string;
+  totalCount: number;
+  successCount: number;
+  failedCount: number;
+  status: string;
+  createdAt: string;
+  completedAt: string | null;
+};
+
+export default function BulkPage() {
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templateId, setTemplateId] = useState("");
+  const [courseName, setCourseName] = useState("");
+  const [batchName, setBatchName] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<{ batchId: string; total: number } | null>(null);
+
+  const [batches, setBatches] = useState<BatchStatus[]>([]);
+  const [loadingBatches, setLoadingBatches] = useState(true);
+
+  const loadBatches = useCallback(async () => {
+    try {
+      const res = await authedFetch("batches");
+      const data = await res.json();
+      setBatches(data.data ?? []);
+    } catch {
+      /* silent */
+    } finally {
+      setLoadingBatches(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!getToken()) { router.push("/login"); return; }
+    listTemplates().then(setTemplates).catch(() => {});
+    loadBatches();
+  }, [router, loadBatches]);
+
+  function onDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer.files[0];
+    if (f) setFile(f);
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!file) { setError("يرجى اختيار ملف."); return; }
+    setError(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      if (batchName) fd.append("name", batchName);
+      if (courseName) fd.append("courseName", courseName);
+      if (templateId) fd.append("templateId", templateId);
+
+      const res = await authedFetch("batches", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message ?? "تعذّر الرفع.");
+      setSubmitted({ batchId: data.batchId, total: data.total });
+      loadBatches();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حدث خطأ.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function reset() {
+    setFile(null);
+    setBatchName("");
+    setCourseName("");
+    setTemplateId("");
+    setError(null);
+    setSubmitted(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  return (
+    <div className="min-h-screen bg-surface-2/40">
+      <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-6 py-3.5">
+        <div className="flex items-center gap-4">
+          <Logo />
+          <span className="hidden text-sm font-bold text-ink-muted sm:inline">/ الإصدار الجماعي</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard" className="btn-ghost">لوحة التحكم</Link>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl space-y-8 p-6">
+        <div>
+          <h1 className="font-display text-2xl font-black text-ink">الإصدار الجماعي</h1>
+          <p className="mt-1 text-sm text-ink-soft">ارفع ملف Excel أو CSV يحتوي على أسماء المتدربين وسيتم إصدار الشهادات تلقائياً.</p>
+        </div>
+
+        {/* Upload card */}
+        {submitted ? (
+          <div className="card p-8 text-center">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-verify-50 text-verify-600">
+              <IconCheck className="h-8 w-8" />
+            </div>
+            <h2 className="mt-5 font-display text-xl font-black text-ink">جارٍ المعالجة!</h2>
+            <p className="mt-2 text-sm text-ink-soft">
+              تم استلام الدفعة بنجاح. سيتم إصدار <span className="font-bold text-ink">{submitted.total}</span> شهادة في الخلفية.
+            </p>
+            <div className="mt-6 flex justify-center gap-3">
+              <button onClick={reset} className="btn-ghost">رفع دفعة جديدة</button>
+              <Link href={`/dashboard/bulk/${submitted.batchId}`} className="btn-primary">
+                متابعة الدفعة <IconArrow className="inline h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="card p-6 space-y-5">
+            {/* Drop zone */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={onDrop}
+              onClick={() => fileRef.current?.click()}
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-10 transition ${
+                dragOver
+                  ? "border-brand-500 bg-brand-50"
+                  : file
+                  ? "border-verify-400 bg-verify-50"
+                  : "border-surface-3 hover:border-brand-400 hover:bg-brand-50/40"
+              }`}
+            >
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+              {file ? (
+                <>
+                  <IconCheck className="h-10 w-10 text-verify-500" />
+                  <p className="mt-3 font-bold text-ink">{file.name}</p>
+                  <p className="mt-1 text-xs text-ink-muted">{(file.size / 1024).toFixed(1)} KB</p>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); setFile(null); if (fileRef.current) fileRef.current.value = ""; }}
+                    className="mt-3 text-xs font-bold text-red-500 hover:underline">
+                    إزالة الملف
+                  </button>
+                </>
+              ) : (
+                <>
+                  <IconUpload className="h-10 w-10 text-ink-soft" />
+                  <p className="mt-3 font-bold text-ink">اسحب الملف هنا أو انقر للاختيار</p>
+                  <p className="mt-1 text-xs text-ink-muted">Excel (.xlsx، .xls) أو CSV — بحد أقصى 500 صف</p>
+                </>
+              )}
+            </div>
+
+            {/* Template hint */}
+            <div className="rounded-xl bg-brand-50 px-4 py-3 text-xs text-brand-700">
+              <strong>هيكل الملف المطلوب:</strong> عمود <code>name</code> أو <code>recipient_name</code> (مطلوب) ·
+              عمود <code>email</code> (اختياري) · عمود <code>course_name</code> (اختياري)
+            </div>
+
+            {/* Fields */}
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-bold text-ink">اسم الدفعة (اختياري)</span>
+              <input value={batchName} onChange={(e) => setBatchName(e.target.value)}
+                placeholder="مثال: ورشة التسويق — يناير 2026" className="input" />
+            </label>
+
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-bold text-ink">اسم الدورة الافتراضي (اختياري)</span>
+              <input value={courseName} onChange={(e) => setCourseName(e.target.value)}
+                placeholder="يُستخدم إذا لم يكن في الملف" className="input" />
+            </label>
+
+            {templates.length > 0 && (
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-bold text-ink">القالب (اختياري)</span>
+                <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="input">
+                  <option value="">القالب الافتراضي</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {error && (
+              <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600 ring-1 ring-red-100">
+                {error}
+              </div>
+            )}
+
+            <button type="submit" disabled={uploading || !file} className="btn-primary w-full disabled:opacity-60">
+              <IconUpload className="h-4 w-4" />
+              {uploading ? "جارٍ الرفع…" : "رفع وإصدار الشهادات"}
+            </button>
+          </form>
+        )}
+
+        {/* Previous batches */}
+        <div className="card overflow-hidden">
+          <div className="border-b px-6 py-4">
+            <h2 className="font-display text-lg font-extrabold text-ink">الدفعات السابقة</h2>
+          </div>
+          {loadingBatches ? (
+            <p className="px-6 py-8 text-center text-sm text-ink-muted">جارٍ التحميل…</p>
+          ) : batches.length === 0 ? (
+            <p className="px-6 py-8 text-center text-sm text-ink-soft">لا توجد دفعات بعد.</p>
+          ) : (
+            <div className="divide-y">
+              {batches.map((b) => (
+                <Link key={b.id} href={`/dashboard/bulk/${b.id}`}
+                  className="flex items-center justify-between px-6 py-4 transition hover:bg-surface-2/60">
+                  <div>
+                    <p className="font-bold text-ink">{b.name}</p>
+                    <p className="text-xs text-ink-muted">
+                      {new Date(b.createdAt).toLocaleDateString("ar-SA")} · {b.totalCount} شهادة
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {b.status === "completed" && (
+                      <span className="flex items-center gap-1.5 rounded-full bg-verify-50 px-3 py-1 text-xs font-bold text-verify-700">
+                        <IconCheck className="h-3.5 w-3.5" /> مكتملة
+                      </span>
+                    )}
+                    {b.status === "processing" && (
+                      <span className="rounded-full bg-gold-50 px-3 py-1 text-xs font-bold text-gold-700">
+                        جارٍ المعالجة
+                      </span>
+                    )}
+                    {b.status === "failed" && (
+                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">
+                        فشلت
+                      </span>
+                    )}
+                    <span className="text-xs text-ink-muted">
+                      {b.successCount}/{b.totalCount} ✓
+                    </span>
+                    <IconArrow className="h-4 w-4 text-ink-muted" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}

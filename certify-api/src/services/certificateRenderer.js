@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { config } from "../config/index.js";
 import { prisma } from "../db/prisma.js";
 import { certificateHtml } from "../templates/certificate.js";
+import { renderDesignToHtml } from "../templates/designRenderer.js";
 
 /**
  * Renders certificates to PDF using headless Chrome (puppeteer). Chrome handles
@@ -15,15 +16,32 @@ import { certificateHtml } from "../templates/certificate.js";
  */
 let browserPromise = null;
 
+async function launchBrowser() {
+  const browser = await puppeteer.launch({
+    headless: "new",
+    executablePath: config.chromePath,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+  });
+  // If Chrome dies, drop the cached instance so the next render relaunches.
+  browser.on("disconnected", () => {
+    browserPromise = null;
+  });
+  return browser;
+}
+
 async function getBrowser() {
   if (!browserPromise) {
-    browserPromise = puppeteer.launch({
-      headless: "new",
-      executablePath: config.chromePath,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    browserPromise = launchBrowser().catch((e) => {
+      browserPromise = null;
+      throw e;
     });
   }
-  return browserPromise;
+  let browser = await browserPromise;
+  if (!browser.connected) {
+    browserPromise = null;
+    browser = await getBrowser();
+  }
+  return browser;
 }
 
 export async function closeBrowser() {
@@ -58,6 +76,25 @@ export async function buildHtml(cert) {
     width: 140,
   });
 
+  // If the certificate uses a custom visual template, render from its design.
+  const template =
+    cert.template ??
+    (cert.templateId
+      ? await prisma.template.findUnique({ where: { id: cert.templateId } })
+      : null);
+
+  const design = parseDesign(template?.designData);
+  if (design) {
+    const vars = {
+      recipient_name: cert.recipientName,
+      course_name: cert.courseName ?? "",
+      issue_date: issueDateLabel(cert.issueDate),
+      org_name: org?.name ?? "منصة الشهادات",
+      verification_code: cert.verificationCode,
+    };
+    return renderDesignToHtml(design, vars, qrSvg);
+  }
+
   return certificateHtml({
     orgName: org?.name ?? "منصة الشهادات",
     recipientName: cert.recipientName,
@@ -71,14 +108,31 @@ export async function buildHtml(cert) {
   });
 }
 
+function parseDesign(designData) {
+  if (!designData) return null;
+  try {
+    const d = typeof designData === "string" ? JSON.parse(designData) : designData;
+    return Array.isArray(d?.elements) && d.elements.length ? d : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Render the certificate to a PDF, store it under the storage dir, persist the
  * relative path on the record, and return that path.
  */
 export async function renderPdf(cert) {
   const html = await buildHtml(cert);
-  const browser = await getBrowser();
-  const page = await browser.newPage();
+
+  // Acquire a page, relaunching once if the browser connection dropped.
+  let page;
+  try {
+    page = await (await getBrowser()).newPage();
+  } catch {
+    browserPromise = null;
+    page = await (await getBrowser()).newPage();
+  }
 
   try {
     await page.setContent(html, { waitUntil: "networkidle0" });

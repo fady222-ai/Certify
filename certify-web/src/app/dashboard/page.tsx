@@ -28,11 +28,11 @@ type Certificate = {
 };
 
 const nav = [
-  { label: "نظرة عامة", icon: IconChart, active: true },
-  { label: "الشهادات", icon: IconBadge },
-  { label: "القوالب", icon: IconPalette },
-  { label: "الإصدار الجماعي", icon: IconUpload },
-  { label: "الفريق", icon: IconUsers },
+  { label: "نظرة عامة", icon: IconChart, href: "/dashboard", active: true },
+  { label: "الشهادات", icon: IconBadge, href: "/dashboard" },
+  { label: "القوالب", icon: IconPalette, href: "/dashboard/templates" },
+  { label: "الإصدار الجماعي", icon: IconUpload, href: "/dashboard" },
+  { label: "الفريق", icon: IconUsers, href: "/dashboard" },
 ];
 
 export default function DashboardPage() {
@@ -97,13 +97,13 @@ export default function DashboardPage() {
         <div className="border-b px-5 py-4"><Logo /></div>
         <nav className="flex-1 space-y-1 p-3">
           {nav.map((n) => (
-            <a key={n.label} href="#"
+            <Link key={n.label} href={n.href}
               className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
                 n.active ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
                   : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"}`}>
               <n.icon className="h-5 w-5" />
               {n.label}
-            </a>
+            </Link>
           ))}
         </nav>
         <div className="m-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white">
@@ -157,8 +157,8 @@ export default function DashboardPage() {
           {/* إجراءات سريعة */}
           <div className="grid gap-5 lg:grid-cols-3">
             <QuickAction icon={IconBadge} title="إصدار فردي" desc="أصدر شهادة واحدة لمتدرب." onClick={() => setModalOpen(true)} />
-            <QuickAction icon={IconUpload} title="إصدار جماعي" desc="ارفع ملف Excel بمئات الأسماء." />
-            <QuickAction icon={IconPalette} title="تصميم قالب" desc="صمّم قالباً بألوان منظمتك." />
+            <QuickAction icon={IconUpload} title="إصدار جماعي" desc="ارفع ملف Excel بمئات الأسماء." onClick={() => router.push("/dashboard/bulk")} />
+            <QuickAction icon={IconPalette} title="تصميم قالب" desc="صمّم قالباً بألوان منظمتك." onClick={() => router.push("/dashboard/templates")} />
           </div>
 
           {/* أحدث الشهادات */}

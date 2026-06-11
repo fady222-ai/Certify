@@ -8,6 +8,7 @@ const issueSchema = z.object({
   recipientEmail: z.string().trim().email("بريد إلكتروني غير صالح.").optional().or(z.literal("")),
   courseName: z.string().trim().max(200).optional(),
   issueDate: z.string().optional(),
+  templateId: z.string().uuid().optional(),
 });
 
 function pdfUrl(cert) {
@@ -68,6 +69,7 @@ export async function createCertificate(req, res, next) {
       recipientEmail: data.recipientEmail || null,
       courseName: data.courseName || null,
       issueDate: data.issueDate || undefined,
+      templateId: data.templateId || null,
     });
 
     return res.status(201).json(presentCertificate(cert));

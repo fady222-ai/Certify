@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authedFetch } from "@/lib/auth";
+import { listTemplates, type Template } from "@/lib/templates";
 import { IconBadge, IconCheck } from "./icons";
 
 export function IssueCertificateModal({
@@ -14,9 +15,15 @@ export function IssueCertificateModal({
   onIssued: () => void;
 }) {
   const [form, setForm] = useState({ recipientName: "", courseName: "", recipientEmail: "" });
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templateId, setTemplateId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) listTemplates().then(setTemplates).catch(() => {});
+  }, [open]);
 
   if (!open) return null;
 
@@ -33,7 +40,7 @@ export function IssueCertificateModal({
       const res = await authedFetch("certificates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, templateId: templateId || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message ?? "تعذّر الإصدار.");
@@ -99,6 +106,17 @@ export function IssueCertificateModal({
                 <span className="mb-1.5 block text-sm font-bold text-ink">اسم الدورة</span>
                 <input value={form.courseName} onChange={update("courseName")} placeholder="مثال: أساسيات التسويق الرقمي" className="input" />
               </label>
+              {templates.length > 0 && (
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-bold text-ink">القالب (اختياري)</span>
+                  <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="input">
+                    <option value="">القالب الافتراضي</option>
+                    {templates.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label className="block">
                 <span className="mb-1.5 block text-sm font-bold text-ink">بريد المتدرب (اختياري)</span>
                 <input type="email" value={form.recipientEmail} onChange={update("recipientEmail")} placeholder="student@example.com" className="input" dir="ltr" />
