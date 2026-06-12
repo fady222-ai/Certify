@@ -1,6 +1,15 @@
 import express, { Router } from "express";
 import { showVerification, trackEvent } from "../controllers/verificationController.js";
-import { registerHandler, loginHandler, meHandler } from "../controllers/authController.js";
+import {
+  registerHandler,
+  verifyEmailHandler,
+  resendOtpHandler,
+  loginHandler,
+  logoutHandler,
+  forgotPasswordHandler,
+  resetPasswordHandler,
+  meHandler,
+} from "../controllers/authController.js";
 import {
   listCertificates,
   createCertificate,
@@ -68,10 +77,15 @@ apiRouter.get("/verify/:code", showVerification);
 apiRouter.post("/verify/:code/track", trackEvent);
 apiRouter.get("/plans", listPlans);
 apiRouter.post("/auth/register", registerHandler);
+apiRouter.post("/auth/verify-email", verifyEmailHandler);
+apiRouter.post("/auth/resend-otp", resendOtpHandler);
 apiRouter.post("/auth/login", loginHandler);
+apiRouter.post("/auth/forgot-password", forgotPasswordHandler);
+apiRouter.post("/auth/reset-password", resetPasswordHandler);
 
 // --- Protected ---
 apiRouter.get("/auth/me", requireAuth, meHandler);
+apiRouter.post("/auth/logout", requireAuth, logoutHandler);
 apiRouter.get("/me/stats", requireAuth, dashboardStats);
 apiRouter.get("/certificates", requireAuth, listCertificates);
 apiRouter.post("/certificates", requireAuth, createCertificate);

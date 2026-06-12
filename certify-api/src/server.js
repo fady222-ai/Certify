@@ -34,17 +34,32 @@ app.use(
   rateLimit({ windowMs: 60 * 1000, max: 120, standardHeaders: true, legacyHeaders: false }),
 );
 
-// Stricter limiter on credential endpoints to blunt brute-force / credential
-// stuffing (login + register). 10 attempts per IP per minute.
-const authLimiter = rateLimit({
+// Stricter limiters on auth endpoints to blunt brute-force / credential stuffing.
+const loginLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
 });
-app.use("/api/auth/login", authLimiter);
-app.use("/api/auth/register", authLimiter);
+const registerLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
+});
+const sensitiveAuthLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
+});
+app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/register", registerLimiter);
+app.use("/api/auth/forgot-password", sensitiveAuthLimiter);
+app.use("/api/auth/resend-otp", sensitiveAuthLimiter);
 
 app.use("/api", apiRouter);
 

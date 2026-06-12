@@ -13,19 +13,51 @@ datasource db {
 }
 
 model User {
-  id            String               @id @default(uuid())
-  email         String               @unique
-  name          String
-  passwordHash  String?              @map("password_hash")
-  role          String               @default("user") // user | admin
-  locale        String               @default("ar")
-  createdAt     DateTime             @default(now()) @map("created_at")
-  updatedAt     DateTime             @updatedAt @map("updated_at")
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  name                String
+  passwordHash        String?              @map("password_hash")
+  role                String               @default("user") // user | admin
+  locale              String               @default("ar")
+  emailVerified       Boolean              @default(false) @map("email_verified")
+  failedLoginAttempts Int                  @default(0)     @map("failed_login_attempts")
+  lockedUntil         DateTime?                            @map("locked_until")
+  tokenRevokedAt      DateTime?                            @map("token_revoked_at")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt      @map("updated_at")
 
-  ownedOrgs     Organization[]       @relation("OrgOwner")
-  memberships   OrganizationMember[]
+  ownedOrgs           Organization[]       @relation("OrgOwner")
+  memberships         OrganizationMember[]
+  verificationTokens  VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
+}
+
+model VerificationToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  code      String
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }
 
 model Plan {

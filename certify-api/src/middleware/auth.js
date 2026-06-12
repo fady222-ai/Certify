@@ -19,6 +19,11 @@ export async function requireAuth(req, res, next) {
       return res.status(401).json({ message: "الجلسة غير صالحة." });
     }
 
+    // Token revocation check — logout invalidates all tokens issued before tokenRevokedAt
+    if (user.tokenRevokedAt && payload.iat * 1000 < user.tokenRevokedAt.getTime()) {
+      return res.status(401).json({ message: "انتهت الجلسة. يرجى تسجيل الدخول مجدداً." });
+    }
+
     const organization = await prisma.organization.findFirst({
       where: { ownerId: user.id },
       include: { plan: true },

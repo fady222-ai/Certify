@@ -39,6 +39,16 @@ export function logout() {
   localStorage.removeItem(USER_KEY);
 }
 
+export async function serverLogout(): Promise<void> {
+  try {
+    await authedFetch("auth/logout", { method: "POST" });
+  } catch {
+    // best-effort — always clear local state
+  } finally {
+    logout();
+  }
+}
+
 type ApiError = { message?: string };
 
 async function postAuth(path: string, body: unknown) {
@@ -59,18 +69,69 @@ export async function register(input: {
   email: string;
   password: string;
   organizationName?: string;
-}): Promise<AuthUser> {
-  const { token, user, organization } = await postAuth("auth/register", input);
+}): Promise<{ userId: string; requires_verification: true }> {
+  const res = await fetch(`${API_URL}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { message?: string }).message ?? "حدث خطأ ما.");
+  return data as { userId: string; requires_verification: true };
+}
+
+export async function verifyEmail(userId: string, code: string): Promise<AuthUser> {
+  const { token, user, organization } = await postAuth("auth/verify-email", { userId, code });
   const profile = { user, organization };
   persist(token, profile);
   return profile;
 }
 
+export async function resendOtp(userId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/auth/resend-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ userId }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { message?: string }).message ?? "حدث خطأ ما.");
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { message?: string }).message ?? "حدث خطأ ما.");
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  const res = await fetch(`${API_URL}/api/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ token, password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { message?: string }).message ?? "حدث خطأ ما.");
+}
+
 export async function login(input: {
   email: string;
   password: string;
-}): Promise<AuthUser> {
-  const { token, user, organization } = await postAuth("auth/login", input);
+}): Promise<AuthUser | { userId: string; requires_verification: true; message: string }> {
+  const res = await fetch(`${API_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 403 && (data as { requires_verification?: boolean }).requires_verification) {
+    return data as { userId: string; requires_verification: true; message: string };
+  }
+  if (!res.ok) throw new Error((data as { message?: string }).message ?? "حدث خطأ ما.");
+  const { token, user, organization } = data as { token: string } & AuthUser;
   const profile = { user, organization };
   persist(token, profile);
   return profile;
