@@ -62,7 +62,13 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - التجديد المجدول: `certify-api/src/jobs/renewSubscriptions.js` (cron يومي 03:00 UTC)
 - **مهم للـ webhooks:** `server.js` يتخطّى `express.json` على مساري
   `/billing/webhook` و`/billing/stripe/webhook` (للحفاظ على raw body لتوقيع HMAC).
-  Paymob webhook يستخدم JSON عادي (HMAC من الحقول وليس raw body).
+  Paymob webhook يستخدم JSON عادي (HMAC من الحقول وليس raw body). توقيع Paymob
+  يُقارَن بـ `timingSafeEqual` (مقارنة ثابتة الزمن).
+- **توقيع webhooks في الإنتاج:** عند تفعيل أي بوابة في الإنتاج يجب ضبط سر الـ
+  webhook (`STRIPE_WEBHOOK_SECRET`/`TAP_WEBHOOK_SECRET`/`PAYMOB_HMAC_SECRET`)؛
+  الخادم يرفض أي webhook بلا توقيع صالح. التخطّي مسموح في dev فقط.
+- **التخفيض للمجاني** (`changePlan` أو checkout بسعر 0) يُلغي اشتراك Stripe
+  النشط فوراً (`cancelActiveGatewaySubscription`) فيتوقف المحاسبة.
 - **وضع dev:** إن لم تُضبط مفاتيح بوابة، يتم التبديل المباشر للباقة بدون دفع.
 
 ---
@@ -72,21 +78,37 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 تأمين شامل لمرحلة التسجيل/المصادقة:
 
 - **تحقق OTP بالبريد**: التسجيل لا يُصدر JWT فوراً — يُرسل رمز 6 أرقام (صلاحية
-  15 دقيقة) عبر `POST /auth/verify-email`.
+  15 دقيقة) عبر `POST /auth/verify-email`. حماية ضد التخمين: محدِّد 5/دقيقة على
+  المسار + عدّاد محاولات لكل رمز (`VerificationToken.attempts`، يُبطَل الرمز بعد
+  5 محاولات خاطئة → 429).
 - **قفل الحساب**: بعد 5 محاولات دخول خاطئة → قفل 15 دقيقة (status 423).
 - **تسجيل خروج حقيقي**: `POST /auth/logout` يضبط `tokenRevokedAt`؛ الـ middleware
-  يرفض أي JWT صدر قبل ذلك الوقت.
+  يرفض أي JWT صدر في/قبل ذلك الوقت (مقارنة `<=`).
 - **استعادة كلمة المرور**: `forgot-password` (آمن ضد email enumeration) +
   `reset-password` (رمز صالح ساعة، يُبطل كل JWT قائم).
 - **JWT**: قُلّص من 30 يوماً → 7 أيام، مع `jti`.
 - **تعقيد كلمة المرور**: 8+ أحرف + حرف كبير + رقم.
-- **rate limits**: register 5/دقيقة، forgot-password 5/دقيقة، resend-otp 5/دقيقة.
+- **rate limits**: register 5/دقيقة، forgot-password 5/دقيقة، resend-otp 5/دقيقة،
+  verify-email 5/دقيقة.
 - ملفات: `authController.js`, `authService.js`, `middleware/auth.js`,
   `services/email/authTemplates.js`. الواجهة: `RegisterForm.tsx` (خطوتان)،
   `LoginForm.tsx`، صفحتا `/forgot-password` و`/reset-password`.
 
-نماذج Prisma المضافة: `VerificationToken`, `PasswordResetToken`. حقول `User`
-المضافة: `emailVerified`, `failedLoginAttempts`, `lockedUntil`, `tokenRevokedAt`.
+نماذج Prisma المضافة: `VerificationToken` (يحوي `attempts`), `PasswordResetToken`.
+حقول `User` المضافة: `emailVerified`, `failedLoginAttempts`, `lockedUntil`,
+`tokenRevokedAt`.
+
+### تحصينات إضافية (مراجعة pentest — PR #2)
+
+- **عزل المستأجرين (IDOR):** الإصدار يتحقّق أن `templateId` عام أو يخصّ نفس
+  المنظمة قبل الاستخدام (`certificateIssuer.assertTemplateAccessible`) — يمنع
+  استخدام قالب منظمة أخرى الخاص.
+- **إلغاء الشهادة يحذف الـ PDF:** `revokeCertificate` يحذف الملف من القرص ويصفّر
+  `pdfUrl` فيتوقف رابط `/storage` العام فوراً.
+- **صلابة:** `JSON.parse` لـ `design_data` ملفوف بـ try/catch (لا 500 على بيانات
+  تالفة)؛ المدير لا يستطيع تغيير باقة منظمته من لوحة الإدارة؛ تحقّق صحة البريد
+  في رفع الدفعات؛ حماية `getStoredUser` بالواجهة.
+- **سليم بعد التحقق:** حقن SQL، XSS، SSRF (`safeImageSrc`)، CSRF (Bearer token).
 
 ---
 
@@ -123,6 +145,7 @@ cd certify-web && npm install && npm run dev
 - [ ] معالجة حالة `past_due` (تنبيه المستخدم + مهلة سماح قبل التخفيض).
 - [x] تحديث `DEPLOY.md`: اسم المستودع في Railway أصبح **Certify** (كان alfady-branch).
 - [ ] تحديث عنوان/وصف PR #1 (الوصف القديم يذكر Laravel/Next 14 خطأً).
+- [x] تحصين أمني + مراجعة pentest كاملة (PR #2) — راجع قسم نظام الأمان.
 
 > **تنبيه schema:** أُضيف حقل `attempts` إلى `VerificationToken` (حدّ محاولات
 > تخمين رمز OTP). شغّل `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.

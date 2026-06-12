@@ -134,6 +134,9 @@ STRIPE_WEBHOOK_SECRET=whsec_live_xxx # webhook جديد بنفس الأحداث 
 
 ## 7. ملاحظات أمنية
 
+- **في الإنتاج، سر الـ webhook إلزامي:** عند ضبط `STRIPE_SECRET_KEY` مع
+  `NODE_ENV=production`، يرفض الخادم أي webhook بلا توقيع صالح، لذا يجب ضبط
+  `STRIPE_WEBHOOK_SECRET` أيضاً وإلا لن تصل إشعارات الدفع/التجديد.
 - **لا تضع** `STRIPE_SECRET_KEY` في الكود مباشرة أو في git — فقط في `.env`
 - ملف `.env` موجود في `.gitignore` بالفعل
 - في الإنتاج استخدم متغيرات بيئة في خادمك (Railway/Render/VPS environment variables)
