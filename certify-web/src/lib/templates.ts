@@ -3,7 +3,7 @@
 import { authedFetch } from "./auth";
 
 export type DesignElement = {
-  type: "text" | "variable" | "image" | "rect" | "line" | "qr";
+  type: "text" | "variable" | "image" | "rect" | "line" | "qr" | "ornament";
   left: number;
   top: number;
   width?: number;
@@ -20,6 +20,12 @@ export type DesignElement = {
   strokeWidth?: number;
   rx?: number;
   src?: string;
+  // rect gradient fill
+  gradient?: { from: string; to: string; angle?: number };
+  // ornament element
+  name?: string;
+  color?: string;
+  orientation?: string;
 };
 
 export type DesignData = {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { DesignData, DesignElement } from "@/lib/templates";
+import { ornamentSvg } from "@/lib/ornaments";
 
 // Sample values shown in place of variables so the preview looks like a real
 // finished certificate (mirrors the keys resolved by the PDF renderer).
@@ -94,9 +95,22 @@ function Element({ el }: { el: DesignElement }) {
           style={{
             ...base,
             height: el.height,
-            background: el.fill && el.fill !== "transparent" ? el.fill : "transparent",
+            background: el.gradient
+              ? `linear-gradient(${el.gradient.angle ?? 135}deg, ${el.gradient.from}, ${el.gradient.to})`
+              : el.fill && el.fill !== "transparent"
+              ? el.fill
+              : "transparent",
             border: el.stroke ? `${el.strokeWidth ?? 1}px solid ${el.stroke}` : undefined,
             borderRadius: el.rx ? el.rx : undefined,
+          }}
+        />
+      );
+    case "ornament":
+      return (
+        <div
+          style={{ ...base, width: el.width, height: el.height ?? el.width, lineHeight: 0 }}
+          dangerouslySetInnerHTML={{
+            __html: ornamentSvg(el.name ?? "", { color: el.color, orientation: el.orientation }),
           }}
         />
       );

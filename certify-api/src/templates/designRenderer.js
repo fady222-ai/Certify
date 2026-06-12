@@ -9,13 +9,17 @@
  *     { type: "text"|"variable", left, top, width, fontSize, fontFamily,
  *       fontWeight, fill, textAlign, text?, variableKey?, angle? },
  *     { type: "image", left, top, width, height, src, angle? },
- *     { type: "rect", left, top, width, height, fill, stroke, strokeWidth, rx, angle? },
+ *     { type: "rect", left, top, width, height, fill, stroke, strokeWidth, rx, angle?,
+ *       gradient?: { from, to, angle } },
+ *     { type: "ornament", name, left, top, width, height, color?, orientation?, angle? },
  *   ]
  * }
  *
  * `vars` maps variable keys to their resolved values, e.g.
  *   { recipient_name, course_name, issue_date, org_name, verification_code }
  */
+import { ornamentSvg } from "./ornaments.js";
+
 export function renderDesignToHtml(design, vars, qrSvg) {
   const width = design.width ?? 1123;
   const height = design.height ?? 794;
@@ -65,13 +69,22 @@ function renderElement(el, vars, qrSvg) {
       return `<img class="el el-image" style="${base}${h}" src="${escapeAttr(safeImageSrc(el.src))}" />`;
     }
     case "rect": {
+      const bg = el.gradient
+        ? `linear-gradient(${num(el.gradient.angle ?? 135)}deg, ${escapeAttr(el.gradient.from ?? "#fff")}, ${escapeAttr(el.gradient.to ?? "#fff")})`
+        : escapeAttr(el.fill ?? "transparent");
       const style =
         base +
         `height:${num(el.height)}px;` +
-        `background:${escapeAttr(el.fill ?? "transparent")};` +
+        `background:${bg};` +
         (el.stroke ? `border:${num(el.strokeWidth ?? 1)}px solid ${escapeAttr(el.stroke)};` : "") +
         (el.rx ? `border-radius:${num(el.rx)}px;` : "");
       return `<div class="el" style="${style}"></div>`;
+    }
+    case "ornament": {
+      const w = num(el.width ?? 100);
+      const h = num(el.height ?? w);
+      const svg = ornamentSvg(el.name, { color: el.color, orientation: el.orientation });
+      return `<div class="el" style="${base}width:${w}px;height:${h}px;line-height:0;">${svg}</div>`;
     }
     case "line": {
       const style =
