@@ -1,0 +1,30 @@
+# Local development database for Certify.
+# Usage:
+#   docker compose up -d db          # start PostgreSQL on localhost:5432
+#   (then in certify-api/.env use:)
+#   DATABASE_URL="postgresql://certify:certify@localhost:5432/certify?schema=public"
+#
+# Apply schema + seed once Postgres is up:
+#   cd certify-api && npx prisma db push && node prisma/seed.js
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: certify-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: certify
+      POSTGRES_PASSWORD: certify
+      POSTGRES_DB: certify
+    ports:
+      - "5432:5432"
+    volumes:
+      - certify-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U certify -d certify"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  certify-pgdata:

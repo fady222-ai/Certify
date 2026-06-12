@@ -81,7 +81,7 @@
 
 | الاسم (Name) | القيمة (Value) |
 |-------------|---------------|
-| `DATABASE_URL` | الصق ما نسخته من الخطوة 1 |
+| `DATABASE_URL` | الصق ما نسخته من الخطوة 1 (رابط PostgreSQL) |
 | `APP_KEY` | افتح **https://generate-secret.vercel.app/64** وانسخ الناتج |
 | `APP_URL` | اتركه **فارغاً الآن** (سنملؤه بعد قليل) |
 | `CERTIFY_VERIFY_BASE_URL` | اتركه **فارغاً الآن** |
@@ -90,8 +90,23 @@
 | `ADMIN_EMAIL` | بريد دخولك كمدير المنصة (مثل `owner@yourdomain.com`) |
 | `ADMIN_PASSWORD` | كلمة مرور قوية لحساب المدير (٨ أحرف على الأقل) |
 | `ADMIN_NAME` | اسمك (مثل `مدير المنصة`) |
-| `TAP_SECRET_KEY` | مفتاح Tap السري — من **https://dashboard.tap.company** → API Keys |
-| `TAP_WEBHOOK_SECRET` | سر الـ Webhook من Tap (اختياري للبداية) |
+| `STRIPE_SECRET_KEY` | مفتاح Stripe السري — راجع **STRIPE_SETUP.md** (اختياري للبداية) |
+| `STRIPE_WEBHOOK_SECRET` | سر Webhook من Stripe — راجع **STRIPE_SETUP.md** (اختياري) |
+| `TAP_SECRET_KEY` | مفتاح Tap السري — من **https://dashboard.tap.company** → API Keys (اختياري) |
+| `TAP_WEBHOOK_SECRET` | سر الـ Webhook من Tap (اختياري) |
+| `PAYMOB_API_KEY` | مفتاح Paymob — من **https://accept.paymob.com** (اختياري، لمصر) |
+| `PAYMOB_INTEGRATION_ID` | معرّف التكامل من Paymob (اختياري) |
+| `PAYMOB_IFRAME_ID` | معرّف الـ iframe من Paymob (اختياري) |
+| `PAYMOB_HMAC_SECRET` | سر HMAC من Paymob (اختياري) |
+| `PAYMOB_USD_TO_EGP_RATE` | سعر تحويل الدولار للجنيه (مثل `50.5`) |
+
+> **ملاحظة عن قاعدة البيانات:** المشروع يستخدم **PostgreSQL** مباشرةً (لا حاجة
+> لأي تغيير في الكود). الخادم يطبّق المخطط (schema) ويزرع الباقات تلقائياً عند
+> أول إقلاع عبر `prisma db push` — فقط تأكد أن `DATABASE_URL` صحيح.
+>
+> **بوابات الدفع كلها اختيارية للبدء:** إن تركت مفاتيحها فارغة، يعمل النظام في
+> "الوضع التجريبي" (تبديل الباقة مباشرة بدون دفع). أضف المفاتيح لاحقاً لتفعيل
+> الدفع الحقيقي.
 
    > **مهم:** احفظ قيمة APP_KEY في مكان آمن — لا تغيّرها أبداً لاحقاً
    >
@@ -256,3 +271,29 @@ WEBSITE URL  = https://certify-web-...up.railway.app
 ```
 
 **لا تشارك APP_KEY مع أحد ولا تغيّره أبداً.**
+
+---
+
+## ملحق — التشغيل المحلي للتطوير (PostgreSQL)
+
+المشروع يستخدم PostgreSQL في التطوير أيضاً. أسهل طريقة عبر Docker:
+
+```bash
+# 1. شغّل قاعدة بيانات محلية
+docker compose up -d db
+
+# 2. في certify-api/.env ضع:
+DATABASE_URL="postgresql://certify:certify@localhost:5432/certify?schema=public"
+
+# 3. طبّق المخطط وازرع البيانات
+cd certify-api
+npx prisma db push
+node prisma/seed.js
+
+# 4. شغّل الخادم والواجهة
+npm run dev                    # certify-api على المنفذ 8000
+cd ../certify-web && npm run dev   # certify-web على المنفذ 3000
+```
+
+إن لم يكن لديك Docker، ثبّت PostgreSQL محلياً وأنشئ قاعدة باسم `certify`، ثم
+استخدم نفس صيغة `DATABASE_URL` مع بيانات الدخول المناسبة.

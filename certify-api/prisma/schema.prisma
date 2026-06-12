@@ -1,13 +1,14 @@
 // Certify data model — mirrors the platform spec (organizations, templates,
 // certificates, batches, events, plans, subscriptions, usage).
-// Dev uses SQLite; switch `provider` to "postgresql" + DATABASE_URL for prod.
+// Uses PostgreSQL. For local dev, run a Postgres instance (see docker-compose.yml
+// or DEPLOY.md) and point DATABASE_URL at it.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

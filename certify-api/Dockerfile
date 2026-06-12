@@ -22,11 +22,10 @@ RUN npm ci
 
 COPY . .
 
-# Single schema source: dev uses SQLite, prod switches to PostgreSQL here.
-RUN sed -i 's/provider = "sqlite"/provider = "postgresql"/' prisma/schema.prisma \
-    && npx prisma generate
+# Schema targets PostgreSQL (see prisma/schema.prisma).
+RUN npx prisma generate
 
 EXPOSE 8000
 
-# Sync schema to the database, seed plans/demo, then start the server.
-CMD ["sh", "-c", "npx prisma db push --skip-generate --accept-data-loss && node prisma/seed.js && node src/server.js"]
+# Sync schema to the database, seed plans, then start the server.
+CMD ["sh", "-c", "npx prisma db push --skip-generate && node prisma/seed.js && node src/server.js"]
