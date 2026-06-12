@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/Logo";
 import { getToken, authedFetch } from "@/lib/auth";
 import {
   IconBadge, IconCheck, IconArrow, IconSearch, IconBan, IconDownload, IconMail,
@@ -95,15 +94,6 @@ export default function CertificatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-2/40">
-      <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-6 py-3.5">
-        <div className="flex items-center gap-4">
-          <Logo />
-          <span className="hidden text-sm font-bold text-ink-muted sm:inline">/ الشهادات</span>
-        </div>
-        <Link href="/dashboard" className="btn-ghost">لوحة التحكم</Link>
-      </header>
-
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">إدارة الشهادات</h1>
@@ -206,6 +196,5 @@ export default function CertificatesPage() {
           )}
         </div>
       </main>
-    </div>
   );
 }

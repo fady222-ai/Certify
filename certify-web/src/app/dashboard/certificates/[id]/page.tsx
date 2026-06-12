@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Logo } from "@/components/Logo";
 import { getToken } from "@/lib/auth";
 import {
   getCertificate, revokeCertificate, resendCertificateEmail, eventLabel,
@@ -88,18 +87,11 @@ export default function CertificateDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-2/40">
-      <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-6 py-3.5">
-        <div className="flex items-center gap-4">
-          <Logo />
-          <span className="hidden text-sm font-bold text-ink-muted sm:inline">
-            / <Link href="/dashboard/certificates" className="hover:underline">الشهادات</Link> / {cert.verification_code}
-          </span>
-        </div>
-        <Link href="/dashboard/certificates" className="btn-ghost">رجوع</Link>
-      </header>
-
       <main className="mx-auto max-w-4xl space-y-6 p-6">
+        <Link href="/dashboard/certificates" className="inline-flex items-center gap-1 text-sm font-bold text-ink-soft hover:text-brand-700">
+          ← رجوع للشهادات
+        </Link>
+
         {toast && (
           <div className="rounded-xl bg-brand-50 px-4 py-3 text-sm font-bold text-brand-700 ring-1 ring-brand-100">{toast}</div>
         )}
@@ -206,7 +198,6 @@ export default function CertificateDetailPage() {
           )}
         </div>
       </main>
-    </div>
   );
 }
 

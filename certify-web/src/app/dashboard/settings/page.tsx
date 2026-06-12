@@ -1,10 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/Logo";
 import { getToken, refreshProfile } from "@/lib/auth";
 import {
   getOrganization, updateOrganization, uploadBranding, deleteBranding,
@@ -87,15 +85,6 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-2/40">
-      <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-6 py-3.5">
-        <div className="flex items-center gap-4">
-          <Logo />
-          <span className="hidden text-sm font-bold text-ink-muted sm:inline">/ إعدادات المنظمة</span>
-        </div>
-        <Link href="/dashboard" className="btn-ghost">لوحة التحكم</Link>
-      </header>
-
       <main className="mx-auto max-w-3xl space-y-6 p-6">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">إعدادات المنظمة</h1>
@@ -194,7 +183,6 @@ export default function SettingsPage() {
           </>
         )}
       </main>
-    </div>
   );
 }
 

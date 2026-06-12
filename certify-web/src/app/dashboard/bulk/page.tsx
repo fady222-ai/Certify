@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/Logo";
 import { getToken, authedFetch } from "@/lib/auth";
 import { listTemplates, type Template } from "@/lib/templates";
 import { IconUpload, IconCheck, IconArrow } from "@/components/icons";
@@ -97,17 +96,6 @@ export default function BulkPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-2/40">
-      <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-6 py-3.5">
-        <div className="flex items-center gap-4">
-          <Logo />
-          <span className="hidden text-sm font-bold text-ink-muted sm:inline">/ الإصدار الجماعي</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/dashboard" className="btn-ghost">لوحة التحكم</Link>
-        </div>
-      </header>
-
       <main className="mx-auto max-w-3xl space-y-8 p-6">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">الإصدار الجماعي</h1>
@@ -264,6 +252,5 @@ export default function BulkPage() {
           )}
         </div>
       </main>
-    </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { Logo } from "@/components/Logo";
 import { getToken, authedFetch } from "@/lib/auth";
 import { IconCheck, IconArrow } from "@/components/icons";
 
@@ -70,18 +69,11 @@ export default function BatchDetailPage() {
   const pct = batch.totalCount > 0 ? Math.round((batch.successCount / batch.totalCount) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-surface-2/40">
-      <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-6 py-3.5">
-        <div className="flex items-center gap-4">
-          <Logo />
-          <span className="hidden text-sm font-bold text-ink-muted sm:inline">
-            / <Link href="/dashboard/bulk" className="hover:underline">الإصدار الجماعي</Link> / {batch.name}
-          </span>
-        </div>
-        <Link href="/dashboard" className="btn-ghost">لوحة التحكم</Link>
-      </header>
-
       <main className="mx-auto max-w-4xl space-y-6 p-6">
+        <Link href="/dashboard/bulk" className="inline-flex items-center gap-1 text-sm font-bold text-ink-soft hover:text-brand-700">
+          ← رجوع للإصدار الجماعي
+        </Link>
+
         {/* Summary */}
         <div className="card p-6">
           <div className="flex items-start justify-between gap-4">
@@ -153,7 +145,6 @@ export default function BatchDetailPage() {
           )}
         </div>
       </main>
-    </div>
   );
 }
 

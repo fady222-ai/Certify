@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/Logo";
 import { getToken } from "@/lib/auth";
-import { listTemplates, deleteTemplate, type Template } from "@/lib/templates";
+import { listTemplates, deleteTemplate, createTemplate, type Template } from "@/lib/templates";
 import { IconPalette, IconArrow, IconBadge } from "@/components/icons";
 
 export default function TemplatesPage() {
   const router = useRouter();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
 
   async function load() {
     try {
@@ -35,24 +35,31 @@ export default function TemplatesPage() {
     load();
   }
 
+  // Public (ready-made) templates aren't owned by the org, so they can't be
+  // edited in place — duplicate into an editable copy and open it.
+  async function useAsTemplate(t: Template) {
+    if (!t.design_data) return;
+    setBusy(t.id);
+    try {
+      const created = await createTemplate({ name: `${t.name} (نسخة)`, designData: t.design_data });
+      router.push(`/dashboard/templates/${created.id}`);
+    } catch {
+      alert("تعذّر إنشاء نسخة من القالب.");
+      setBusy(null);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-surface-2/40">
-      <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-6 py-3.5">
-        <div className="flex items-center gap-4">
-          <Logo />
-          <span className="hidden text-sm font-bold text-ink-muted sm:inline">/ القوالب</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/dashboard" className="btn-ghost">لوحة التحكم</Link>
+      <main className="mx-auto max-w-7xl p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-black text-ink">قوالب الشهادات</h1>
+            <p className="mt-1 text-sm text-ink-soft">استخدم قالباً جاهزاً أو صمّم قالبك الخاص بألوان منظمتك.</p>
+          </div>
           <Link href="/dashboard/templates/new" className="btn-primary">
             <IconPalette className="h-4 w-4" /> قالب جديد
           </Link>
         </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl p-6">
-        <h1 className="font-display text-2xl font-black text-ink">قوالب الشهادات</h1>
-        <p className="mt-1 text-sm text-ink-soft">صمّم قوالبك الخاصة واستخدمها عند إصدار الشهادات.</p>
 
         {loading ? (
           <p className="mt-10 text-center text-sm text-ink-muted">جارٍ التحميل…</p>
@@ -72,10 +79,15 @@ export default function TemplatesPage() {
             {templates.map((t) => (
               <div key={t.id} className="card card-lift overflow-hidden">
                 <div
-                  className="flex h-40 items-center justify-center border-b"
+                  className="relative flex h-40 items-center justify-center border-b"
                   style={{ background: t.design_data?.background ?? "#f8fafc" }}
                 >
                   <IconBadge className="h-10 w-10" style={{ color: firstColor(t) }} />
+                  {t.is_public && (
+                    <span className="absolute right-3 top-3 rounded-full bg-brand-600/90 px-2.5 py-1 text-[11px] font-bold text-white">
+                      جاهز
+                    </span>
+                  )}
                 </div>
                 <div className="p-4">
                   <h3 className="font-extrabold text-ink">{t.name}</h3>
@@ -83,13 +95,26 @@ export default function TemplatesPage() {
                     {t.design_data?.elements?.length ?? 0} عنصر
                   </p>
                   <div className="mt-4 flex items-center gap-2">
-                    <Link href={`/dashboard/templates/${t.id}`} className="btn-ghost flex-1 justify-center py-2 text-xs">
-                      تعديل <IconArrow className="h-3.5 w-3.5" />
-                    </Link>
-                    <button onClick={() => remove(t.id)}
-                      className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100">
-                      حذف
-                    </button>
+                    {t.is_public ? (
+                      <button
+                        onClick={() => useAsTemplate(t)}
+                        disabled={busy === t.id}
+                        className="btn-primary flex-1 justify-center py-2 text-xs disabled:opacity-60"
+                      >
+                        {busy === t.id ? "جارٍ النسخ…" : "استخدام كقالب"}
+                        {busy !== t.id && <IconArrow className="h-3.5 w-3.5" />}
+                      </button>
+                    ) : (
+                      <>
+                        <Link href={`/dashboard/templates/${t.id}`} className="btn-ghost flex-1 justify-center py-2 text-xs">
+                          تعديل <IconArrow className="h-3.5 w-3.5" />
+                        </Link>
+                        <button onClick={() => remove(t.id)}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100">
+                          حذف
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -97,7 +122,6 @@ export default function TemplatesPage() {
           </div>
         )}
       </main>
-    </div>
   );
 }
 
