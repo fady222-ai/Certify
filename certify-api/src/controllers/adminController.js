@@ -105,6 +105,12 @@ export async function adminChangePlan(req, res) {
   const exists = await prisma.organization.findUnique({ where: { id } });
   if (!exists) return res.status(404).json({ message: "المنظمة غير موجودة." });
 
+  // The admin manages their own plan through normal billing, not the admin
+  // panel — block self-edits here to avoid surprising side effects.
+  if (exists.ownerId === req.user.id) {
+    return res.status(400).json({ message: "لا يمكنك تغيير باقة منظمتك الخاصة من هنا." });
+  }
+
   const org = await prisma.organization.update({
     where: { id },
     data: { planId: plan.id },

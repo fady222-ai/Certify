@@ -26,7 +26,14 @@ export function getToken(): string | null {
 export function getStoredUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(USER_KEY);
-  return raw ? (JSON.parse(raw) as AuthUser) : null;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as AuthUser;
+  } catch {
+    // Corrupted stored profile — clear it so the app falls back to logged-out.
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
 }
 
 function persist(token: string, profile: AuthUser) {

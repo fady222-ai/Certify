@@ -1,3 +1,5 @@
+import path from "node:path";
+import fs from "node:fs/promises";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
 import { config } from "../config/index.js";
@@ -114,9 +116,16 @@ export async function revokeCertificate(req, res) {
       status: "revoked",
       revokedAt: new Date(),
       revokedReason: reason,
+      pdfUrl: null,
       events: { create: { eventType: "revoked", metadata: reason ? JSON.stringify({ reason }) : null } },
     },
   });
+
+  // Delete the rendered PDF from disk so the public /storage link stops working
+  // immediately — a revoked certificate must not remain downloadable.
+  if (cert.pdfUrl && !/^https?:\/\//i.test(cert.pdfUrl)) {
+    fs.unlink(path.join(config.storageDir, cert.pdfUrl)).catch(() => {});
+  }
 
   return res.json(presentCertificate(updated));
 }

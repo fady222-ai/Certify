@@ -38,6 +38,24 @@ async function generateCode() {
   throw new Error("Failed to generate a unique verification code.");
 }
 
+/**
+ * Verify a requested templateId is usable by this organization: it must exist
+ * and be either public or owned by the org. Prevents cross-tenant template use
+ * (IDOR) where org B issues a certificate rendered with org A's private design.
+ */
+async function assertTemplateAccessible(organization, templateId) {
+  if (!templateId) return;
+  const template = await prisma.template.findUnique({ where: { id: templateId } });
+  const accessible =
+    template &&
+    (template.isPublic || !template.organizationId || template.organizationId === organization.id);
+  if (!accessible) {
+    const err = new Error("القالب غير موجود أو لا يمكن الوصول إليه.");
+    err.statusCode = 404;
+    throw err;
+  }
+}
+
 async function assertWithinPlanLimit(organization) {
   if (!organization.planId) return; // no plan attached yet
   const plan = await prisma.plan.findUnique({ where: { id: organization.planId } });
@@ -79,6 +97,7 @@ async function incrementUsage(organizationId) {
  */
 export async function issueCertificate(organization, data, render = true, options = {}) {
   const { sendMail = true } = options;
+  await assertTemplateAccessible(organization, data.templateId);
   await assertWithinPlanLimit(organization);
 
   const id = crypto.randomUUID();

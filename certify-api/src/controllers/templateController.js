@@ -16,6 +16,16 @@ const upsertSchema = z.object({
   designData: designSchema,
 });
 
+function parseDesign(designData) {
+  if (!designData) return null;
+  try {
+    return JSON.parse(designData);
+  } catch {
+    // Corrupted/non-JSON design data must not crash the endpoint with a 500.
+    return null;
+  }
+}
+
 function present(t) {
   return {
     id: t.id,
@@ -24,7 +34,7 @@ function present(t) {
     category: t.category,
     orientation: t.orientation,
     is_public: t.isPublic,
-    design_data: t.designData ? JSON.parse(t.designData) : null,
+    design_data: parseDesign(t.designData),
     updated_at: t.updatedAt,
   };
 }

@@ -134,6 +134,11 @@ export async function getBatch(req, res) {
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
+/** Lightweight email sanity check; invalid addresses are dropped (email is optional). */
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 /**
  * Parse an uploaded xlsx or csv file into normalised row objects.
  * Uses exceljs (xlsx) and csv-parse (csv) — both free of the Prototype
@@ -159,9 +164,10 @@ async function parseFile(file) {
         norm["اسم المتدرب"] ||
         "";
       if (!name) return null;
+      const email = norm["email"] || norm["البريد"] || "";
       return {
         recipientName: name,
-        recipientEmail: norm["email"] || norm["البريد"] || undefined,
+        recipientEmail: isValidEmail(email) ? email : undefined,
         courseName:
           norm["course_name"] ||
           norm["course"] ||
