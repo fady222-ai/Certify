@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { prisma } from "../db/prisma.js";
-import { createTokenCharge } from "../services/tapService.js";
+import { createTokenCharge as tapTokenCharge } from "../services/tapService.js";
+import { createTokenCharge as paymobTokenCharge } from "../services/paymobService.js";
 
 /**
  * Runs daily at 03:00.
@@ -32,7 +33,7 @@ export async function processRenewals() {
   for (const sub of tapDue) {
     try {
       const amount = sub.interval === "annual" ? sub.plan.priceYearly : sub.plan.priceMonthly;
-      const charge = await createTokenCharge({
+      const charge = await tapTokenCharge({
         amount,
         currency: sub.currency,
         customerId: sub.tapCustomerId,
@@ -47,17 +48,54 @@ export async function processRenewals() {
 
         await prisma.subscription.update({
           where: { id: sub.id },
-          data: {
-            tapChargeId: charge.id,
-            currentPeriodStart: sub.currentPeriodEnd,
-            currentPeriodEnd: next,
-          },
+          data: { tapChargeId: charge.id, currentPeriodStart: sub.currentPeriodEnd, currentPeriodEnd: next },
         });
       } else {
         await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } });
       }
     } catch (err) {
-      console.error(`Renewal failed for sub ${sub.id}:`, err.message);
+      console.error(`Tap renewal failed for sub ${sub.id}:`, err.message);
+      await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } }).catch(() => {});
+    }
+  }
+
+  // ── 2. Auto-renew overdue Paymob card subscriptions ──────────────────────
+  // Only card-based Paymob payments have a token; wallet payments (Vodafone Cash,
+  // InstaPay) cannot be charged automatically — those users must re-subscribe.
+  const paymobDue = await prisma.subscription.findMany({
+    where: {
+      gateway: "paymob",
+      status: "active",
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd: { lte: now },
+      paymobCardToken: { not: null },
+    },
+    include: { plan: true, organization: true },
+  });
+
+  for (const sub of paymobDue) {
+    try {
+      const amountUsd = sub.interval === "annual" ? sub.plan.priceYearly : sub.plan.priceMonthly;
+      const charge = await paymobTokenCharge({
+        amountUsd,
+        cardToken: sub.paymobCardToken,
+        description: `Certify ${sub.plan.name} renewal`,
+      });
+
+      if (charge.status === "CAPTURED") {
+        const next = new Date(sub.currentPeriodEnd);
+        if (sub.interval === "annual") next.setFullYear(next.getFullYear() + 1);
+        else next.setMonth(next.getMonth() + 1);
+
+        await prisma.subscription.update({
+          where: { id: sub.id },
+          data: { currentPeriodStart: sub.currentPeriodEnd, currentPeriodEnd: next },
+        });
+      } else {
+        await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } });
+      }
+    } catch (err) {
+      console.error(`Paymob renewal failed for sub ${sub.id}:`, err.message);
       await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } }).catch(() => {});
     }
   }
@@ -88,7 +126,7 @@ export async function processRenewals() {
     }
   }
 
-  if (tapDue.length + expired.length > 0) {
-    console.log(`Renewal job: renewed ${tapDue.length}, downgraded ${expired.length}`);
+  if (tapDue.length + paymobDue.length + expired.length > 0) {
+    console.log(`Renewal job: tap=${tapDue.length}, paymob=${paymobDue.length}, downgraded=${expired.length}`);
   }
 }

@@ -28,6 +28,8 @@ import {
   handleCallback,
   handleTapWebhook,
   handleStripeWebhook,
+  handlePaymobCallback,
+  handlePaymobWebhook,
   cancelSubscription,
   changePlan,
 } from "../controllers/billingController.js";
@@ -89,6 +91,8 @@ apiRouter.post("/billing/checkout", requireAuth, createCheckout);
 apiRouter.get("/billing/callback", handleCallback);
 apiRouter.post("/billing/webhook", ...captureRawBody, handleTapWebhook);
 apiRouter.post("/billing/stripe/webhook", ...captureRawBody, handleStripeWebhook);
+apiRouter.get("/billing/paymob/callback", handlePaymobCallback);
+apiRouter.post("/billing/paymob/webhook", handlePaymobWebhook);
 apiRouter.post("/billing/cancel", requireAuth, cancelSubscription);
 apiRouter.post("/billing/plan", requireAuth, changePlan);
 

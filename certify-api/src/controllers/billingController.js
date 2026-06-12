@@ -12,6 +12,11 @@ import {
   verifyWebhookSignature,
   isConfigured as tapConfigured,
 } from "../services/tapService.js";
+import {
+  createHostedCheckout as paymobCheckout,
+  verifyHmac as paymobVerifyHmac,
+  isConfigured as paymobConfigured,
+} from "../services/paymobService.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -95,6 +100,7 @@ export async function listPlans(_req, res) {
     gateways: {
       stripe: stripeConfigured(),
       tap: tapConfigured(),
+      paymob: paymobConfigured(),
     },
   });
 }
@@ -124,7 +130,7 @@ export async function getBilling(req, res) {
     plan: plan ? presentPlan(plan) : null,
     subscription: presentSubscription(subscription),
     usage: { month, used, limit, remaining: limit != null ? Math.max(0, limit - used) : null },
-    gateways: { stripe: stripeConfigured(), tap: tapConfigured() },
+    gateways: { stripe: stripeConfigured(), tap: tapConfigured(), paymob: paymobConfigured() },
   });
 }
 
@@ -139,7 +145,8 @@ export async function createCheckout(req, res) {
 
   const planSlug = (req.body?.plan_slug ?? "").toString().trim();
   const interval = req.body?.interval === "annual" ? "annual" : "monthly";
-  const gateway = req.body?.gateway === "tap" ? "tap" : "stripe";
+  const gw = req.body?.gateway;
+  const gateway = gw === "tap" ? "tap" : gw === "paymob" ? "paymob" : "stripe";
 
   const plan = await prisma.plan.findUnique({ where: { slug: planSlug } });
   if (!plan || !plan.isActive) return res.status(404).json({ message: "الباقة غير موجودة." });
@@ -201,37 +208,72 @@ export async function createCheckout(req, res) {
   }
 
   // ── Tap ───────────────────────────────────────────────────────────────────
-  if (!tapConfigured()) {
-    await applyPlanToOrg(req.organization.id, plan, { gateway: "tap", interval, amount });
-    return res.json({ message: `تم تفعيل باقة ${plan.name} (وضع تجريبي — لا توجد مفاتيح Tap).`, plan: presentPlan(plan), dev_mode: true });
+  if (gateway === "tap") {
+    if (!tapConfigured()) {
+      await applyPlanToOrg(req.organization.id, plan, { gateway: "tap", interval, amount });
+      return res.json({ message: `تم تفعيل باقة ${plan.name} (وضع تجريبي — لا توجد مفاتيح Tap).`, plan: presentPlan(plan), dev_mode: true });
+    }
+
+    const callbackUrl = `${config.appUrl}/api/billing/callback`;
+    const charge = await createCharge({
+      amount,
+      currency: "USD",
+      org: req.organization,
+      user: req.user,
+      planName: plan.name,
+      interval,
+      callbackUrl,
+    });
+
+    await prisma.subscription.upsert({
+      where: { organizationId: req.organization.id },
+      create: {
+        organizationId: req.organization.id,
+        planId: plan.id,
+        gateway: "tap",
+        tapChargeId: charge.id,
+        status: "inactive",
+        interval,
+        amount,
+        currency: "USD",
+      },
+      update: {
+        gateway: "tap",
+        tapChargeId: charge.id,
+        planId: plan.id,
+        status: "inactive",
+        interval,
+        amount,
+        currency: "USD",
+      },
+    });
+
+    return res.json({ redirect_url: charge.redirect_url, charge_id: charge.id });
   }
 
-  const callbackUrl = `${config.appUrl}/api/billing/callback`;
-  const charge = await createCharge({
-    amount,
-    currency: "USD",
-    org: req.organization,
-    user: req.user,
-    planName: plan.name,
-    interval,
-    callbackUrl,
-  });
+  // ── Paymob ────────────────────────────────────────────────────────────────
+  if (!paymobConfigured()) {
+    await applyPlanToOrg(req.organization.id, plan, { gateway: "paymob", interval, amount });
+    return res.json({ message: `تم تفعيل باقة ${plan.name} (وضع تجريبي — لا توجد مفاتيح Paymob).`, plan: presentPlan(plan), dev_mode: true });
+  }
+
+  const session = await paymobCheckout({ amountUsd: amount, plan, org: req.organization, user: req.user });
 
   await prisma.subscription.upsert({
     where: { organizationId: req.organization.id },
     create: {
       organizationId: req.organization.id,
       planId: plan.id,
-      gateway: "tap",
-      tapChargeId: charge.id,
+      gateway: "paymob",
+      paymobOrderId: session.paymobOrderId,
       status: "inactive",
       interval,
       amount,
       currency: "USD",
     },
     update: {
-      gateway: "tap",
-      tapChargeId: charge.id,
+      gateway: "paymob",
+      paymobOrderId: session.paymobOrderId,
       planId: plan.id,
       status: "inactive",
       interval,
@@ -240,7 +282,7 @@ export async function createCheckout(req, res) {
     },
   });
 
-  return res.json({ redirect_url: charge.redirect_url, charge_id: charge.id });
+  return res.json({ redirect_url: session.redirect_url, order_id: session.paymobOrderId });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -316,6 +358,128 @@ export async function handleTapWebhook(req, res) {
       await prisma.subscription.updateMany({ where: { tapChargeId: chargeId }, data: { status: "past_due" } });
     }
   } catch (err) { console.error("Tap webhook error:", err); }
+
+  res.json({ received: true });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/billing/paymob/callback  (Paymob redirect after payment)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function handlePaymobCallback(req, res) {
+  const webUrl = config.verifyBaseUrl;
+  const q = req.query ?? {};
+
+  const success = q.success === "true";
+  const pending = q.pending === "true";
+  const hmac = q.hmac ?? "";
+
+  // Build params object for HMAC verification (remove hmac itself)
+  const { hmac: _h, ...hmacParams } = q;
+  if (!paymobVerifyHmac(hmacParams, hmac))
+    return res.redirect(`${webUrl}/dashboard/billing?error=verify_failed`);
+
+  if (!success || pending)
+    return res.redirect(`${webUrl}/dashboard/billing?error=payment_failed`);
+
+  // Merchant order ID embedded as certify_{orgId}_{ts}
+  const merchantOrderId = q.merchant_order_id ?? "";
+  const orgId = merchantOrderId.startsWith("certify_") ? merchantOrderId.split("_")[1] : null;
+  if (!orgId) return res.redirect(`${webUrl}/dashboard/billing?error=not_found`);
+
+  try {
+    const sub = await prisma.subscription.findFirst({
+      where: { organizationId: orgId, gateway: "paymob" },
+      include: { plan: true },
+    });
+    if (!sub) return res.redirect(`${webUrl}/dashboard/billing?error=not_found`);
+
+    // `token` query param is the card token for recurring (present for card payments)
+    const cardToken = q.token ?? null;
+
+    await applyPlanToOrg(orgId, sub.plan, {
+      gateway: "paymob",
+      paymobOrderId: sub.paymobOrderId,
+      paymobCardToken: cardToken ?? sub.paymobCardToken,
+      interval: sub.interval,
+      amount: sub.amount ?? 0,
+      currency: "USD",
+    });
+
+    return res.redirect(`${webUrl}/dashboard/billing?success=1`);
+  } catch (err) {
+    console.error("Paymob callback error:", err);
+    return res.redirect(`${webUrl}/dashboard/billing?error=verify_failed`);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/billing/paymob/webhook  (Paymob transaction notification — JSON)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function handlePaymobWebhook(req, res) {
+  const body = req.body ?? {};
+  if (body.type !== "TRANSACTION") return res.json({ received: true });
+
+  const obj = body.obj ?? {};
+  const hmac = body.hmac ?? "";
+
+  // Build flat params from obj for HMAC verification
+  const hmacParams = {
+    amount_cents: obj.amount_cents,
+    created_at: obj.created_at,
+    currency: obj.currency,
+    error_occured: obj.error_occured,
+    has_parent_transaction: obj.has_parent_transaction,
+    id: obj.id,
+    integration_id: obj.integration_id,
+    is_3d_secure: obj.is_3d_secure,
+    is_auth: obj.is_auth,
+    is_capture: obj.is_capture,
+    is_refunded: obj.is_refunded,
+    is_standalone_payment: obj.is_standalone_payment,
+    is_voided: obj.is_voided,
+    order: obj.order?.id ?? obj.order,
+    owner: obj.owner?.id ?? obj.owner,
+    pending: obj.pending,
+    "source_data.pan": obj.source_data?.pan,
+    "source_data.sub_type": obj.source_data?.sub_type,
+    "source_data.type": obj.source_data?.type,
+    success: obj.success,
+  };
+
+  if (!paymobVerifyHmac(hmacParams, hmac))
+    return res.status(401).json({ message: "Invalid HMAC." });
+
+  const merchantOrderId = obj.order?.merchant_order_id ?? "";
+  const orgId = merchantOrderId.startsWith("certify_") ? merchantOrderId.split("_")[1] : null;
+  if (!orgId) return res.json({ received: true });
+
+  try {
+    const sub = await prisma.subscription.findFirst({
+      where: { organizationId: orgId, gateway: "paymob" },
+      include: { plan: true },
+    });
+    if (!sub) return res.json({ received: true });
+
+    if (obj.success === true && obj.pending === false) {
+      if (sub.status !== "active") {
+        const cardToken = obj.token ?? obj.payment_key_claims?.token ?? null;
+        await applyPlanToOrg(orgId, sub.plan, {
+          gateway: "paymob",
+          paymobOrderId: sub.paymobOrderId,
+          paymobCardToken: cardToken ?? sub.paymobCardToken,
+          interval: sub.interval,
+          amount: sub.amount ?? 0,
+          currency: "USD",
+        });
+      }
+    } else if (obj.success === false && obj.pending === false) {
+      await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } });
+    }
+  } catch (err) {
+    console.error("Paymob webhook error:", err);
+  }
 
   res.json({ received: true });
 }

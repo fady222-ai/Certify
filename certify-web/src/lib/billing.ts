@@ -16,8 +16,10 @@ export type Plan = {
   has_white_label: boolean;
 };
 
+export type Gateway = "stripe" | "tap" | "paymob";
+
 export type Subscription = {
-  gateway: "stripe" | "tap";
+  gateway: Gateway;
   status: "inactive" | "active" | "past_due" | "cancelled";
   interval: "monthly" | "annual";
   amount: number | null;
@@ -31,16 +33,14 @@ export type Billing = {
   plan: Plan | null;
   subscription: Subscription;
   usage: { month: string; used: number; limit: number | null; remaining: number | null };
-  gateways: { stripe: boolean; tap: boolean };
+  gateways: { stripe: boolean; tap: boolean; paymob: boolean };
 };
 
-export type Gateway = "stripe" | "tap";
-
 /** Public — list active plans + available gateways. */
-export async function listPlans(): Promise<{ plans: Plan[]; gateways: { stripe: boolean; tap: boolean } }> {
+export async function listPlans(): Promise<{ plans: Plan[]; gateways: { stripe: boolean; tap: boolean; paymob: boolean } }> {
   const res = await fetch(`${API_URL}/api/plans`, { headers: { Accept: "application/json" } });
   const data = await res.json();
-  return { plans: data.data ?? [], gateways: data.gateways ?? { stripe: false, tap: false } };
+  return { plans: data.data ?? [], gateways: data.gateways ?? { stripe: false, tap: false, paymob: false } };
 }
 
 /** Authed — current plan + usage + subscription. */

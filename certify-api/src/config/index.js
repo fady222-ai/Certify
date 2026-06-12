@@ -65,4 +65,12 @@ export const config = {
   // Tap Payments — leave empty in dev to skip real charges.
   tapSecretKey: process.env.TAP_SECRET_KEY ?? "",
   tapWebhookSecret: process.env.TAP_WEBHOOK_SECRET ?? "",
+
+  // Paymob (Egypt — Vodafone Cash, InstaPay, Fawry, Meeza, cards) — leave empty in dev.
+  paymobApiKey: process.env.PAYMOB_API_KEY ?? "",
+  paymobIntegrationId: process.env.PAYMOB_INTEGRATION_ID ?? "",
+  paymobIframeId: process.env.PAYMOB_IFRAME_ID ?? "",
+  paymobHmacSecret: process.env.PAYMOB_HMAC_SECRET ?? "",
+  // Conversion rate USD→EGP used when charging via Paymob (update when rate changes).
+  paymobEgpRate: parseFloat(process.env.PAYMOB_USD_TO_EGP_RATE ?? "50.5"),
 };

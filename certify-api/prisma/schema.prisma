@@ -203,12 +203,14 @@ model Subscription {
   id                 String       @id @default(uuid())
   organizationId     String       @unique @map("organization_id")
   planId             Int          @map("plan_id")
-  gateway            String       @default("stripe")   // stripe | tap
+  gateway            String       @default("stripe")   // stripe | tap | paymob
   stripeCustomerId   String?      @map("stripe_customer_id")
   stripeSubscriptionId String?    @map("stripe_subscription_id")
   tapChargeId        String?      @map("tap_charge_id")
   tapCustomerId      String?      @map("tap_customer_id")
-  tapCardId          String?      @map("tap_card_id")   // for Tap auto-renewal
+  tapCardId          String?      @map("tap_card_id")
+  paymobOrderId      String?      @map("paymob_order_id")
+  paymobCardToken    String?      @map("paymob_card_token")
   status             String       @default("inactive") // inactive | active | past_due | cancelled
   interval           String       @default("monthly")  // monthly | annual
   amount             Float?

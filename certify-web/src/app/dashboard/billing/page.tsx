@@ -23,6 +23,7 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
 const GATEWAY_LABELS: Record<string, { label: string; cls: string }> = {
   stripe: { label: "Stripe",       cls: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100" },
   tap:    { label: "Tap Payments", cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
+  paymob: { label: "Paymob 🇪🇬",   cls: "bg-amber-50 text-amber-700 ring-1 ring-amber-100" },
 };
 
 type PendingUpgrade = { slug: string; interval: "monthly" | "annual" };
@@ -107,7 +108,7 @@ function BillingContent() {
   const plan = billing?.plan;
   const sub = billing?.subscription;
   const usage = billing?.usage;
-  const gateways = billing?.gateways ?? { stripe: false, tap: false };
+  const gateways = billing?.gateways ?? { stripe: false, tap: false, paymob: false };
   const usedPct = usage?.limit ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
   const isPaid = plan && plan.price_monthly > 0;
   const isActive = sub?.status === "active";
@@ -319,6 +320,7 @@ function BillingContent() {
         <GatewayPicker
           stripeAvailable={gateways.stripe}
           tapAvailable={gateways.tap}
+          paymobAvailable={gateways.paymob}
           loading={checkoutLoading}
           onSelect={(gw) => doCheckout(pending.slug, pending.interval, gw)}
           onClose={() => setPending(null)}

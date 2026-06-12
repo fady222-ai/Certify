@@ -243,6 +243,7 @@ export default function PricingPage() {
         <GatewayPicker
           stripeAvailable={true}
           tapAvailable={true}
+          paymobAvailable={true}
           loading={!!loading}
           onSelect={(gw) => doCheckout(pending.slug, pending.interval, gw)}
           onClose={() => setPending(null)}
