@@ -26,7 +26,8 @@ import {
   getBilling,
   createCheckout,
   handleCallback,
-  handleWebhook,
+  handleTapWebhook,
+  handleStripeWebhook,
   cancelSubscription,
   changePlan,
 } from "../controllers/billingController.js";
@@ -46,6 +47,15 @@ import { requireAuth } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
 import { uploadFile } from "../middleware/upload.js";
 import { uploadImage } from "../middleware/uploadImage.js";
+
+// Raw-body capture middleware (used for webhook signature verification)
+const captureRawBody = [
+  express.raw({ type: "*/*" }),
+  (req, _res, next) => {
+    if (Buffer.isBuffer(req.body)) req.rawBody = req.body.toString("utf8");
+    next();
+  },
+];
 
 export const apiRouter = Router();
 
@@ -73,15 +83,12 @@ apiRouter.get("/templates/:id", requireAuth, getTemplate);
 apiRouter.put("/templates/:id", requireAuth, updateTemplate);
 apiRouter.delete("/templates/:id", requireAuth, deleteTemplate);
 
+// Billing
 apiRouter.get("/billing", requireAuth, getBilling);
 apiRouter.post("/billing/checkout", requireAuth, createCheckout);
 apiRouter.get("/billing/callback", handleCallback);
-apiRouter.post(
-  "/billing/webhook",
-  express.raw({ type: "application/json" }),
-  (req, _res, next) => { if (Buffer.isBuffer(req.body)) req.rawBody = req.body.toString(); next(); },
-  handleWebhook,
-);
+apiRouter.post("/billing/webhook", ...captureRawBody, handleTapWebhook);
+apiRouter.post("/billing/stripe/webhook", ...captureRawBody, handleStripeWebhook);
 apiRouter.post("/billing/cancel", requireAuth, cancelSubscription);
 apiRouter.post("/billing/plan", requireAuth, changePlan);
 

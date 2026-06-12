@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createCheckout } from "@/lib/billing";
+import { createCheckout, type Gateway } from "@/lib/billing";
+import { GatewayPicker } from "@/components/GatewayPicker";
 import { getToken } from "@/lib/auth";
 
 const PLANS = [
   {
     slug: "free",
-    name: "مجاني",
+    name: "Free",
     monthly: 0,
     yearly: 0,
     certs: "10 شهادات / شهر",
@@ -20,19 +21,19 @@ const PLANS = [
   {
     slug: "starter",
     name: "Starter",
-    monthly: 49,
-    yearly: 490,
+    monthly: 9,
+    yearly: 90,
     certs: "200 شهادة / شهر",
-    features: ["كل ميزات المجاني", "قوالب غير محدودة", "إرسال بريد إلكتروني", "إصدار جماعي CSV"],
+    features: ["كل ميزات Free", "قوالب غير محدودة", "إرسال بريد إلكتروني", "إصدار جماعي CSV"],
     cta: "ابدأ الآن",
     highlight: false,
   },
   {
     slug: "pro",
     name: "Pro",
-    monthly: 149,
-    yearly: 1490,
-    certs: "2000 شهادة / شهر",
+    monthly: 29,
+    yearly: 290,
+    certs: "2,000 شهادة / شهر",
     features: ["كل ميزات Starter", "3 أعضاء فريق", "وصول API", "تقارير متقدمة"],
     cta: "ابدأ الآن",
     highlight: true,
@@ -40,8 +41,8 @@ const PLANS = [
   {
     slug: "business",
     name: "Business",
-    monthly: 299,
-    yearly: 2990,
+    monthly: 79,
+    yearly: 790,
     certs: "10,000 شهادة / شهر",
     features: ["كل ميزات Pro", "10 أعضاء فريق", "علامة بيضاء (White-label)", "دعم مخصص"],
     cta: "ابدأ الآن",
@@ -52,35 +53,22 @@ const PLANS = [
 export default function PricingPage() {
   const router = useRouter();
   const [interval, setInterval] = useState<"monthly" | "annual">("monthly");
+  const [pending, setPending] = useState<{ slug: string; interval: "monthly" | "annual" } | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSelect(slug: string) {
-    if (slug === "free") {
-      const token = getToken();
-      if (!token) return router.push("/register");
-      setLoading(slug);
-      try {
-        const res = await createCheckout(slug, interval);
-        if (res.redirect_url) {
-          window.location.href = res.redirect_url;
-        } else {
-          router.push("/dashboard/billing?success=1");
-        }
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "حدث خطأ.");
-        setLoading(null);
-      }
-      return;
-    }
+  function handleSelect(slug: string) {
+    if (!getToken()) return router.push(`/register?plan=${slug}&interval=${interval}`);
+    if (slug === "free") return doCheckout(slug, interval, "stripe");
+    setPending({ slug, interval });
+  }
 
-    const token = getToken();
-    if (!token) return router.push(`/register?plan=${slug}&interval=${interval}`);
-
+  async function doCheckout(slug: string, iv: "monthly" | "annual", gateway: Gateway) {
+    setPending(null);
     setLoading(slug);
     setError(null);
     try {
-      const res = await createCheckout(slug, interval);
+      const res = await createCheckout(slug, iv, gateway);
       if (res.redirect_url) {
         window.location.href = res.redirect_url;
       } else {
@@ -92,11 +80,11 @@ export default function PricingPage() {
     }
   }
 
-  const annualSaving = Math.round((1 - 10 / 12) * 100); // ~17%
+  const annualSaving = 17;
 
   return (
     <div className="min-h-screen bg-surface-2/40" dir="rtl">
-      {/* Header */}
+      {/* Navbar */}
       <header className="glass sticky top-0 z-30 border-b border-line px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-xl font-bold text-brand-600">Certify</Link>
@@ -104,9 +92,7 @@ export default function PricingPage() {
             <Link href="/login" className="text-sm text-ink-soft hover:text-brand-600 transition-colors">
               تسجيل الدخول
             </Link>
-            <Link href="/register" className="btn-primary text-sm px-4 py-2">
-              ابدأ مجاناً
-            </Link>
+            <Link href="/register" className="btn-primary text-sm px-4 py-2">ابدأ مجاناً</Link>
           </div>
         </div>
       </header>
@@ -115,7 +101,7 @@ export default function PricingPage() {
         {/* Hero */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold text-ink">الأسعار</h1>
-          <p className="text-lg text-ink-soft">اختر الباقة المناسبة لنشاطك</p>
+          <p className="text-lg text-ink-soft">اختر الباقة المناسبة لنشاطك — جميع الأسعار بالدولار الأمريكي</p>
         </div>
 
         {/* Interval Toggle */}
@@ -124,9 +110,7 @@ export default function PricingPage() {
             <button
               onClick={() => setInterval("monthly")}
               className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                interval === "monthly"
-                  ? "bg-brand-600 text-white shadow-sm"
-                  : "text-ink-soft hover:text-ink"
+                interval === "monthly" ? "bg-brand-600 text-white shadow-sm" : "text-ink-soft hover:text-ink"
               }`}
             >
               شهري
@@ -134,9 +118,7 @@ export default function PricingPage() {
             <button
               onClick={() => setInterval("annual")}
               className={`px-5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                interval === "annual"
-                  ? "bg-brand-600 text-white shadow-sm"
-                  : "text-ink-soft hover:text-ink"
+                interval === "annual" ? "bg-brand-600 text-white shadow-sm" : "text-ink-soft hover:text-ink"
               }`}
             >
               سنوي
@@ -155,13 +137,11 @@ export default function PricingPage() {
           </div>
         )}
 
-        {/* Plans Grid */}
+        {/* Plans */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {PLANS.map((plan) => {
             const price = interval === "annual" ? plan.yearly : plan.monthly;
-            const monthlyEquiv = interval === "annual" && plan.yearly > 0
-              ? Math.round(plan.yearly / 12)
-              : null;
+            const monthlyEquiv = interval === "annual" && plan.yearly > 0 ? Math.round(plan.yearly / 12) : null;
 
             return (
               <div
@@ -189,15 +169,15 @@ export default function PricingPage() {
                   ) : (
                     <>
                       <p className="text-3xl font-bold text-ink">
-                        {price.toLocaleString("ar-SA")}
-                        <span className="text-base font-normal text-ink-muted"> ر.س</span>
+                        <span className="text-base font-normal text-ink-muted">$</span>
+                        {price}
                         <span className="text-sm font-normal text-ink-muted">
                           {interval === "annual" ? "/سنة" : "/شهر"}
                         </span>
                       </p>
                       {monthlyEquiv && (
                         <p className="text-xs text-emerald-600 mt-1">
-                          أي {monthlyEquiv} ر.س / شهر فقط
+                          ${monthlyEquiv} / شهر فقط
                         </p>
                       )}
                     </>
@@ -233,22 +213,22 @@ export default function PricingPage() {
         <div className="text-center space-y-3">
           <p className="text-sm text-ink-muted font-medium">وسائل الدفع المقبولة</p>
           <div className="flex justify-center flex-wrap gap-3">
-            {["مدى", "فيزا", "ماستركارد", "Apple Pay", "STC Pay", "Benefit"].map((m) => (
+            {["مدى", "فيزا", "ماستركارد", "Apple Pay", "STC Pay", "Benefit", "American Express"].map((m) => (
               <span key={m} className="bg-white border border-line rounded-lg px-3 py-1.5 text-xs font-medium text-ink-soft shadow-sm">
                 {m}
               </span>
             ))}
           </div>
-          <p className="text-xs text-ink-muted">جميع المدفوعات آمنة ومشفرة عبر Tap Payments</p>
+          <p className="text-xs text-ink-muted">جميع المدفوعات آمنة ومشفّرة — Stripe أو Tap Payments</p>
         </div>
 
         {/* FAQ */}
         <div className="max-w-2xl mx-auto space-y-4">
           <h2 className="text-xl font-bold text-ink text-center">أسئلة شائعة</h2>
           {[
-            { q: "هل يمكنني الترقية أو التخفيض في أي وقت؟", a: "نعم، يمكنك تغيير باقتك في أي وقت. التخفيض يُطبَّق فوراً والترقية تُفعَّل بعد إتمام الدفع." },
-            { q: "ماذا يحدث عند انتهاء الدورة؟", a: "تلقيك تذكيراً بالبريد الإلكتروني قبل 7 أيام. إذا لم يتجدد الاشتراك، تنتقل للباقة المجانية تلقائياً." },
-            { q: "هل الدفع آمن؟", a: "نعم، نستخدم Tap Payments — بوابة دفع معتمدة في الخليج العربي بمعايير PCI DSS." },
+            { q: "هل يتجدد الاشتراك تلقائياً؟", a: "نعم، يتجدد الاشتراك تلقائياً كل شهر أو سنة. يمكنك الإلغاء في أي وقت وستبقى على باقتك حتى نهاية الدورة الحالية." },
+            { q: "ما الفرق بين Stripe وTap؟", a: "Stripe: دفع عالمي بالبطاقات الائتمانية. Tap: مخصص للسوق الخليجي ويدعم مدى، STC Pay، وApple Pay. كلاهما يقبل الدفع بالدولار." },
+            { q: "هل يمكنني الترقية أو التخفيض؟", a: "نعم في أي وقت. التخفيض يُطبَّق فوراً والترقية تُفعَّل فور إتمام الدفع." },
           ].map(({ q, a }) => (
             <div key={q} className="bg-white border border-line rounded-2xl p-5 shadow-sm">
               <p className="font-bold text-ink mb-2">{q}</p>
@@ -257,6 +237,17 @@ export default function PricingPage() {
           ))}
         </div>
       </main>
+
+      {/* Gateway Picker Modal */}
+      {pending && (
+        <GatewayPicker
+          stripeAvailable={true}
+          tapAvailable={true}
+          loading={!!loading}
+          onSelect={(gw) => doCheckout(pending.slug, pending.interval, gw)}
+          onClose={() => setPending(null)}
+        />
+      )}
     </div>
   );
 }

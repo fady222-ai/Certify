@@ -7,10 +7,10 @@ const prisma = new PrismaClient();
 async function main() {
   // --- Plans (from pricing model) ---
   const plans = [
-    { slug: "free",     name: "مجاني",    priceMonthly: 0,   priceYearly: 0,    certificatesPerMonth: 10,    teamMembersLimit: 1 },
-    { slug: "starter",  name: "Starter",  priceMonthly: 49,  priceYearly: 490,  certificatesPerMonth: 200,   teamMembersLimit: 1 },
-    { slug: "pro",      name: "Pro",      priceMonthly: 149, priceYearly: 1490, certificatesPerMonth: 2000,  teamMembersLimit: 3, hasApi: true },
-    { slug: "business", name: "Business", priceMonthly: 299, priceYearly: 2990, certificatesPerMonth: 10000, teamMembersLimit: 10, hasApi: true, hasWhiteLabel: true },
+    { slug: "free",     name: "Free",     priceMonthly: 0,  priceYearly: 0,   certificatesPerMonth: 10,    teamMembersLimit: 1 },
+    { slug: "starter",  name: "Starter",  priceMonthly: 9,  priceYearly: 90,  certificatesPerMonth: 200,   teamMembersLimit: 1 },
+    { slug: "pro",      name: "Pro",      priceMonthly: 29, priceYearly: 290, certificatesPerMonth: 2000,  teamMembersLimit: 3, hasApi: true },
+    { slug: "business", name: "Business", priceMonthly: 79, priceYearly: 790, certificatesPerMonth: 10000, teamMembersLimit: 10, hasApi: true, hasWhiteLabel: true },
   ];
   for (const p of plans) {
     await prisma.plan.upsert({ where: { slug: p.slug }, create: p, update: p });

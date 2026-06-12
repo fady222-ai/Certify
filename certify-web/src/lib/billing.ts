@@ -17,10 +17,12 @@ export type Plan = {
 };
 
 export type Subscription = {
+  gateway: "stripe" | "tap";
   status: "inactive" | "active" | "past_due" | "cancelled";
   interval: "monthly" | "annual";
   amount: number | null;
   currency: string;
+  cancel_at_period_end: boolean;
   current_period_end: string | null;
   cancelled_at: string | null;
 } | null;
@@ -28,19 +30,17 @@ export type Subscription = {
 export type Billing = {
   plan: Plan | null;
   subscription: Subscription;
-  usage: {
-    month: string;
-    used: number;
-    limit: number | null;
-    remaining: number | null;
-  };
+  usage: { month: string; used: number; limit: number | null; remaining: number | null };
+  gateways: { stripe: boolean; tap: boolean };
 };
 
-/** Public — list active plans. */
-export async function listPlans(): Promise<Plan[]> {
+export type Gateway = "stripe" | "tap";
+
+/** Public — list active plans + available gateways. */
+export async function listPlans(): Promise<{ plans: Plan[]; gateways: { stripe: boolean; tap: boolean } }> {
   const res = await fetch(`${API_URL}/api/plans`, { headers: { Accept: "application/json" } });
   const data = await res.json();
-  return data.data ?? [];
+  return { plans: data.data ?? [], gateways: data.gateways ?? { stripe: false, tap: false } };
 }
 
 /** Authed — current plan + usage + subscription. */
@@ -51,24 +51,25 @@ export async function getBilling(): Promise<Billing> {
 }
 
 /**
- * Authed — start checkout with Tap Payments.
- * For free plan returns { message } directly; for paid plans returns { redirect_url }.
+ * Authed — start checkout.
+ * Returns { redirect_url } for paid plans, or { message } for free/dev-mode.
  */
 export async function createCheckout(
   planSlug: string,
   interval: "monthly" | "annual",
+  gateway: Gateway = "stripe",
 ): Promise<{ redirect_url?: string; message?: string; dev_mode?: boolean }> {
   const res = await authedFetch("billing/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ plan_slug: planSlug, interval }),
+    body: JSON.stringify({ plan_slug: planSlug, interval, gateway }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? "تعذّر بدء عملية الدفع.");
   return data;
 }
 
-/** Authed — cancel active subscription. */
+/** Authed — cancel active subscription at period end. */
 export async function cancelSubscription(): Promise<{ message: string }> {
   const res = await authedFetch("billing/cancel", { method: "POST" });
   const data = await res.json();

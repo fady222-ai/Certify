@@ -203,12 +203,17 @@ model Subscription {
   id                 String       @id @default(uuid())
   organizationId     String       @unique @map("organization_id")
   planId             Int          @map("plan_id")
+  gateway            String       @default("stripe")   // stripe | tap
+  stripeCustomerId   String?      @map("stripe_customer_id")
+  stripeSubscriptionId String?    @map("stripe_subscription_id")
   tapChargeId        String?      @map("tap_charge_id")
   tapCustomerId      String?      @map("tap_customer_id")
+  tapCardId          String?      @map("tap_card_id")   // for Tap auto-renewal
   status             String       @default("inactive") // inactive | active | past_due | cancelled
   interval           String       @default("monthly")  // monthly | annual
   amount             Float?
-  currency           String       @default("SAR")
+  currency           String       @default("USD")
+  cancelAtPeriodEnd  Boolean      @default(false) @map("cancel_at_period_end")
   currentPeriodStart DateTime?    @map("current_period_start")
   currentPeriodEnd   DateTime?    @map("current_period_end")
   cancelledAt        DateTime?    @map("cancelled_at")

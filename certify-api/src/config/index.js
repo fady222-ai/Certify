@@ -58,6 +58,10 @@ export const config = {
     enabled: (process.env.EMAIL_ENABLED ?? "true") !== "false",
   },
 
+  // Stripe — leave empty in dev to skip real charges.
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+
   // Tap Payments — leave empty in dev to skip real charges.
   tapSecretKey: process.env.TAP_SECRET_KEY ?? "",
   tapWebhookSecret: process.env.TAP_WEBHOOK_SECRET ?? "",

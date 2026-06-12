@@ -3,7 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getBilling, createCheckout, cancelSubscription, type Billing } from "@/lib/billing";
+import { getBilling, createCheckout, cancelSubscription, type Billing, type Gateway } from "@/lib/billing";
+import { GatewayPicker } from "@/components/GatewayPicker";
 
 const PLAN_NAMES: Record<string, string> = {
   free: "مجاني",
@@ -19,6 +20,13 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   cancelled: { label: "ملغي",       cls: "bg-red-50 text-red-600 ring-1 ring-red-100" },
 };
 
+const GATEWAY_LABELS: Record<string, { label: string; cls: string }> = {
+  stripe: { label: "Stripe",       cls: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100" },
+  tap:    { label: "Tap Payments", cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
+};
+
+type PendingUpgrade = { slug: string; interval: "monthly" | "annual" };
+
 function BillingContent() {
   const params = useSearchParams();
   const router = useRouter();
@@ -26,7 +34,8 @@ function BillingContent() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [pending, setPending] = useState<PendingUpgrade | null>(null);
 
   useEffect(() => {
     getBilling().then(setBilling).finally(() => setLoading(false));
@@ -53,10 +62,19 @@ function BillingContent() {
     setTimeout(() => setToast(null), 4000);
   }
 
-  async function handleUpgrade(slug: string, interval: "monthly" | "annual") {
-    setUpgrading(true);
+  function handleUpgradeClick(slug: string, interval: "monthly" | "annual") {
+    if (slug === "free") {
+      doCheckout("free", interval, "stripe");
+      return;
+    }
+    setPending({ slug, interval });
+  }
+
+  async function doCheckout(slug: string, interval: "monthly" | "annual", gateway: Gateway) {
+    setPending(null);
+    setCheckoutLoading(true);
     try {
-      const res = await createCheckout(slug, interval);
+      const res = await createCheckout(slug, interval, gateway);
       if (res.redirect_url) {
         window.location.href = res.redirect_url;
       } else {
@@ -67,7 +85,7 @@ function BillingContent() {
     } catch (e) {
       showToast(e instanceof Error ? e.message : "حدث خطأ.", "err");
     } finally {
-      setUpgrading(false);
+      setCheckoutLoading(false);
     }
   }
 
@@ -89,9 +107,11 @@ function BillingContent() {
   const plan = billing?.plan;
   const sub = billing?.subscription;
   const usage = billing?.usage;
+  const gateways = billing?.gateways ?? { stripe: false, tap: false };
   const usedPct = usage?.limit ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
   const isPaid = plan && plan.price_monthly > 0;
   const isActive = sub?.status === "active";
+  const cancelAtEnd = sub?.cancel_at_period_end;
   const periodEnd = sub?.current_period_end
     ? new Date(sub.current_period_end).toLocaleDateString("ar-SA")
     : null;
@@ -122,23 +142,30 @@ function BillingContent() {
         <>
           {/* Current Plan Card */}
           <div className="bg-white rounded-2xl border border-line shadow-sm p-6 space-y-5">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs text-ink-muted mb-1">الباقة الحالية</p>
                 <p className="text-2xl font-bold text-ink">
                   {PLAN_NAMES[plan?.slug ?? "free"] ?? plan?.name ?? "مجاني"}
                 </p>
-                {isPaid && (
+                {isPaid && sub?.amount != null && (
                   <p className="text-sm text-ink-soft mt-0.5">
-                    {plan?.price_monthly.toLocaleString("ar-SA")} ر.س / شهر
+                    ${sub.amount} {sub.interval === "annual" ? "/سنة" : "/شهر"}
                   </p>
                 )}
               </div>
-              {sub && (
-                <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${STATUS_LABELS[sub.status]?.cls ?? ""}`}>
-                  {STATUS_LABELS[sub.status]?.label ?? sub.status}
-                </span>
-              )}
+              <div className="flex flex-col items-end gap-2">
+                {sub && (
+                  <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${STATUS_LABELS[sub.status]?.cls ?? ""}`}>
+                    {STATUS_LABELS[sub.status]?.label ?? sub.status}
+                  </span>
+                )}
+                {sub?.gateway && GATEWAY_LABELS[sub.gateway] && (
+                  <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${GATEWAY_LABELS[sub.gateway].cls}`}>
+                    {GATEWAY_LABELS[sub.gateway].label}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Usage bar */}
@@ -166,16 +193,25 @@ function BillingContent() {
               </div>
             )}
 
-            {/* Period end */}
+            {/* Period end / cancel notice */}
             {periodEnd && (
               <p className="text-sm text-ink-soft">
-                {sub?.status === "cancelled" ? "ينتهي في:" : "تاريخ التجديد:"}{" "}
+                {cancelAtEnd
+                  ? "ينتهي الاشتراك في:"
+                  : sub?.status === "cancelled"
+                  ? "ينتهي في:"
+                  : "تاريخ التجديد:"}{" "}
                 <span className="font-medium text-ink">{periodEnd}</span>
+                {cancelAtEnd && (
+                  <span className="mr-2 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-md px-1.5 py-0.5">
+                    لن يتجدد تلقائياً
+                  </span>
+                )}
               </p>
             )}
 
             {/* Cancel */}
-            {isPaid && isActive && sub?.status !== "cancelled" && (
+            {isPaid && isActive && !cancelAtEnd && (
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
@@ -197,9 +233,9 @@ function BillingContent() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
-                  { slug: "starter", label: "Starter", price: "49 ر.س/شهر",  annual: "490 ر.س/سنة" },
-                  { slug: "pro",     label: "Pro",     price: "149 ر.س/شهر", annual: "1490 ر.س/سنة", hot: true },
-                  { slug: "business",label: "Business",price: "299 ر.س/شهر", annual: "2990 ر.س/سنة" },
+                  { slug: "starter", label: "Starter", monthly: 9,  yearly: 90,  hot: false },
+                  { slug: "pro",     label: "Pro",     monthly: 29, yearly: 290, hot: true  },
+                  { slug: "business",label: "Business",monthly: 79, yearly: 790, hot: false },
                 ].map((p) => (
                   <div
                     key={p.slug}
@@ -209,13 +245,13 @@ function BillingContent() {
                   >
                     <div>
                       <p className="font-bold text-ink">{p.label}</p>
-                      <p className="text-sm text-ink font-medium">{p.price}</p>
-                      <p className="text-xs text-ink-muted">أو {p.annual}</p>
+                      <p className="text-sm text-ink font-medium">${p.monthly}/شهر</p>
+                      <p className="text-xs text-ink-muted">أو ${p.yearly}/سنة</p>
                     </div>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleUpgrade(p.slug, "monthly")}
-                        disabled={upgrading}
+                        onClick={() => handleUpgradeClick(p.slug, "monthly")}
+                        disabled={checkoutLoading}
                         className={`flex-1 text-xs py-1.5 rounded-lg font-medium disabled:opacity-50 transition-colors ${
                           p.hot
                             ? "bg-brand-600 text-white hover:bg-brand-700"
@@ -225,8 +261,8 @@ function BillingContent() {
                         شهري
                       </button>
                       <button
-                        onClick={() => handleUpgrade(p.slug, "annual")}
-                        disabled={upgrading}
+                        onClick={() => handleUpgradeClick(p.slug, "annual")}
+                        disabled={checkoutLoading}
                         className="flex-1 text-xs py-1.5 rounded-lg font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 disabled:opacity-50 transition-colors"
                       >
                         سنوي
@@ -253,8 +289,8 @@ function BillingContent() {
                   استعرض الباقات
                 </Link>
                 <button
-                  onClick={() => handleUpgrade("free", "monthly")}
-                  disabled={upgrading}
+                  onClick={() => doCheckout("free", "monthly", "stripe")}
+                  disabled={checkoutLoading}
                   className="text-sm px-4 py-2 bg-surface-2 text-ink border border-line rounded-xl font-medium hover:bg-surface-2/80 disabled:opacity-50 transition-colors"
                 >
                   التخفيض للمجاني
@@ -266,7 +302,7 @@ function BillingContent() {
           {/* Payment methods */}
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-xs text-ink-muted">وسائل الدفع:</span>
-            {["مدى", "فيزا", "ماستركارد", "Apple Pay", "STC Pay"].map((m) => (
+            {["مدى", "فيزا", "ماستركارد", "Apple Pay", "STC Pay", "Benefit"].map((m) => (
               <span
                 key={m}
                 className="text-xs bg-white border border-line rounded-md px-2 py-0.5 text-ink-muted"
@@ -276,6 +312,17 @@ function BillingContent() {
             ))}
           </div>
         </>
+      )}
+
+      {/* Gateway Picker Modal */}
+      {pending && (
+        <GatewayPicker
+          stripeAvailable={gateways.stripe}
+          tapAvailable={gateways.tap}
+          loading={checkoutLoading}
+          onSelect={(gw) => doCheckout(pending.slug, pending.interval, gw)}
+          onClose={() => setPending(null)}
+        />
       )}
     </div>
   );
