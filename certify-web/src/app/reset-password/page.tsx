@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { AuthShell } from "@/components/AuthShell";
 import { ResetPasswordForm } from "@/components/ResetPasswordForm";
@@ -20,7 +21,9 @@ export default function ResetPasswordPage() {
         </>
       }
     >
-      <ResetPasswordForm />
+      <Suspense fallback={null}>
+        <ResetPasswordForm />
+      </Suspense>
     </AuthShell>
   );
 }
