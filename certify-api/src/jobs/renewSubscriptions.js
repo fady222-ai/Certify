@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { prisma } from "../db/prisma.js";
 import { createTokenCharge as tapTokenCharge } from "../services/tapService.js";
 import { createTokenCharge as paymobTokenCharge } from "../services/paymobService.js";
+import { sendPaymentReceipt, sendRenewalReminder, sendPaymentFailed } from "../services/billingMailer.js";
 
 /**
  * Runs daily at 03:00.
@@ -50,12 +51,15 @@ export async function processRenewals() {
           where: { id: sub.id },
           data: { tapChargeId: charge.id, currentPeriodStart: sub.currentPeriodEnd, currentPeriodEnd: next },
         });
+        sendPaymentReceipt(sub.organizationId, sub.plan, { ...sub, currentPeriodEnd: next }, { isRenewal: true }).catch(() => {});
       } else {
         await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } });
+        sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
       }
     } catch (err) {
       console.error(`Tap renewal failed for sub ${sub.id}:`, err.message);
       await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } }).catch(() => {});
+      sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
     }
   }
 
@@ -91,13 +95,37 @@ export async function processRenewals() {
           where: { id: sub.id },
           data: { currentPeriodStart: sub.currentPeriodEnd, currentPeriodEnd: next },
         });
+        sendPaymentReceipt(sub.organizationId, sub.plan, { ...sub, currentPeriodEnd: next }, { isRenewal: true }).catch(() => {});
       } else {
         await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } });
+        sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
       }
     } catch (err) {
       console.error(`Paymob renewal failed for sub ${sub.id}:`, err.message);
       await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } }).catch(() => {});
+      sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
     }
+  }
+
+  // ── 3. Send renewal reminders to wallet-based Paymob subscribers ─────────
+  // These users paid via Vodafone Cash / InstaPay / Fawry — no card token is
+  // saved so auto-renewal is impossible. Warn them 3 days before expiry.
+  const in3days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const in4days = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000);
+
+  const walletExpiring = await prisma.subscription.findMany({
+    where: {
+      gateway: "paymob",
+      paymobCardToken: null,
+      status: "active",
+      cancelAtPeriodEnd: false,
+      currentPeriodEnd: { gte: in3days, lt: in4days },
+    },
+    include: { plan: true },
+  });
+
+  for (const sub of walletExpiring) {
+    sendRenewalReminder(sub.organizationId, sub.plan, sub, 3).catch(() => {});
   }
 
   // ── 2. Downgrade cancelled/expired subscriptions ─────────────────────────
@@ -126,7 +154,7 @@ export async function processRenewals() {
     }
   }
 
-  if (tapDue.length + paymobDue.length + expired.length > 0) {
-    console.log(`Renewal job: tap=${tapDue.length}, paymob=${paymobDue.length}, downgraded=${expired.length}`);
+  if (tapDue.length + paymobDue.length + expired.length + walletExpiring.length > 0) {
+    console.log(`Renewal job: tap=${tapDue.length}, paymob=${paymobDue.length}, downgraded=${expired.length}, reminders=${walletExpiring.length}`);
   }
 }

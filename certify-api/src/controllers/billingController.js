@@ -17,6 +17,7 @@ import {
   verifyHmac as paymobVerifyHmac,
   isConfigured as paymobConfigured,
 } from "../services/paymobService.js";
+import { sendPaymentReceipt } from "../services/billingMailer.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -51,7 +52,7 @@ function presentSubscription(sub) {
   };
 }
 
-async function applyPlanToOrg(orgId, plan, subData) {
+async function applyPlanToOrg(orgId, plan, subData, { notify = false } = {}) {
   const now = new Date();
   const periodEnd = new Date(now);
   if (subData.interval === "annual") periodEnd.setFullYear(periodEnd.getFullYear() + 1);
@@ -84,6 +85,10 @@ async function applyPlanToOrg(orgId, plan, subData) {
       },
     }),
   ]);
+
+  if (notify && amount > 0) {
+    sendPaymentReceipt(orgId, plan, { ...subData, currentPeriodEnd: periodEnd }).catch(() => {});
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -314,7 +319,7 @@ export async function handleCallback(req, res) {
       interval: sub.interval,
       amount: sub.amount ?? 0,
       currency: "USD",
-    });
+    }, { notify: true });
 
     return res.redirect(`${webUrl}/dashboard/billing?success=1`);
   } catch (err) {
@@ -404,7 +409,7 @@ export async function handlePaymobCallback(req, res) {
       interval: sub.interval,
       amount: sub.amount ?? 0,
       currency: "USD",
-    });
+    }, { notify: true });
 
     return res.redirect(`${webUrl}/dashboard/billing?success=1`);
   } catch (err) {
@@ -472,7 +477,7 @@ export async function handlePaymobWebhook(req, res) {
           interval: sub.interval,
           amount: sub.amount ?? 0,
           currency: "USD",
-        });
+        }, { notify: true });
       }
     } else if (obj.success === false && obj.pending === false) {
       await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } });
@@ -517,7 +522,7 @@ export async function handleStripeWebhook(req, res) {
           interval: interval ?? "monthly",
           amount,
           currency: "USD",
-        });
+        }, { notify: true });
         break;
       }
 
@@ -539,6 +544,12 @@ export async function handleStripeWebhook(req, res) {
           where: { id: sub.id },
           data: { status: "active", currentPeriodStart: now, currentPeriodEnd: next },
         });
+
+        // Fire renewal receipt email (best-effort)
+        const renewedPlan = await prisma.plan.findUnique({ where: { id: sub.planId } });
+        if (renewedPlan) {
+          sendPaymentReceipt(sub.organizationId, renewedPlan, { ...sub, currentPeriodEnd: next }, { isRenewal: true }).catch(() => {});
+        }
         break;
       }
 
