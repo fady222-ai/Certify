@@ -46,10 +46,10 @@ export async function listCertificates(req, res) {
   }
   if (search) {
     where.OR = [
-      { recipientName: { contains: search } },
-      { recipientEmail: { contains: search } },
-      { courseName: { contains: search } },
-      { verificationCode: { contains: search } },
+      { recipientName: { contains: search, mode: "insensitive" } },
+      { recipientEmail: { contains: search, mode: "insensitive" } },
+      { courseName: { contains: search, mode: "insensitive" } },
+      { verificationCode: { contains: search, mode: "insensitive" } },
     ];
   }
 

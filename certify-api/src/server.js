@@ -60,6 +60,9 @@ app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/register", registerLimiter);
 app.use("/api/auth/forgot-password", sensitiveAuthLimiter);
 app.use("/api/auth/resend-otp", sensitiveAuthLimiter);
+// Blunt OTP brute-force: cap verification attempts per IP (complements the
+// per-code attempt counter enforced in authService.verifyEmail).
+app.use("/api/auth/verify-email", sensitiveAuthLimiter);
 
 app.use("/api", apiRouter);
 

@@ -139,7 +139,10 @@ export async function createTokenCharge({ amountUsd, cardToken, description }) {
  * Paymob computes HMAC over these 20 fields in exactly this order.
  */
 export function verifyHmac(params, receivedHmac) {
-  if (!config.paymobHmacSecret) return true; // dev mode — skip verification
+  if (!config.paymobHmacSecret) {
+    // In production refuse to trust an unsigned payload; only skip in dev.
+    return !config.isProduction;
+  }
   const str = [
     params.amount_cents,
     params.created_at,
@@ -165,7 +168,12 @@ export function verifyHmac(params, receivedHmac) {
     .map((v) => String(v ?? ""))
     .join("");
   const computed = crypto.createHmac("sha512", config.paymobHmacSecret).update(str).digest("hex");
-  return computed === receivedHmac;
+  // Constant-time comparison to avoid leaking the HMAC via timing.
+  try {
+    return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(String(receivedHmac ?? "")));
+  } catch {
+    return false;
+  }
 }
 
 export function isConfigured() {

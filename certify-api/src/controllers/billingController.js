@@ -91,6 +91,27 @@ async function applyPlanToOrg(orgId, plan, subData, { notify = false } = {}) {
   }
 }
 
+/**
+ * Cancel any active paid subscription at the gateway before switching an org to
+ * the free plan. Without this, a downgrade leaves the Stripe subscription live
+ * and the customer keeps getting billed (and `invoice.paid` would re-extend it).
+ * Best-effort: a gateway error must not block the downgrade.
+ */
+async function cancelActiveGatewaySubscription(orgId) {
+  const sub = await prisma.subscription.findUnique({ where: { organizationId: orgId } });
+  if (!sub) return;
+
+  if (sub.gateway === "stripe" && sub.stripeSubscriptionId && stripeConfigured()) {
+    try {
+      await stripeCancelSub(sub.stripeSubscriptionId, false); // cancel immediately
+    } catch (err) {
+      console.error(`Stripe cancel on downgrade failed for org ${orgId}:`, err.message);
+    }
+  }
+  // Tap/Paymob are charge-based: dropping to amount=0 sets status "inactive",
+  // which the renewal cron skips — no gateway-side cancellation needed.
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Public — plan list
 // ─────────────────────────────────────────────────────────────────────────────
@@ -158,8 +179,9 @@ export async function createCheckout(req, res) {
 
   const amount = interval === "annual" ? plan.priceYearly : plan.priceMonthly;
 
-  // Free plan — switch directly
+  // Free plan — switch directly (cancel any live paid subscription first)
   if (amount === 0) {
+    await cancelActiveGatewaySubscription(req.organization.id);
     await applyPlanToOrg(req.organization.id, plan, { gateway: "stripe", interval, amount: 0 });
     return res.json({ message: `تم التحويل إلى باقة ${plan.name}.`, plan: presentPlan(plan) });
   }
@@ -637,6 +659,7 @@ export async function changePlan(req, res) {
     });
   }
 
+  await cancelActiveGatewaySubscription(req.organization.id);
   await applyPlanToOrg(req.organization.id, plan, { gateway: "stripe", interval: "monthly", amount: 0 });
   res.json({ message: `تم التبديل إلى باقة ${plan.name}.`, plan: presentPlan(plan) });
 }

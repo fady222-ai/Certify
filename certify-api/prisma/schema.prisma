@@ -38,6 +38,7 @@ model VerificationToken {
   id        String    @id @default(uuid())
   userId    String    @map("user_id")
   code      String
+  attempts  Int       @default(0)
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")

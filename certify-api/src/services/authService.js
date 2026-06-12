@@ -11,6 +11,7 @@ const OTP_TTL_MINUTES = 15;
 const RESET_TTL_HOURS = 1;
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
+const MAX_OTP_ATTEMPTS = 5;
 
 export function slugify(name) {
   const base = String(name ?? "")
@@ -138,7 +139,19 @@ export async function verifyEmail({ userId, code }) {
     throw err;
   }
 
+  // Too many wrong guesses for this code — invalidate it and force a resend.
+  if (record.attempts >= MAX_OTP_ATTEMPTS) {
+    await prisma.verificationToken.update({ where: { id: record.id }, data: { usedAt: new Date() } });
+    const err = new Error("تجاوزت عدد المحاولات المسموح. اطلب رمزاً جديداً.");
+    err.statusCode = 429;
+    throw err;
+  }
+
   if (record.code !== code) {
+    await prisma.verificationToken.update({
+      where: { id: record.id },
+      data: { attempts: { increment: 1 } },
+    });
     const err = new Error("رمز التحقق غير صحيح.");
     err.statusCode = 422;
     throw err;

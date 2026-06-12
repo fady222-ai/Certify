@@ -64,9 +64,9 @@ export async function listAdminOrganizations(req, res) {
   const where = search
     ? {
         OR: [
-          { name: { contains: search } },
-          { owner: { email: { contains: search } } },
-          { owner: { name: { contains: search } } },
+          { name: { contains: search, mode: "insensitive" } },
+          { owner: { email: { contains: search, mode: "insensitive" } } },
+          { owner: { name: { contains: search, mode: "insensitive" } } },
         ],
       }
     : {};

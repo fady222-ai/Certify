@@ -20,6 +20,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 export const config = {
+  isProduction: process.env.NODE_ENV === "production",
   port: parseInt(process.env.PORT ?? "8000", 10),
   appUrl: process.env.APP_URL ?? "http://localhost:8000",
 

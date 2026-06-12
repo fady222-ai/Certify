@@ -92,7 +92,7 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 
 ## Git والنشر
 
-- **الفرع النشط للتطوير:** `claude/project-selection-tq9yfe`
+- **الفرع النشط للتطوير:** `claude/youthful-johnson-qrd0un`
 - **المستودع:** `fady222-ai/Certify` (أُعيدت تسميته من `alfady-branch`)
 - بعد أي تعديل على schema: شغّل `npx prisma db push` على بيئة النشر.
 - **بريد مخصص:** لاستخدام دومين خاص — فعّل الدومين في Resend (DNS) ثم اضبط
@@ -121,8 +121,11 @@ cd certify-web && npm install && npm run dev
 ## مهام معلّقة / أفكار مستقبلية
 
 - [ ] معالجة حالة `past_due` (تنبيه المستخدم + مهلة سماح قبل التخفيض).
-- [ ] تحديث `DEPLOY.md`: اسم المستودع في Railway أصبح **Certify** (كان alfady-branch).
+- [x] تحديث `DEPLOY.md`: اسم المستودع في Railway أصبح **Certify** (كان alfady-branch).
 - [ ] تحديث عنوان/وصف PR #1 (الوصف القديم يذكر Laravel/Next 14 خطأً).
+
+> **تنبيه schema:** أُضيف حقل `attempts` إلى `VerificationToken` (حدّ محاولات
+> تخمين رمز OTP). شغّل `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
 
 ---
 

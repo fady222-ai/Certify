@@ -77,7 +77,11 @@ export async function retrieveCharge(chargeId) {
  * Tap sends hashDigest header = HMAC-SHA256(rawBody, webhookSecret).
  */
 export function verifyWebhookSignature(rawBody, hashDigest) {
-  if (!config.tapWebhookSecret) return true; // skip in dev if not configured
+  if (!config.tapWebhookSecret) {
+    // In production a missing secret means we cannot trust the payload — reject
+    // rather than silently accept forged webhooks. Only skipped in dev.
+    return !config.isProduction;
+  }
   const expected = crypto
     .createHmac("sha256", config.tapWebhookSecret)
     .update(rawBody)

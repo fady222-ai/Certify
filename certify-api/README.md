@@ -4,7 +4,7 @@
 
 ## الستاك
 - **Express** — REST API
-- **Prisma** — نماذج البيانات والهجرات (SQLite للتطوير، PostgreSQL للإنتاج)
+- **Prisma** — نماذج البيانات والهجرات (PostgreSQL في التطوير والإنتاج)
 - **puppeteer** — توليد PDF عربي RTL عبر headless Chrome
 - **qrcode** — رمز QR للتحقق
 - **crypto** (مدمج) — بصمة HMAC-SHA256 لمنع التزوير
@@ -42,6 +42,7 @@ src/
   server.js              نقطة الدخول
 ```
 
-## الانتقال للإنتاج (PostgreSQL)
-في `prisma/schema.prisma` غيّر `provider = "postgresql"` واضبط `DATABASE_URL`، ثم
-`npx prisma migrate deploy`.
+## الانتقال للإنتاج
+المخطط يستخدم `provider = "postgresql"` أصلاً، فلا تغيير في الكود مطلوب. اضبط
+`DATABASE_URL` على قاعدة الإنتاج ثم طبّق المخطط عبر `npx prisma db push`
+(أو `npx prisma migrate deploy` إن كنت تستخدم migrations). راجع `DEPLOY.md`.
