@@ -266,8 +266,34 @@ const designs = [
   ]),
 ];
 
+// Per-design theme metadata for the lightweight customizer: the two identity
+// colors a user may recolor, and a fixed box where an uploaded logo is placed.
+const lb = (left, top, width, height) => ({ left, top, width, height });
+const THEMES = [
+  { accent: GOLD, accent2: NAVY, logoBox: lb(511, 55, 100, 90) },          // 1
+  { accent: GOLD, accent2: "#5c3d0a", logoBox: lb(521, 60, 90, 90) },      // 2
+  { accent: SLATE, accent2: SILVER, logoBox: lb(521, 60, 90, 90) },        // 3
+  { accent: "#4f46e5", accent2: INK, logoBox: lb(511, 70, 100, 80) },      // 4
+  { accent: "#4f46e5", accent2: "#0ea5e9", logoBox: lb(90, 40, 90, 90) },  // 5
+  { accent: "#e11d48", accent2: "#f59e0b", logoBox: lb(90, 40, 90, 90) },  // 6
+  { accent: "#7c3aed", accent2: "#6d28d9", logoBox: lb(893, 80, 130, 130) }, // 7
+  { accent: "#0d9488", accent2: "#0f766e", logoBox: lb(893, 80, 130, 130) }, // 8
+  { accent: NAVY, accent2: GOLD, logoBox: lb(110, 55, 90, 90) },           // 9
+  { accent: "#1f2937", accent2: GOLD, logoBox: lb(110, 55, 90, 90) },      // 10
+  { accent: "#5eead4", accent2: "#0b2540", logoBox: lb(120, 40, 90, 90) }, // 11
+  { accent: "#fcd34d", accent2: "#111827", logoBox: lb(120, 40, 90, 90) }, // 12
+  { accent: GOLD, accent2: NAVY, logoBox: lb(90, 70, 90, 90) },            // 13
+  { accent: "#065f46", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 14
+  { accent: "#1e3a8a", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 15
+  { accent: "#7f1d1d", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 16
+  { accent: "#5b6f5b", accent2: "#3f4a3f", logoBox: lb(511, 60, 100, 80) }, // 17
+  { accent: "#0ea5e9", accent2: "#0369a1", logoBox: lb(110, 40, 90, 90) }, // 18
+  { accent: GOLD, accent2: NAVY, logoBox: lb(347, 70, 100, 100) },         // 19 (portrait)
+  { accent: "#4f46e5", accent2: INK, logoBox: lb(511, 70, 100, 80) },      // 20
+];
+
 export const presetTemplates = designs.map((design, i) => ({
   id: ID(i + 1),
   name: `تصميم ${i + 1}`,
-  design,
+  design: { ...design, theme: THEMES[i] },
 }));

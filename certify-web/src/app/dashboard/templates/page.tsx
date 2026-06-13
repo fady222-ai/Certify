@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
-import { listTemplates, deleteTemplate, createTemplate, type Template } from "@/lib/templates";
+import { listTemplates, deleteTemplate, type Template } from "@/lib/templates";
+import { getTheme } from "@/lib/customize";
 import { DesignPreview } from "@/components/DesignPreview";
 import { IconPalette, IconArrow } from "@/components/icons";
 
@@ -12,7 +13,6 @@ export default function TemplatesPage() {
   const router = useRouter();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<string | null>(null);
   const [preview, setPreview] = useState<Template | null>(null);
 
   async function load() {
@@ -37,18 +37,12 @@ export default function TemplatesPage() {
     load();
   }
 
-  // Public (ready-made) templates aren't owned by the org, so they can't be
-  // edited in place — duplicate into an editable copy and open it.
-  async function useAsTemplate(t: Template) {
-    if (!t.design_data) return;
-    setBusy(t.id);
-    try {
-      const created = await createTemplate({ name: `${t.name} (نسخة)`, designData: t.design_data });
-      router.push(`/dashboard/templates/${created.id}`);
-    } catch {
-      alert("تعذّر إنشاء نسخة من القالب.");
-      setBusy(null);
-    }
+  // Public preset → customize a new copy (base). Owned themed template →
+  // re-customize in place (id). Owned plain template → the classic fabric editor.
+  function editHref(t: Template): string {
+    if (t.is_public) return `/dashboard/templates/customize?base=${t.id}`;
+    if (getTheme(t.design_data)) return `/dashboard/templates/customize?id=${t.id}`;
+    return `/dashboard/templates/${t.id}`;
   }
 
   return (
@@ -56,7 +50,7 @@ export default function TemplatesPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-black text-ink">قوالب الشهادات</h1>
-            <p className="mt-1 text-sm text-ink-soft">عاين قالباً جاهزاً واستخدمه، أو صمّم قالبك الخاص.</p>
+            <p className="mt-1 text-sm text-ink-soft">عاين قالباً جاهزاً وخصّصه بألوانك وشعارك، أو صمّم قالبك الخاص.</p>
           </div>
           <Link href="/dashboard/templates/new" className="btn-primary">
             <IconPalette className="h-4 w-4" /> قالب جديد
@@ -107,24 +101,17 @@ export default function TemplatesPage() {
                   <div className="mt-4 flex items-center gap-2">
                     {t.is_public ? (
                       <>
-                        <button
-                          onClick={() => setPreview(t)}
-                          className="btn-ghost flex-1 justify-center py-2 text-xs"
-                        >
+                        <button onClick={() => setPreview(t)} className="btn-ghost flex-1 justify-center py-2 text-xs">
                           معاينة
                         </button>
-                        <button
-                          onClick={() => useAsTemplate(t)}
-                          disabled={busy === t.id}
-                          className="btn-primary flex-1 justify-center py-2 text-xs disabled:opacity-60"
-                        >
-                          {busy === t.id ? "جارٍ النسخ…" : "استخدام"}
-                        </button>
+                        <Link href={editHref(t)} className="btn-primary flex-1 justify-center py-2 text-xs">
+                          تخصيص
+                        </Link>
                       </>
                     ) : (
                       <>
-                        <Link href={`/dashboard/templates/${t.id}`} className="btn-ghost flex-1 justify-center py-2 text-xs">
-                          تعديل <IconArrow className="h-3.5 w-3.5" />
+                        <Link href={editHref(t)} className="btn-ghost flex-1 justify-center py-2 text-xs">
+                          {getTheme(t.design_data) ? "تخصيص" : "تعديل"} <IconArrow className="h-3.5 w-3.5" />
                         </Link>
                         <button onClick={() => remove(t.id)}
                           className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100">
@@ -162,20 +149,9 @@ export default function TemplatesPage() {
               </div>
               <div className="flex items-center justify-end gap-2 border-t px-5 py-3.5">
                 <button onClick={() => setPreview(null)} className="btn-ghost">إغلاق</button>
-                {preview.is_public ? (
-                  <button
-                    onClick={() => useAsTemplate(preview)}
-                    disabled={busy === preview.id}
-                    className="btn-primary disabled:opacity-60"
-                  >
-                    {busy === preview.id ? "جارٍ النسخ…" : "استخدام كقالب"}
-                    {busy !== preview.id && <IconArrow className="h-4 w-4" />}
-                  </button>
-                ) : (
-                  <Link href={`/dashboard/templates/${preview.id}`} className="btn-primary">
-                    تعديل <IconArrow className="h-4 w-4" />
-                  </Link>
-                )}
+                <Link href={editHref(preview)} className="btn-primary">
+                  {preview.is_public || getTheme(preview.design_data) ? "تخصيص" : "تعديل"} <IconArrow className="h-4 w-4" />
+                </Link>
               </div>
             </div>
           </div>

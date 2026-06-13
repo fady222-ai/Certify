@@ -6,6 +6,9 @@ const designSchema = z.object({
   height: z.number().optional(),
   background: z.string().optional(),
   elements: z.array(z.record(z.string(), z.any())).default([]),
+  // Optional theme metadata (accent colors + logo box) used by the lightweight
+  // customizer; kept so customized templates remain re-customizable.
+  theme: z.record(z.string(), z.any()).optional(),
 });
 
 const upsertSchema = z.object({

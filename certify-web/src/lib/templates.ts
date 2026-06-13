@@ -26,6 +26,8 @@ export type DesignElement = {
   name?: string;
   color?: string;
   orientation?: string;
+  // marks an injected logo image (customizer)
+  role?: string;
 };
 
 export type DesignData = {

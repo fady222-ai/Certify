@@ -85,8 +85,14 @@ function Element({ el }: { el: DesignElement }) {
     case "qr":
       return <QrPlaceholder size={el.width ?? 90} style={base} />;
     case "image":
-      // Preset designs have no preset image assets; show a neutral placeholder.
-      return (
+      return el.src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={el.src}
+          alt=""
+          style={{ ...base, width: el.width, height: el.height ?? el.width, objectFit: "contain" }}
+        />
+      ) : (
         <div style={{ ...base, height: el.height ?? el.width ?? 80, background: "#e5e7eb" }} />
       );
     case "rect":
