@@ -5,19 +5,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import { listTemplates, deleteTemplate, type Template } from "@/lib/templates";
-import { getTheme } from "@/lib/customize";
+import { getOrganization } from "@/lib/organization";
+import { getTheme, injectLogo } from "@/lib/customize";
 import { DesignPreview } from "@/components/DesignPreview";
 import { IconPalette, IconArrow } from "@/components/icons";
 
 export default function TemplatesPage() {
   const router = useRouter();
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<Template | null>(null);
 
   async function load() {
     try {
-      setTemplates(await listTemplates());
+      const [tpls, org] = await Promise.all([listTemplates(), getOrganization().catch(() => null)]);
+      setTemplates(tpls);
+      setLogoUrl(org?.logo_url ?? null);
     } catch {
       router.push("/login");
     } finally {
@@ -81,7 +85,7 @@ export default function TemplatesPage() {
                   title="معاينة"
                 >
                   {t.design_data ? (
-                    <DesignPreview design={t.design_data} />
+                    <DesignPreview design={injectLogo(t.design_data, logoUrl)!} />
                   ) : (
                     <div className="flex h-40 items-center justify-center bg-surface-2 text-ink-muted">
                       <IconPalette className="h-10 w-10" />
@@ -144,7 +148,7 @@ export default function TemplatesPage() {
               </div>
               <div className="max-h-[70vh] overflow-auto bg-surface-2/40 p-5">
                 <div className="mx-auto max-w-2xl rounded-lg shadow ring-1 ring-line">
-                  <DesignPreview design={preview.design_data} />
+                  <DesignPreview design={injectLogo(preview.design_data, logoUrl)!} />
                 </div>
               </div>
               <div className="flex items-center justify-end gap-2 border-t px-5 py-3.5">

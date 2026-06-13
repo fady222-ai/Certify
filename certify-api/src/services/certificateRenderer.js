@@ -99,6 +99,17 @@ export async function buildHtml(cert) {
       org_name: org?.name ?? "منصة الشهادات",
       verification_code: cert.verificationCode,
     };
+    // Inject the organization's logo (from settings) at the template's logo slot
+    // at render time — kept dynamic so updating the logo in settings applies
+    // everywhere, and saved templates never embed a logo.
+    const logoUrl = assetUrl(org?.logoUrl);
+    const box = design.theme?.logoBox;
+    if (logoUrl && box && box.width) {
+      design.elements = [
+        ...design.elements,
+        { type: "image", role: "logo", src: logoUrl, left: box.left, top: box.top, width: box.width, height: box.height },
+      ];
+    }
     return renderDesignToHtml(design, vars, qrSvg);
   }
 

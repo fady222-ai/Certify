@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getToken } from "@/lib/auth";
@@ -11,9 +11,10 @@ import {
   type Template,
   type DesignData,
 } from "@/lib/templates";
-import { applyTheme, getTheme, downscaleToDataUrl, type Theme } from "@/lib/customize";
+import { getOrganization } from "@/lib/organization";
+import { applyTheme, injectLogo, getTheme, type Theme } from "@/lib/customize";
 import { DesignPreview } from "@/components/DesignPreview";
-import { IconPalette, IconUpload, IconArrow, IconTrash } from "@/components/icons";
+import { IconPalette, IconArrow } from "@/components/icons";
 
 function Customizer() {
   const router = useRouter();
@@ -21,72 +22,55 @@ function Customizer() {
   const baseId = params.get("base");
   const ownedId = params.get("id");
   const sourceId = baseId ?? ownedId;
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const [base, setBase] = useState<Template | null>(null);
   const [theme, setTheme] = useState<Theme | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [accent, setAccent] = useState("#000000");
   const [accent2, setAccent2] = useState("#000000");
-  const [logo, setLogo] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!getToken()) { router.push("/login"); return; }
     if (!sourceId) { setError("لا يوجد قالب محدّد."); setLoading(false); return; }
-    getTemplate(sourceId)
-      .then((t) => {
+    Promise.all([getTemplate(sourceId), getOrganization().catch(() => null)])
+      .then(([t, org]) => {
         const th = getTheme(t.design_data);
-        if (!t.design_data || !th) {
-          setError("هذا القالب غير قابل للتخصيص.");
-          return;
-        }
+        if (!t.design_data || !th) { setError("هذا القالب غير قابل للتخصيص."); return; }
         setBase(t);
         setTheme(th);
         setAccent(th.accent);
         setAccent2(th.accent2);
         setName(baseId ? `${t.name} — مخصّص` : t.name);
-        // pre-load an existing logo if editing an owned customized template
-        const existing = t.design_data.elements?.find((e) => e.type === "image" && e.role === "logo");
-        if (existing?.src) setLogo(existing.src);
+        setLogoUrl(org?.logo_url ?? null);
       })
       .catch(() => setError("تعذّر تحميل القالب."))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceId]);
 
-  // Live preview design with current color + logo choices applied.
-  const previewDesign = useMemo<DesignData | null>(() => {
+  // Saved design = recolor only (logo is resolved from org settings at render time).
+  const savedDesign = useMemo<DesignData | null>(() => {
     if (!base?.design_data || !theme) return null;
-    return applyTheme(base.design_data, theme, { accent, accent2, logoDataUri: logo });
-  }, [base, theme, accent, accent2, logo]);
+    return applyTheme(base.design_data, theme, { accent, accent2 });
+  }, [base, theme, accent, accent2]);
 
-  async function onPickLogo(file?: File | null) {
-    if (!file) return;
-    setError(null);
-    try {
-      setLogo(await downscaleToDataUrl(file));
-    } catch {
-      setError("تعذّرت معالجة الصورة. جرّب صورة PNG/JPG أصغر.");
-    }
-  }
+  // Preview = saved design + the org logo placed at the slot (WYSIWYG).
+  const previewDesign = useMemo(() => injectLogo(savedDesign, logoUrl), [savedDesign, logoUrl]);
 
   async function onSave() {
-    if (!previewDesign || !theme) return;
+    if (!savedDesign || !theme) return;
     if (!name.trim()) { setError("يرجى إدخال اسم للقالب."); return; }
     setSaving(true);
     setError(null);
-    // keep theme so the saved template stays re-customizable
-    const designData = { ...previewDesign, theme: { ...theme, accent, accent2 } } as DesignData;
+    const designData = { ...savedDesign, theme: { ...theme, accent, accent2 } } as DesignData;
     try {
-      if (ownedId) {
-        await updateTemplate(ownedId, { name: name.trim(), designData });
-      } else {
-        await createTemplate({ name: name.trim(), designData });
-      }
+      if (ownedId) await updateTemplate(ownedId, { name: name.trim(), designData });
+      else await createTemplate({ name: name.trim(), designData });
       router.push("/dashboard/templates");
     } catch (e) {
       setError(e instanceof Error ? e.message : "تعذّر الحفظ.");
@@ -111,24 +95,22 @@ function Customizer() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">تخصيص القالب</h1>
-          <p className="mt-1 text-sm text-ink-soft">عدّل الألوان والشعار فقط — يبقى التصميم كما هو، ثم احفظه باسم جديد.</p>
+          <p className="mt-1 text-sm text-ink-soft">عدّل الألوان فقط — يبقى التصميم كما هو، ثم احفظه باسم جديد.</p>
         </div>
         <Link href="/dashboard/templates" className="btn-ghost">إلغاء</Link>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
-        {/* Live preview */}
         <div className="rounded-2xl bg-surface-2/50 p-5 ring-1 ring-line">
           <div className="mx-auto max-w-3xl overflow-hidden rounded-lg shadow ring-1 ring-line">
             {previewDesign && <DesignPreview design={previewDesign} />}
           </div>
         </div>
 
-        {/* Controls */}
         <div className="space-y-5">
           <label className="block">
             <span className="mb-1.5 block text-sm font-bold text-ink">اسم القالب الجديد</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="مثال: قالب شركتي" />
+            <input value={name} onChange={(e) => setName(e.target.value)} className="input" placeholder="مثال: قالب أكاديميتي" />
           </label>
 
           <div className="grid grid-cols-2 gap-3">
@@ -148,21 +130,12 @@ function Customizer() {
             </label>
           </div>
 
-          <div>
-            <span className="mb-1.5 block text-sm font-bold text-ink">الشعار (اختياري)</span>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => fileRef.current?.click()} className="btn-ghost flex-1 justify-center">
-                <IconUpload className="h-4 w-4" /> {logo ? "تغيير الشعار" : "رفع شعار"}
-              </button>
-              {logo && (
-                <button type="button" onClick={() => setLogo(null)} className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-600 hover:bg-red-100" title="إزالة">
-                  <IconTrash className="h-4 w-4" />
-                </button>
-              )}
-              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
-                onChange={(e) => { onPickLogo(e.target.files?.[0]); e.target.value = ""; }} />
-            </div>
-            <p className="mt-1 text-xs text-ink-muted">PNG شفاف يُفضّل. يوضع في المكان المخصّص بالتصميم.</p>
+          <div className="rounded-xl bg-surface-2/60 px-4 py-3 text-xs text-ink-soft ring-1 ring-line">
+            {logoUrl ? (
+              <>الشعار يُؤخذ تلقائياً من <Link href="/dashboard/settings" className="font-bold text-brand-700 hover:underline">إعدادات المنظمة</Link> ويظهر في موضعه على الشهادة.</>
+            ) : (
+              <>لا يوجد شعار لمنظمتك بعد. <Link href="/dashboard/settings" className="font-bold text-brand-700 hover:underline">ارفع شعارك من الإعدادات</Link> ليظهر تلقائياً على القوالب.</>
+            )}
           </div>
 
           {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600 ring-1 ring-red-100">{error}</p>}
