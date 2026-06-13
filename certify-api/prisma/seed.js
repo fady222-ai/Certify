@@ -90,6 +90,16 @@ async function main() {
     });
   }
 
+  // Remove public presets that were dropped from the catalog (kept upserts only
+  // add/update). Never touches org-owned templates.
+  await prisma.template.deleteMany({
+    where: {
+      isPublic: true,
+      organizationId: null,
+      id: { notIn: presetTemplates.map((t) => t.id) },
+    },
+  });
+
   console.log(`Seeded plans, demo org, demo certificate (CERT-SMOK-0001), and ${presetTemplates.length} public templates.`);
 }
 

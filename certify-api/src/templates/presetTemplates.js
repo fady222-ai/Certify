@@ -36,8 +36,8 @@ function footerCenter({ label = NAVY, sub = MUTE } = {}) {
     { type: "line", left: 753, top: 662, width: 240, stroke: label, strokeWidth: 1 },
     { type: "variable", variableKey: "issue_date", left: 753, top: 670, width: 240, fontSize: 16, fontWeight: 700, fill: label, textAlign: "center" },
     { type: "text", left: 753, top: 696, width: 240, text: "التاريخ", fontSize: 12, fontWeight: 500, fill: sub, textAlign: "center" },
-    { type: "qr", left: 524, top: 596, width: 72 },
-    { type: "variable", variableKey: "verification_code", left: 461, top: 676, width: 200, fontSize: 11, fontWeight: 600, fill: sub, textAlign: "center" },
+    { type: "qr", left: 524, top: 580, width: 72 },
+    { type: "variable", variableKey: "verification_code", left: 461, top: 690, width: 200, fontSize: 11, fontWeight: 600, fill: sub, textAlign: "center" },
   ];
 }
 
@@ -51,17 +51,10 @@ const corners = (color) => ["TL", "TR", "BL", "BR"].map((o) => ({
   left: o[1] === "R" ? 983 : 0, top: o[0] === "B" ? 654 : 0, width: 140, height: 140,
 }));
 
-const decoCorners = (color) => ["TL", "TR", "BL", "BR"].map((o) => ({
-  type: "ornament", name: "artDecoCorner", color, orientation: o,
-  left: o[1] === "R" ? 963 : 20, top: o[0] === "B" ? 614 : 20, width: 160, height: 160,
-}));
-
 const botanicalCorners = (color) => ["TL", "TR", "BL", "BR"].map((o) => ({
   type: "ornament", name: "botanical", color, orientation: o,
   left: o[1] === "R" ? 953 : 30, top: o[0] === "B" ? 624 : 30, width: 160, height: 160,
 }));
-
-const monoWatermark = (color) => ({ type: "ornament", name: "monogram", color, left: 311, top: 175, width: 500, height: 500 });
 
 const pageP = (background, elements) => ({ width: 794, height: 1123, background, elements });
 
@@ -153,15 +146,7 @@ const designs = [
     ...centeredCore({ title: "#5c3d0a", name: GOLD, course: "#5c3d0a", line: GOLDSOFT, sub: "#92722f" }),
     ...footerCenter({ label: "#5c3d0a", sub: "#a8895a" }),
   ]),
-  // 3) silver / slate
-  page("#ffffff", [
-    { type: "rect", left: 28, top: 28, width: 1067, height: 738, fill: "transparent", stroke: SILVER, strokeWidth: 4 },
-    { type: "rect", left: 40, top: 40, width: 1043, height: 714, fill: "transparent", stroke: "#cbd5e1", strokeWidth: 1 },
-    { type: "ornament", name: "laurel", color: SILVER, left: 521, top: 64, width: 90, height: 90 },
-    ...centeredCore({ title: SLATE, name: "#1e293b", course: SLATE, line: SILVER, sub: "#64748b" }),
-    ...footerCenter({ label: SLATE, sub: "#64748b" }),
-  ]),
-  // 4) minimal
+  // 3) minimal
   page("#ffffff", [
     { type: "rect", left: 0, top: 0, width: 1123, height: 12, gradient: { from: "#4f46e5", to: "#0ea5e9", angle: 90 } },
     { type: "rect", left: 0, top: 782, width: 1123, height: 12, gradient: { from: "#0ea5e9", to: "#4f46e5", angle: 90 } },
@@ -169,46 +154,23 @@ const designs = [
     ...centeredCore({ title: INK, name: "#4f46e5", course: INK, line: "#4f46e5", sub: MUTE }),
     ...footerCenter({ label: INK }),
   ]),
-  // 5) header band — indigo→sky
+  // 4) header band — indigo→sky
   headerBand({ from: "#4f46e5", to: "#0ea5e9" }),
-  // 6) header band — rose→amber
-  headerBand({ from: "#e11d48", to: "#f59e0b" }),
-  // 7) side panel — purple
+  // 5) side panel — purple
   sidePanel({ from: "#7c3aed", to: "#4f46e5", accent: "#6d28d9" }),
-  // 8) side panel — teal
-  sidePanel({ from: "#0d9488", to: "#0ea5e9", accent: "#0f766e" }),
-  // 9) medallion side panel — navy + gold
+  // 6) medallion side panel — navy + gold
   medallionPanel({ panel: NAVY, ribbon: GOLD, accent: NAVY }),
-  // 10) medallion side panel — charcoal + gold
-  medallionPanel({ panel: "#1f2937", ribbon: GOLD, accent: "#3f2d0a" }),
-  // 11) dark — navy + teal accent
+  // 7) dark — navy + teal accent
   dark({ from: "#0b2540", to: "#143a5e", title: "#5eead4", accent: "#5eead4" }),
-  // 12) dark — charcoal + gold accent
-  dark({ from: "#111827", to: "#1f2937", title: "#fcd34d", accent: "#fcd34d" }),
 
-  // 13) guilloché luxe — security rosette + watermark + gold frame
-  page("#ffffff", [
-    monoWatermark(NAVY),
-    ...goldFrame(),
-    { type: "ornament", name: "guilloche", color: GOLD, left: 515, top: 50, width: 96, height: 96 },
-    ...centeredCore({ title: NAVY, name: GOLD, course: INK, line: GOLD }),
-    ...footerCenter({ label: NAVY }),
-  ]),
-  // 14) art-deco emerald
-  page("#ffffff", [
-    monoWatermark("#065f46"),
-    ...decoCorners(GOLD),
-    ...centeredCore({ title: "#065f46", name: GOLD, course: "#064e3b", line: GOLD }),
-    ...footerCenter({ label: "#065f46" }),
-  ]),
-  // 15) royal blue + gold rosette
+  // 8) royal blue + gold rosette
   page("#ffffff", [
     ...goldFrame(),
     { type: "ornament", name: "rosette", left: 905, top: 76, width: 104, height: 104 },
     ...centeredCore({ title: "#1e3a8a", name: GOLD, course: INK, line: GOLD }),
     ...footerCenter({ label: "#1e3a8a" }),
   ]),
-  // 16) burgundy classic — laurel + rosette
+  // 9) burgundy classic — laurel + rosette
   page("#fffaf7", [
     ...goldFrame(),
     { type: "ornament", name: "laurel", color: GOLD, left: 60, top: 60, width: 80, height: 80 },
@@ -216,13 +178,13 @@ const designs = [
     ...centeredCore({ title: "#7f1d1d", name: GOLD, course: "#7f1d1d", line: GOLD, sub: "#9b6b6b" }),
     ...footerCenter({ label: "#7f1d1d", sub: "#9b6b6b" }),
   ]),
-  // 17) soft botanical
+  // 10) soft botanical
   page("#fdf6f4", [
     ...botanicalCorners("#5b6f5b"),
     ...centeredCore({ title: "#3f4a3f", name: "#5b6f5b", course: "#3f4a3f", line: "#c8b6a6", sub: "#8a857f" }),
     ...footerCenter({ label: "#3f4a3f", sub: "#8a857f" }),
   ]),
-  // 18) modern wave
+  // 11) modern wave
   page("#ffffff", [
     { type: "rect", left: 0, top: 0, width: 1123, height: 14, gradient: { from: "#06b6d4", to: "#0ea5e9", angle: 90 } },
     { type: "ornament", name: "wave", color: "#0ea5e9", left: 0, top: 712, width: 1123, height: 82 },
@@ -234,10 +196,10 @@ const designs = [
     { type: "line", left: 753, top: 640, width: 240, stroke: "#0369a1", strokeWidth: 1 },
     { type: "variable", variableKey: "issue_date", left: 753, top: 648, width: 240, fontSize: 16, fontWeight: 700, fill: "#0369a1", textAlign: "center" },
     { type: "text", left: 753, top: 674, width: 240, text: "التاريخ", fontSize: 12, fontWeight: 500, fill: MUTE, textAlign: "center" },
-    { type: "qr", left: 524, top: 560, width: 72 },
-    { type: "variable", variableKey: "verification_code", left: 461, top: 638, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
+    { type: "qr", left: 524, top: 556, width: 72 },
+    { type: "variable", variableKey: "verification_code", left: 461, top: 686, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
   ]),
-  // 19) portrait — formal wall certificate
+  // 12) portrait — formal wall certificate
   pageP("#ffffff", [
     { type: "rect", left: 28, top: 28, width: 738, height: 1067, fill: "transparent", stroke: GOLD, strokeWidth: 4 },
     { type: "rect", left: 40, top: 40, width: 714, height: 1043, fill: "transparent", stroke: GOLDSOFT, strokeWidth: 1 },
@@ -254,15 +216,8 @@ const designs = [
     { type: "line", left: 454, top: 900, width: 220, stroke: NAVY, strokeWidth: 1 },
     { type: "variable", variableKey: "issue_date", left: 454, top: 908, width: 220, fontSize: 15, fontWeight: 700, fill: NAVY, textAlign: "center" },
     { type: "text", left: 454, top: 932, width: 220, text: "التاريخ", fontSize: 12, fontWeight: 500, fill: MUTE, textAlign: "center" },
-    { type: "qr", left: 359, top: 700, width: 76 },
-    { type: "variable", variableKey: "verification_code", left: 297, top: 786, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
-  ]),
-  // 20) minimal monogram watermark
-  page("#ffffff", [
-    { type: "ornament", name: "monogram", color: "#4f46e5", left: 261, top: 120, width: 600, height: 600 },
-    { type: "rect", left: 481, top: 248, width: 160, height: 3, fill: "#4f46e5" },
-    ...centeredCore({ title: INK, name: "#4f46e5", course: INK, line: "#4f46e5", sub: MUTE }),
-    ...footerCenter({ label: INK }),
+    { type: "qr", left: 359, top: 690, width: 76 },
+    { type: "variable", variableKey: "verification_code", left: 297, top: 800, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
   ]),
 ];
 
@@ -270,26 +225,18 @@ const designs = [
 // colors a user may recolor, and a fixed box where an uploaded logo is placed.
 const lb = (left, top, width, height) => ({ left, top, width, height });
 const THEMES = [
-  { accent: GOLD, accent2: NAVY, logoBox: lb(511, 55, 100, 90) },          // 1
-  { accent: GOLD, accent2: "#5c3d0a", logoBox: lb(521, 60, 90, 90) },      // 2
-  { accent: SLATE, accent2: SILVER, logoBox: lb(521, 60, 90, 90) },        // 3
-  { accent: "#4f46e5", accent2: INK, logoBox: lb(511, 70, 100, 80) },      // 4
-  { accent: "#4f46e5", accent2: "#0ea5e9", logoBox: lb(90, 40, 90, 90) },  // 5
-  { accent: "#e11d48", accent2: "#f59e0b", logoBox: lb(90, 40, 90, 90) },  // 6
-  { accent: "#7c3aed", accent2: "#6d28d9", logoBox: lb(893, 80, 130, 130) }, // 7
-  { accent: "#0d9488", accent2: "#0f766e", logoBox: lb(893, 80, 130, 130) }, // 8
-  { accent: NAVY, accent2: GOLD, logoBox: lb(110, 55, 90, 90) },           // 9
-  { accent: "#1f2937", accent2: GOLD, logoBox: lb(110, 55, 90, 90) },      // 10
-  { accent: "#5eead4", accent2: "#0b2540", logoBox: lb(120, 40, 90, 90) }, // 11
-  { accent: "#fcd34d", accent2: "#111827", logoBox: lb(120, 40, 90, 90) }, // 12
-  { accent: GOLD, accent2: NAVY, logoBox: lb(90, 70, 90, 90) },            // 13
-  { accent: "#065f46", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 14
-  { accent: "#1e3a8a", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 15
-  { accent: "#7f1d1d", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 16
-  { accent: "#5b6f5b", accent2: "#3f4a3f", logoBox: lb(511, 60, 100, 80) }, // 17
-  { accent: "#0ea5e9", accent2: "#0369a1", logoBox: lb(110, 40, 90, 90) }, // 18
-  { accent: GOLD, accent2: NAVY, logoBox: lb(347, 70, 100, 100) },         // 19 (portrait)
-  { accent: "#4f46e5", accent2: INK, logoBox: lb(511, 70, 100, 80) },      // 20
+  { accent: GOLD, accent2: NAVY, logoBox: lb(511, 55, 100, 90) },          // 1 classic
+  { accent: GOLD, accent2: "#5c3d0a", logoBox: lb(521, 60, 90, 90) },      // 2 elegant
+  { accent: "#4f46e5", accent2: INK, logoBox: lb(511, 70, 100, 80) },      // 3 minimal
+  { accent: "#4f46e5", accent2: "#0ea5e9", logoBox: lb(90, 40, 90, 90) },  // 4 header band
+  { accent: "#7c3aed", accent2: "#6d28d9", logoBox: lb(893, 80, 130, 130) }, // 5 side panel
+  { accent: NAVY, accent2: GOLD, logoBox: lb(110, 55, 90, 90) },           // 6 medallion
+  { accent: "#5eead4", accent2: "#0b2540", logoBox: lb(120, 40, 90, 90) }, // 7 dark
+  { accent: "#1e3a8a", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 8 royal
+  { accent: "#7f1d1d", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 9 burgundy
+  { accent: "#5b6f5b", accent2: "#3f4a3f", logoBox: lb(511, 60, 100, 80) }, // 10 botanical
+  { accent: "#0ea5e9", accent2: "#0369a1", logoBox: lb(110, 40, 90, 90) }, // 11 wave
+  { accent: GOLD, accent2: NAVY, logoBox: lb(347, 70, 100, 100) },         // 12 portrait
 ];
 
 export const presetTemplates = designs.map((design, i) => ({

@@ -70,8 +70,8 @@ export function certificateHtml(ctx) {
   .date-value { font-size: 13px; font-weight: 600; color: #374151; }
   .qr-block { text-align: center; }
   .qr-block svg { width: 80px; height: 80px; }
-  .verify-label { font-size: 10px; color: #9ca3af; margin-top: 4px; }
-  .verify-code { position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #9ca3af; letter-spacing: 2px; font-family: monospace; }
+  .verify-label { font-size: 10px; color: #9ca3af; margin-top: 6px; }
+  .verify-code { font-size: 10px; color: #9ca3af; letter-spacing: 1px; font-family: monospace; margin-top: 3px; }
 </style>
 </head>
 <body>
@@ -109,10 +109,9 @@ export function certificateHtml(ctx) {
     <div class="qr-block">
       ${qrSvg}
       <div class="verify-label">تحقق من الشهادة</div>
+      <div class="verify-code">${escapeHtml(verificationCode)}</div>
     </div>
   </div>
-
-  <div class="verify-code">${escapeHtml(verificationCode)}</div>
 </div>
 </body>
 </html>`;
