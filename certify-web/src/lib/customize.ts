@@ -51,13 +51,31 @@ export function applyTheme(
  * The saved template never contains this element — the logo is resolved from
  * org settings at render time.
  */
+function boxesOverlap(el: DesignElement, box: Theme["logoBox"]): boolean {
+  const w = el.width ?? 0;
+  const h = el.height ?? w;
+  if (!w || !h) return false;
+  return !(
+    el.left + w <= box.left ||
+    el.left >= box.left + box.width ||
+    el.top + h <= box.top ||
+    el.top >= box.top + box.height
+  );
+}
+
 export function injectLogo(design: DesignData | null, logoUrl?: string | null): DesignData | null {
   if (!design) return design;
   const box = (design as unknown as { theme?: Theme }).theme?.logoBox;
   if (!logoUrl || !box) return design;
   const clone: DesignData = JSON.parse(JSON.stringify(design));
   clone.elements = [
-    ...(clone.elements ?? []).filter((el) => !(el.type === "image" && el.role === "logo")),
+    // Drop a prior logo image + the template's default emblem at the logo slot,
+    // so the org logo replaces it (matches the PDF renderer).
+    ...(clone.elements ?? []).filter(
+      (el) =>
+        !(el.type === "image" && el.role === "logo") &&
+        !(el.type === "ornament" && boxesOverlap(el, box)),
+    ),
     { type: "image", role: "logo", src: logoUrl, left: box.left, top: box.top, width: box.width, height: box.height },
   ];
   return clone;

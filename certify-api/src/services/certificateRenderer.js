@@ -105,10 +105,14 @@ export async function buildHtml(cert) {
     const logoUrl = assetUrl(org?.logoUrl);
     const box = design.theme?.logoBox;
     if (logoUrl && box && box.width) {
-      design.elements = [
-        ...design.elements,
+      // Drop the template's default emblem/ornament sitting at the logo slot so
+      // the org logo replaces it (no double logo), then place the org logo.
+      design.elements = design.elements.filter(
+        (el) => !(el.type === "ornament" && boxesOverlap(el, box)),
+      );
+      design.elements.push(
         { type: "image", role: "logo", src: logoUrl, left: box.left, top: box.top, width: box.width, height: box.height },
-      ];
+      );
     }
     return renderDesignToHtml(design, vars, qrSvg);
   }
@@ -124,6 +128,19 @@ export async function buildHtml(cert) {
     logoUrl: assetUrl(org?.logoUrl),
     signatureUrl: assetUrl(org?.signatureUrl),
   });
+}
+
+/** Axis-aligned box intersection (height defaults to width when absent). */
+function boxesOverlap(el, box) {
+  const w = el.width ?? 0;
+  const h = el.height ?? w;
+  if (!w || !h) return false;
+  return !(
+    el.left + w <= box.left ||
+    el.left >= box.left + box.width ||
+    el.top + h <= box.top ||
+    el.top >= box.top + box.height
+  );
 }
 
 function parseDesign(designData) {
