@@ -17,19 +17,29 @@ function currentMonth() {
   return new Date().toISOString().slice(0, 7); // YYYY-MM
 }
 
-function randomChunk() {
-  // 4 unambiguous uppercase chars
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+// Unambiguous uppercase alphabet (no 0/1/I/O) for safe manual transcription.
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const CODE_GROUPS = 4; // CERT-XXXX-XXXX-XXXX-XXXX → 16 chars ≈ 78 bits of entropy
+
+/** Cryptographically-random token of `len` chars from the unambiguous alphabet. */
+function randomToken(len) {
   let out = "";
-  for (let i = 0; i < 4; i++) {
-    out += alphabet[crypto.randomInt(alphabet.length)];
+  for (let i = 0; i < len; i++) {
+    out += CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)];
   }
   return out;
 }
 
+/**
+ * Build a high-entropy verification code, e.g. CERT-AB12-CD34-EF56-GH78.
+ * ~78 bits of entropy makes an accidental collision astronomically unlikely;
+ * the verification_code column is also @unique, so a duplicate can never be
+ * stored even in theory. The DB check + retry below is cheap belt-and-braces.
+ */
 async function generateCode() {
-  for (let i = 0; i < 10; i++) {
-    const code = `CERT-${randomChunk()}-${randomChunk()}`;
+  for (let i = 0; i < 12; i++) {
+    const groups = Array.from({ length: CODE_GROUPS }, () => randomToken(4));
+    const code = `CERT-${groups.join("-")}`;
     const exists = await prisma.certificate.findUnique({
       where: { verificationCode: code },
     });
