@@ -51,6 +51,20 @@ const corners = (color) => ["TL", "TR", "BL", "BR"].map((o) => ({
   left: o[1] === "R" ? 983 : 0, top: o[0] === "B" ? 654 : 0, width: 140, height: 140,
 }));
 
+const decoCorners = (color) => ["TL", "TR", "BL", "BR"].map((o) => ({
+  type: "ornament", name: "artDecoCorner", color, orientation: o,
+  left: o[1] === "R" ? 963 : 20, top: o[0] === "B" ? 614 : 20, width: 160, height: 160,
+}));
+
+const botanicalCorners = (color) => ["TL", "TR", "BL", "BR"].map((o) => ({
+  type: "ornament", name: "botanical", color, orientation: o,
+  left: o[1] === "R" ? 953 : 30, top: o[0] === "B" ? 624 : 30, width: 160, height: 160,
+}));
+
+const monoWatermark = (color) => ({ type: "ornament", name: "monogram", color, left: 311, top: 175, width: 500, height: 500 });
+
+const pageP = (background, elements) => ({ width: 794, height: 1123, background, elements });
+
 // Layout builders ─────────────────────────────────────────────────────────────
 function headerBand({ from, to }) {
   return page("#ffffff", [
@@ -171,6 +185,85 @@ const designs = [
   dark({ from: "#0b2540", to: "#143a5e", title: "#5eead4", accent: "#5eead4" }),
   // 12) dark — charcoal + gold accent
   dark({ from: "#111827", to: "#1f2937", title: "#fcd34d", accent: "#fcd34d" }),
+
+  // 13) guilloché luxe — security rosette + watermark + gold frame
+  page("#ffffff", [
+    monoWatermark(NAVY),
+    ...goldFrame(),
+    { type: "ornament", name: "guilloche", color: GOLD, left: 515, top: 50, width: 96, height: 96 },
+    ...centeredCore({ title: NAVY, name: GOLD, course: INK, line: GOLD }),
+    ...footerCenter({ label: NAVY }),
+  ]),
+  // 14) art-deco emerald
+  page("#ffffff", [
+    monoWatermark("#065f46"),
+    ...decoCorners(GOLD),
+    ...centeredCore({ title: "#065f46", name: GOLD, course: "#064e3b", line: GOLD }),
+    ...footerCenter({ label: "#065f46" }),
+  ]),
+  // 15) royal blue + gold rosette
+  page("#ffffff", [
+    ...goldFrame(),
+    { type: "ornament", name: "rosette", left: 905, top: 76, width: 104, height: 104 },
+    ...centeredCore({ title: "#1e3a8a", name: GOLD, course: INK, line: GOLD }),
+    ...footerCenter({ label: "#1e3a8a" }),
+  ]),
+  // 16) burgundy classic — laurel + rosette
+  page("#fffaf7", [
+    ...goldFrame(),
+    { type: "ornament", name: "laurel", color: GOLD, left: 60, top: 60, width: 80, height: 80 },
+    { type: "ornament", name: "rosette", left: 905, top: 70, width: 100, height: 100 },
+    ...centeredCore({ title: "#7f1d1d", name: GOLD, course: "#7f1d1d", line: GOLD, sub: "#9b6b6b" }),
+    ...footerCenter({ label: "#7f1d1d", sub: "#9b6b6b" }),
+  ]),
+  // 17) soft botanical
+  page("#fdf6f4", [
+    ...botanicalCorners("#5b6f5b"),
+    ...centeredCore({ title: "#3f4a3f", name: "#5b6f5b", course: "#3f4a3f", line: "#c8b6a6", sub: "#8a857f" }),
+    ...footerCenter({ label: "#3f4a3f", sub: "#8a857f" }),
+  ]),
+  // 18) modern wave
+  page("#ffffff", [
+    { type: "rect", left: 0, top: 0, width: 1123, height: 14, gradient: { from: "#06b6d4", to: "#0ea5e9", angle: 90 } },
+    { type: "ornament", name: "wave", color: "#0ea5e9", left: 0, top: 712, width: 1123, height: 82 },
+    { type: "ornament", name: "sealGold", left: 516, top: 64, width: 96, height: 96 },
+    ...centeredCore({ title: "#0369a1", name: "#0ea5e9", course: INK, line: "#0ea5e9" }),
+    { type: "line", left: 130, top: 640, width: 240, stroke: "#0369a1", strokeWidth: 1 },
+    { type: "variable", variableKey: "org_name", left: 130, top: 648, width: 240, fontSize: 16, fontWeight: 700, fill: "#0369a1", textAlign: "center" },
+    { type: "text", left: 130, top: 674, width: 240, text: "الجهة المانحة", fontSize: 12, fontWeight: 500, fill: MUTE, textAlign: "center" },
+    { type: "line", left: 753, top: 640, width: 240, stroke: "#0369a1", strokeWidth: 1 },
+    { type: "variable", variableKey: "issue_date", left: 753, top: 648, width: 240, fontSize: 16, fontWeight: 700, fill: "#0369a1", textAlign: "center" },
+    { type: "text", left: 753, top: 674, width: 240, text: "التاريخ", fontSize: 12, fontWeight: 500, fill: MUTE, textAlign: "center" },
+    { type: "qr", left: 524, top: 560, width: 72 },
+    { type: "variable", variableKey: "verification_code", left: 461, top: 638, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
+  ]),
+  // 19) portrait — formal wall certificate
+  pageP("#ffffff", [
+    { type: "rect", left: 28, top: 28, width: 738, height: 1067, fill: "transparent", stroke: GOLD, strokeWidth: 4 },
+    { type: "rect", left: 40, top: 40, width: 714, height: 1043, fill: "transparent", stroke: GOLDSOFT, strokeWidth: 1 },
+    { type: "ornament", name: "rosette", left: 347, top: 80, width: 100, height: 100 },
+    { type: "text", left: 47, top: 230, width: 700, text: "شهادة", fontSize: 60, fontWeight: 800, fill: NAVY, textAlign: "center", fontFamily: "Cairo" },
+    { type: "line", left: 287, top: 330, width: 220, stroke: GOLD, strokeWidth: 1 },
+    { type: "text", left: 97, top: 370, width: 600, text: "تُمنح هذه الشهادة إلى", fontSize: 20, fontWeight: 500, fill: MUTE, textAlign: "center" },
+    { type: "variable", variableKey: "recipient_name", left: 47, top: 415, width: 700, fontSize: 46, fontWeight: 800, fill: GOLD, textAlign: "center", fontFamily: "Cairo" },
+    { type: "line", left: 197, top: 500, width: 400, stroke: "#e5e7eb", strokeWidth: 1 },
+    { type: "variable", variableKey: "course_name", left: 47, top: 535, width: 700, fontSize: 28, fontWeight: 700, fill: INK, textAlign: "center", fontFamily: "Cairo" },
+    { type: "line", left: 120, top: 900, width: 220, stroke: NAVY, strokeWidth: 1 },
+    { type: "variable", variableKey: "org_name", left: 120, top: 908, width: 220, fontSize: 15, fontWeight: 700, fill: NAVY, textAlign: "center" },
+    { type: "text", left: 120, top: 932, width: 220, text: "الجهة المانحة", fontSize: 12, fontWeight: 500, fill: MUTE, textAlign: "center" },
+    { type: "line", left: 454, top: 900, width: 220, stroke: NAVY, strokeWidth: 1 },
+    { type: "variable", variableKey: "issue_date", left: 454, top: 908, width: 220, fontSize: 15, fontWeight: 700, fill: NAVY, textAlign: "center" },
+    { type: "text", left: 454, top: 932, width: 220, text: "التاريخ", fontSize: 12, fontWeight: 500, fill: MUTE, textAlign: "center" },
+    { type: "qr", left: 359, top: 700, width: 76 },
+    { type: "variable", variableKey: "verification_code", left: 297, top: 786, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
+  ]),
+  // 20) minimal monogram watermark
+  page("#ffffff", [
+    { type: "ornament", name: "monogram", color: "#4f46e5", left: 261, top: 120, width: 600, height: 600 },
+    { type: "rect", left: 481, top: 248, width: 160, height: 3, fill: "#4f46e5" },
+    ...centeredCore({ title: INK, name: "#4f46e5", course: INK, line: "#4f46e5", sub: MUTE }),
+    ...footerCenter({ label: INK }),
+  ]),
 ];
 
 export const presetTemplates = designs.map((design, i) => ({
