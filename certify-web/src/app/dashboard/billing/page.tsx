@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getBilling, createCheckout, cancelSubscription, type Billing, type Gateway } from "@/lib/billing";
 import { GatewayPicker } from "@/components/GatewayPicker";
+import { IconCheck } from "@/components/icons";
 
 const PLAN_NAMES: Record<string, string> = {
   free: "مجاني",
@@ -26,6 +27,15 @@ const GATEWAY_LABELS: Record<string, { label: string; cls: string }> = {
   paymob: { label: "Paymob 🇪🇬",   cls: "bg-amber-50 text-amber-700 ring-1 ring-amber-100" },
 };
 
+const UPGRADE_PLANS = [
+  { slug: "starter", label: "Starter", monthly: 9, yearly: 90, popular: false,
+    features: ["٢٠٠ شهادة شهرياً", "كل القوالب الجاهزة", "تحقّق عام بـ QR"] },
+  { slug: "pro", label: "Pro", monthly: 29, yearly: 290, popular: true,
+    features: ["٢٠٠٠ شهادة شهرياً", "الإصدار الجماعي", "وصول API", "٣ أعضاء فريق"] },
+  { slug: "business", label: "Business", monthly: 79, yearly: 790, popular: false,
+    features: ["١٠٬٠٠٠ شهادة شهرياً", "API + إزالة العلامة", "١٠ أعضاء فريق", "دعم أولوية"] },
+];
+
 type PendingUpgrade = { slug: string; interval: "monthly" | "annual" };
 
 function BillingContent() {
@@ -37,6 +47,7 @@ function BillingContent() {
   const [cancelling, setCancelling] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [pending, setPending] = useState<PendingUpgrade | null>(null);
+  const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
 
   useEffect(() => {
     getBilling().then(setBilling).finally(() => setLoading(false));
@@ -225,54 +236,89 @@ function BillingContent() {
 
           {/* Upgrade (free users) */}
           {!isPaid && (
-            <div className="bg-white rounded-2xl border border-line shadow-sm p-6 space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-ink">ترقية الباقة</h2>
-                <p className="text-sm text-ink-muted mt-0.5">
-                  أصدر المزيد من الشهادات وافتح مزايا متقدمة
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  { slug: "starter", label: "Starter", monthly: 9,  yearly: 90,  hot: false },
-                  { slug: "pro",     label: "Pro",     monthly: 29, yearly: 290, hot: true  },
-                  { slug: "business",label: "Business",monthly: 79, yearly: 790, hot: false },
-                ].map((p) => (
-                  <div
-                    key={p.slug}
-                    className={`rounded-xl border p-4 space-y-3 ${
-                      p.hot ? "border-brand-300 bg-brand-50/30" : "border-line"
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-bold text-ink">رقِّ باقتك</h2>
+                  <p className="text-sm text-ink-muted mt-0.5">أصدر المزيد من الشهادات وافتح مزايا متقدمة.</p>
+                </div>
+                {/* Billing cycle toggle */}
+                <div className="flex items-center gap-1 rounded-xl bg-white p-1 ring-1 ring-line">
+                  <button
+                    onClick={() => setCycle("monthly")}
+                    className={`rounded-lg px-3.5 py-1.5 text-sm font-bold transition ${
+                      cycle === "monthly" ? "bg-brand-600 text-white shadow-sm" : "text-ink-soft hover:bg-surface-2"
                     }`}
                   >
-                    <div>
-                      <p className="font-bold text-ink">{p.label}</p>
-                      <p className="text-sm text-ink font-medium">${p.monthly}/شهر</p>
-                      <p className="text-xs text-ink-muted">أو ${p.yearly}/سنة</p>
-                    </div>
-                    <div className="flex gap-2">
+                    شهري
+                  </button>
+                  <button
+                    onClick={() => setCycle("annual")}
+                    className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-bold transition ${
+                      cycle === "annual" ? "bg-brand-600 text-white shadow-sm" : "text-ink-soft hover:bg-surface-2"
+                    }`}
+                  >
+                    سنوي
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
+                      cycle === "annual" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
+                    }`}>
+                      وفّر ١٧٪
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                {UPGRADE_PLANS.map((p) => {
+                  const price = cycle === "monthly" ? p.monthly : p.yearly;
+                  const perMonth = Math.round(p.yearly / 12);
+                  return (
+                    <div
+                      key={p.slug}
+                      className={`relative flex flex-col rounded-2xl border bg-white p-5 shadow-sm transition ${
+                        p.popular ? "border-brand-500 ring-2 ring-brand-500/30" : "border-line hover:border-brand-200"
+                      }`}
+                    >
+                      {p.popular && (
+                        <span className="absolute -top-2.5 right-5 rounded-full bg-brand-600 px-2.5 py-0.5 text-[11px] font-extrabold text-white shadow">
+                          الأكثر شيوعاً
+                        </span>
+                      )}
+                      <p className="font-display text-lg font-black text-ink">{p.label}</p>
+                      <div className="mt-2 flex items-end gap-1">
+                        <span className="font-display text-3xl font-black text-ink">${price}</span>
+                        <span className="mb-1 text-sm text-ink-muted">{cycle === "monthly" ? "/شهر" : "/سنة"}</span>
+                      </div>
+                      <p className="mt-0.5 h-4 text-xs text-emerald-600">
+                        {cycle === "annual" ? `≈ $${perMonth}/شهر` : ""}
+                      </p>
+
+                      <ul className="mt-4 flex-1 space-y-2">
+                        {p.features.map((f) => (
+                          <li key={f} className="flex items-center gap-2 text-sm text-ink-soft">
+                            <IconCheck className="h-4 w-4 shrink-0 text-emerald-500" />
+                            {f}
+                          </li>
+                        ))}
+                      </ul>
+
                       <button
-                        onClick={() => handleUpgradeClick(p.slug, "monthly")}
+                        onClick={() => handleUpgradeClick(p.slug, cycle)}
                         disabled={checkoutLoading}
-                        className={`flex-1 text-xs py-1.5 rounded-lg font-medium disabled:opacity-50 transition-colors ${
-                          p.hot
-                            ? "bg-brand-600 text-white hover:bg-brand-700"
-                            : "bg-surface-2 text-ink hover:bg-surface-2/80 border border-line"
+                        className={`mt-5 w-full rounded-xl py-2.5 text-sm font-bold transition disabled:opacity-50 ${
+                          p.popular
+                            ? "bg-brand-600 text-white hover:bg-brand-700 shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
+                            : "border border-line bg-surface-2 text-ink hover:bg-white hover:border-brand-300"
                         }`}
                       >
-                        شهري
-                      </button>
-                      <button
-                        onClick={() => handleUpgradeClick(p.slug, "annual")}
-                        disabled={checkoutLoading}
-                        className="flex-1 text-xs py-1.5 rounded-lg font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 disabled:opacity-50 transition-colors"
-                      >
-                        سنوي
+                        {checkoutLoading ? "…" : `الترقية إلى ${p.label}`}
                       </button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              <Link href="/pricing" className="text-sm text-brand-600 hover:underline">
+
+              <Link href="/pricing" className="inline-block text-sm font-bold text-brand-600 hover:underline">
                 مقارنة الباقات الكاملة ←
               </Link>
             </div>
