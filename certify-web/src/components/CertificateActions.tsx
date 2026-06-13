@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { API_URL } from "@/lib/api";
-import { IconQr, IconLinkedin, IconCheck, IconArrow } from "@/components/icons";
+import { IconQr, IconLinkedin } from "@/components/icons";
 
 type Props = {
   code: string;
@@ -59,22 +58,6 @@ function linkedinUrl({ code, courseName, orgName, issueDate, expiryDate }: Props
 
 export function CertificateActions(props: Props) {
   const { code, pdfUrl } = props;
-  const [copied, setCopied] = useState(false);
-
-  async function copyLink() {
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/verify/${code}`
-        : `/verify/${code}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard unavailable */
-    }
-    track(code, "shared");
-  }
 
   return (
     <div className="mt-7 flex flex-wrap gap-3">
@@ -100,10 +83,6 @@ export function CertificateActions(props: Props) {
         <IconLinkedin className="h-4 w-4 text-[#0a66c2]" />
         إضافة إلى لينكدإن
       </a>
-      <button type="button" onClick={copyLink} className="btn-ghost">
-        {copied ? <IconCheck className="h-4 w-4 text-verify-500" /> : <IconArrow className="h-4 w-4" />}
-        {copied ? "تم نسخ الرابط" : "نسخ رابط التحقق"}
-      </button>
     </div>
   );
 }

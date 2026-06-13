@@ -29,7 +29,6 @@ export function SiteFooter() {
             <ul className="space-y-2 text-sm text-ink-soft">
               <li><Link href="/login" className="hover:text-brand-700">تسجيل الدخول</Link></li>
               <li><Link href="/register" className="hover:text-brand-700">إنشاء حساب</Link></li>
-              <li><Link href="/dashboard" className="hover:text-brand-700">لوحة التحكم</Link></li>
             </ul>
           </div>
         </div>

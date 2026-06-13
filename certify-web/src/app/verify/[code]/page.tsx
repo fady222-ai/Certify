@@ -72,11 +72,6 @@ export default async function VerifyPage({ params }: Params) {
             </div>
           )}
 
-          {/* شريط ثقة */}
-          <div className="mx-auto mt-10 flex max-w-md items-center justify-center gap-2 text-xs text-ink-muted">
-            <IconShield className="h-4 w-4 text-brand-400" />
-            تم التحقق عبر بصمة رقمية مشفّرة (HMAC-SHA256)
-          </div>
         </div>
       </main>
       <SiteFooter />
