@@ -16,6 +16,26 @@ import { applyTheme, injectLogo, getTheme, type Theme } from "@/lib/customize";
 import { DesignPreview } from "@/components/DesignPreview";
 import { IconPalette, IconArrow } from "@/components/icons";
 
+type Pos = "right" | "center" | "left";
+const MARGIN = 60;
+
+// Constrained horizontal anchors (keeps the template's vertical + size).
+function posToBox(theme: Theme, width: number, pos: Pos) {
+  const lw = theme.logoBox.width;
+  const left = pos === "right" ? width - MARGIN - lw : pos === "left" ? MARGIN : Math.round((width - lw) / 2);
+  return { ...theme.logoBox, left };
+}
+function boxToPos(theme: Theme, width: number): Pos {
+  const lw = theme.logoBox.width;
+  const center = Math.round((width - lw) / 2);
+  const right = width - MARGIN - lw;
+  const l = theme.logoBox.left;
+  const d = (x: number) => Math.abs(l - x);
+  if (d(MARGIN) <= d(center) && d(MARGIN) <= d(right)) return "left";
+  if (d(right) <= d(center)) return "right";
+  return "center";
+}
+
 function Customizer() {
   const router = useRouter();
   const params = useSearchParams();
@@ -32,6 +52,7 @@ function Customizer() {
   const [name, setName] = useState("");
   const [accent, setAccent] = useState("#000000");
   const [accent2, setAccent2] = useState("#000000");
+  const [pos, setPos] = useState<Pos>("center");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -45,6 +66,7 @@ function Customizer() {
         setTheme(th);
         setAccent(th.accent);
         setAccent2(th.accent2);
+        setPos(boxToPos(th, t.design_data.width || 1123));
         setName(baseId ? `${t.name} — مخصّص` : t.name);
         setLogoUrl(org?.logo_url ?? null);
       })
@@ -53,24 +75,27 @@ function Customizer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceId]);
 
-  // Saved design = recolor only (logo is resolved from org settings at render time).
-  const savedDesign = useMemo<DesignData | null>(() => {
-    if (!base?.design_data || !theme) return null;
-    return applyTheme(base.design_data, theme, { accent, accent2 });
-  }, [base, theme, accent, accent2]);
+  const width = base?.design_data?.width ?? 1123;
 
-  // Preview = saved design + the org logo placed at the slot (WYSIWYG).
-  const previewDesign = useMemo(() => injectLogo(savedDesign, logoUrl), [savedDesign, logoUrl]);
+  // Recolor + apply the chosen logo position into the design's theme.
+  const themedDesign = useMemo<DesignData | null>(() => {
+    if (!base?.design_data || !theme) return null;
+    const d = applyTheme(base.design_data, theme, { accent, accent2 });
+    (d as unknown as { theme: Theme }).theme = { ...theme, accent, accent2, logoBox: posToBox(theme, width, pos) };
+    return d;
+  }, [base, theme, accent, accent2, pos, width]);
+
+  // Preview = themed design + org logo at the (chosen) slot.
+  const previewDesign = useMemo(() => injectLogo(themedDesign, logoUrl), [themedDesign, logoUrl]);
 
   async function onSave() {
-    if (!savedDesign || !theme) return;
+    if (!themedDesign || !theme) return;
     if (!name.trim()) { setError("يرجى إدخال اسم للقالب."); return; }
     setSaving(true);
     setError(null);
-    const designData = { ...savedDesign, theme: { ...theme, accent, accent2 } } as DesignData;
     try {
-      if (ownedId) await updateTemplate(ownedId, { name: name.trim(), designData });
-      else await createTemplate({ name: name.trim(), designData });
+      if (ownedId) await updateTemplate(ownedId, { name: name.trim(), designData: themedDesign });
+      else await createTemplate({ name: name.trim(), designData: themedDesign });
       router.push("/dashboard/templates");
     } catch (e) {
       setError(e instanceof Error ? e.message : "تعذّر الحفظ.");
@@ -90,12 +115,18 @@ function Customizer() {
     );
   }
 
+  const positions: { v: Pos; label: string }[] = [
+    { v: "right", label: "يمين" },
+    { v: "center", label: "وسط" },
+    { v: "left", label: "يسار" },
+  ];
+
   return (
     <main className="mx-auto max-w-6xl p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">تخصيص القالب</h1>
-          <p className="mt-1 text-sm text-ink-soft">عدّل الألوان فقط — يبقى التصميم كما هو، ثم احفظه باسم جديد.</p>
+          <p className="mt-1 text-sm text-ink-soft">عدّل الألوان وموضع الشعار — يبقى التصميم كما هو، ثم احفظه باسم جديد.</p>
         </div>
         <Link href="/dashboard/templates" className="btn-ghost">إلغاء</Link>
       </div>
@@ -130,9 +161,25 @@ function Customizer() {
             </label>
           </div>
 
+          {logoUrl && (
+            <div>
+              <span className="mb-1.5 block text-sm font-bold text-ink">موضع الشعار</span>
+              <div className="flex gap-1.5 rounded-xl bg-white p-1 ring-1 ring-surface-3">
+                {positions.map((p) => (
+                  <button key={p.v} type="button" onClick={() => setPos(p.v)}
+                    className={`flex-1 rounded-lg px-3 py-2 text-sm font-bold transition ${
+                      pos === p.v ? "bg-brand-600 text-white" : "text-ink-soft hover:bg-surface-2"
+                    }`}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="rounded-xl bg-surface-2/60 px-4 py-3 text-xs text-ink-soft ring-1 ring-line">
             {logoUrl ? (
-              <>الشعار يُؤخذ تلقائياً من <Link href="/dashboard/settings" className="font-bold text-brand-700 hover:underline">إعدادات المنظمة</Link> ويظهر في موضعه على الشهادة.</>
+              <>الشعار يُؤخذ تلقائياً من <Link href="/dashboard/settings" className="font-bold text-brand-700 hover:underline">إعدادات المنظمة</Link>.</>
             ) : (
               <>لا يوجد شعار لمنظمتك بعد. <Link href="/dashboard/settings" className="font-bold text-brand-700 hover:underline">ارفع شعارك من الإعدادات</Link> ليظهر تلقائياً على القوالب.</>
             )}
