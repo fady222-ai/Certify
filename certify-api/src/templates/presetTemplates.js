@@ -225,15 +225,15 @@ const designs = [
 // colors a user may recolor, and a fixed box where an uploaded logo is placed.
 const lb = (left, top, width, height) => ({ left, top, width, height });
 const THEMES = [
-  { accent: GOLD, accent2: NAVY, logoBox: lb(511, 55, 100, 90) },          // 1 classic
+  { accent: GOLD, accent2: NAVY, logoBox: lb(511, 36, 100, 72) },          // 1 classic
   { accent: GOLD, accent2: "#5c3d0a", logoBox: lb(521, 60, 90, 90) },      // 2 elegant
   { accent: "#4f46e5", accent2: INK, logoBox: lb(511, 70, 100, 80) },      // 3 minimal
-  { accent: "#4f46e5", accent2: "#0ea5e9", logoBox: lb(90, 40, 90, 90) },  // 4 header band
+  { accent: "#4f46e5", accent2: "#0ea5e9", logoBox: lb(90, 40, 90, 90), logoBacking: true },  // 4 header band
   { accent: "#7c3aed", accent2: "#6d28d9", logoBox: lb(893, 80, 130, 130) }, // 5 side panel
   { accent: NAVY, accent2: GOLD, logoBox: lb(110, 55, 90, 90) },           // 6 medallion
-  { accent: "#5eead4", accent2: "#0b2540", logoBox: lb(120, 40, 90, 90) }, // 7 dark
-  { accent: "#1e3a8a", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 8 royal
-  { accent: "#7f1d1d", accent2: GOLD, logoBox: lb(511, 55, 100, 80) },     // 9 burgundy
+  { accent: "#5eead4", accent2: "#0b2540", logoBox: lb(120, 40, 90, 90), logoBacking: true }, // 7 dark
+  { accent: "#1e3a8a", accent2: GOLD, logoBox: lb(511, 36, 100, 72) },     // 8 royal
+  { accent: "#7f1d1d", accent2: GOLD, logoBox: lb(60, 55, 90, 90) },       // 9 burgundy
   { accent: "#5b6f5b", accent2: "#3f4a3f", logoBox: lb(511, 60, 100, 80) }, // 10 botanical
   { accent: "#0ea5e9", accent2: "#0369a1", logoBox: lb(110, 40, 90, 90) }, // 11 wave
   { accent: GOLD, accent2: NAVY, logoBox: lb(347, 70, 100, 100) },         // 12 portrait

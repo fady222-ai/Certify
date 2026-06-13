@@ -110,6 +110,13 @@ export async function buildHtml(cert) {
       design.elements = design.elements.filter(
         (el) => !(el.type === "ornament" && boxesOverlap(el, box)),
       );
+      // Optional light backing card so a logo stays visible on a colored/dark area.
+      if (design.theme?.logoBacking) {
+        const p = 10;
+        design.elements.push(
+          { type: "rect", left: box.left - p, top: box.top - p, width: box.width + 2 * p, height: box.height + 2 * p, fill: "#ffffff", rx: 12 },
+        );
+      }
       design.elements.push(
         { type: "image", role: "logo", src: logoUrl, left: box.left, top: box.top, width: box.width, height: box.height },
       );

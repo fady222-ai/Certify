@@ -4,6 +4,7 @@ export type Theme = {
   accent: string;
   accent2: string;
   logoBox: { left: number; top: number; width: number; height: number };
+  logoBacking?: boolean;
 };
 
 /** Read the theme metadata embedded in a (public) template's design_data. */
@@ -65,18 +66,22 @@ function boxesOverlap(el: DesignElement, box: Theme["logoBox"]): boolean {
 
 export function injectLogo(design: DesignData | null, logoUrl?: string | null): DesignData | null {
   if (!design) return design;
-  const box = (design as unknown as { theme?: Theme }).theme?.logoBox;
+  const theme = (design as unknown as { theme?: Theme }).theme;
+  const box = theme?.logoBox;
   if (!logoUrl || !box) return design;
   const clone: DesignData = JSON.parse(JSON.stringify(design));
-  clone.elements = [
-    // Drop a prior logo image + the template's default emblem at the logo slot,
-    // so the org logo replaces it (matches the PDF renderer).
-    ...(clone.elements ?? []).filter(
-      (el) =>
-        !(el.type === "image" && el.role === "logo") &&
-        !(el.type === "ornament" && boxesOverlap(el, box)),
-    ),
-    { type: "image", role: "logo", src: logoUrl, left: box.left, top: box.top, width: box.width, height: box.height },
-  ];
+  // Drop a prior logo image + the template's default emblem at the logo slot.
+  const kept = (clone.elements ?? []).filter(
+    (el) =>
+      !(el.type === "image" && el.role === "logo") &&
+      !(el.type === "rect" && el.role === "logo") &&
+      !(el.type === "ornament" && boxesOverlap(el, box)),
+  );
+  if (theme?.logoBacking) {
+    const p = 10;
+    kept.push({ type: "rect", role: "logo", left: box.left - p, top: box.top - p, width: box.width + 2 * p, height: box.height + 2 * p, fill: "#ffffff", rx: 12 });
+  }
+  kept.push({ type: "image", role: "logo", src: logoUrl, left: box.left, top: box.top, width: box.width, height: box.height });
+  clone.elements = kept;
   return clone;
 }
