@@ -61,6 +61,15 @@ export default function TemplatesPage() {
           </Link>
         </div>
 
+        {!loading && !logoUrl && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 ring-1 ring-amber-200">
+            <span>💡 لم ترفع شعار منظمتك بعد — ارفعه ليظهر تلقائياً على شهاداتك.</span>
+            <Link href="/dashboard/settings" className="whitespace-nowrap font-extrabold text-amber-900 hover:underline">
+              رفع الشعار ←
+            </Link>
+          </div>
+        )}
+
         {loading ? (
           <p className="mt-10 text-center text-sm text-ink-muted">جارٍ التحميل…</p>
         ) : templates.length === 0 ? (
