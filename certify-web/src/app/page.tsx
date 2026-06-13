@@ -66,9 +66,9 @@ export default function Home() {
                   ابدأ مجاناً الآن
                   <IconArrow className="h-4 w-4 rotate-180" />
                 </Link>
-                <Link href="/verify/CERT-SMOK-0001" className="btn-ghost text-base">
+                <Link href="/verify" className="btn-ghost text-base">
                   <IconShield className="h-4 w-4" />
-                  جرّب صفحة التحقق
+                  تحقّق من شهادة
                 </Link>
               </div>
 

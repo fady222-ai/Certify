@@ -11,7 +11,7 @@ export function SiteHeader() {
           <a href="/#features" className="transition hover:text-brand-700">المميزات</a>
           <a href="/#how" className="transition hover:text-brand-700">كيف تعمل</a>
           <a href="/#pricing" className="transition hover:text-brand-700">الأسعار</a>
-          <Link href="/verify/CERT-SMOK-0001" className="transition hover:text-brand-700">تحقّق من شهادة</Link>
+          <Link href="/verify" className="transition hover:text-brand-700">تحقّق من شهادة</Link>
         </nav>
 
         <div className="flex items-center gap-2.5">
