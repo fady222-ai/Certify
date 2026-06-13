@@ -13,6 +13,9 @@ export function getTheme(design: DesignData | null): Theme | null {
   return t;
 }
 
+// Emblem/badge ornaments replaced by the org logo (border/background kept).
+const EMBLEM_ORNAMENTS = new Set(["sealGold", "rosette", "ribbonSeal", "laurel", "chip", "guilloche"]);
+
 const eqColor = (a?: string, b?: string) =>
   typeof a === "string" && typeof b === "string" && a.toLowerCase() === b.toLowerCase();
 
@@ -74,7 +77,7 @@ export function injectLogo(design: DesignData | null, logoUrl?: string | null): 
     ...(clone.elements ?? []).filter(
       (el) =>
         !(el.type === "image" && el.role === "logo") &&
-        !(el.type === "ornament" && boxesOverlap(el, box)),
+        !(el.type === "ornament" && (EMBLEM_ORNAMENTS.has(el.name ?? "") || boxesOverlap(el, box))),
     ),
     { type: "image", role: "logo", src: logoUrl, left: box.left, top: box.top, width: box.width, height: box.height },
   ];

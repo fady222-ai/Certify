@@ -105,10 +105,11 @@ export async function buildHtml(cert) {
     const logoUrl = assetUrl(org?.logoUrl);
     const box = design.theme?.logoBox;
     if (logoUrl && box && box.width) {
-      // Drop the template's default emblem/ornament sitting at the logo slot so
-      // the org logo replaces it (no double logo), then place the org logo.
+      // Replace the template's emblem/badge (seal, rosette, ribbon, laurel,
+      // chip) with the org logo — anywhere — plus anything at the logo slot.
+      // Border/background ornaments (corners, botanical, wave…) are kept.
       design.elements = design.elements.filter(
-        (el) => !(el.type === "ornament" && boxesOverlap(el, box)),
+        (el) => !(el.type === "ornament" && (EMBLEM_ORNAMENTS.has(el.name) || boxesOverlap(el, box))),
       );
       design.elements.push(
         { type: "image", role: "logo", src: logoUrl, left: box.left, top: box.top, width: box.width, height: box.height },
@@ -129,6 +130,10 @@ export async function buildHtml(cert) {
     signatureUrl: assetUrl(org?.signatureUrl),
   });
 }
+
+// Ornaments that act as an emblem/badge/logo — replaced by the org logo when one
+// is set. (Border/background ornaments like corners/botanical/wave are kept.)
+const EMBLEM_ORNAMENTS = new Set(["sealGold", "rosette", "ribbonSeal", "laurel", "chip", "guilloche"]);
 
 /** Axis-aligned box intersection (height defaults to width when absent). */
 function boxesOverlap(el, box) {
