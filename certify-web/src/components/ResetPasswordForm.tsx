@@ -55,13 +55,13 @@ export function ResetPasswordForm() {
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="٨ أحرف + حرف كبير + رقم"
+            placeholder="٨ أحرف على الأقل"
             className="input pr-11"
             dir="ltr"
             autoFocus
           />
         </span>
-        <p className="mt-1 text-xs text-ink-muted">٨ أحرف على الأقل، حرف كبير، ورقم.</p>
+        <p className="mt-1 text-xs text-ink-muted">٨ أحرف على الأقل.</p>
       </label>
 
       <label className="block">

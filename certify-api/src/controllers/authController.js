@@ -3,9 +3,7 @@ import * as auth from "../services/authService.js";
 
 const passwordSchema = z
   .string()
-  .min(8, "كلمة المرور يجب ألا تقل عن ٨ أحرف.")
-  .regex(/[A-Z]/, "يجب أن تحتوي على حرف كبير واحد على الأقل.")
-  .regex(/[0-9]/, "يجب أن تحتوي على رقم واحد على الأقل.");
+  .min(8, "كلمة المرور يجب ألا تقل عن ٨ أحرف.");
 
 const registerSchema = z.object({
   name: z.string().trim().min(2, "الاسم قصير جداً.").max(120),

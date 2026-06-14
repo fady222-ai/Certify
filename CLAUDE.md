@@ -87,7 +87,7 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - **استعادة كلمة المرور**: `forgot-password` (آمن ضد email enumeration) +
   `reset-password` (رمز صالح ساعة، يُبطل كل JWT قائم).
 - **JWT**: قُلّص من 30 يوماً → 7 أيام، مع `jti`.
-- **تعقيد كلمة المرور**: 8+ أحرف + حرف كبير + رقم.
+- **طول كلمة المرور**: 8+ أحرف (بلا اشتراط حرف كبير/رقم).
 - **rate limits**: register 5/دقيقة، forgot-password 5/دقيقة، resend-otp 5/دقيقة،
   verify-email 5/دقيقة.
 - ملفات: `authController.js`, `authService.js`, `middleware/auth.js`,

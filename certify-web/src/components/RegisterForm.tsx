@@ -154,9 +154,9 @@ export function RegisterForm() {
         <span className="mb-1.5 block text-sm font-bold text-ink">كلمة المرور</span>
         <span className="relative block">
           <IconLock className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
-          <input type="password" required minLength={8} value={form.password} onChange={update("password")} placeholder="٨ أحرف + حرف كبير + رقم" className="input pr-11" dir="ltr" />
+          <input type="password" required minLength={8} value={form.password} onChange={update("password")} placeholder="٨ أحرف على الأقل" className="input pr-11" dir="ltr" />
         </span>
-        <p className="mt-1 text-xs text-ink-muted">٨ أحرف على الأقل، حرف كبير، ورقم.</p>
+        <p className="mt-1 text-xs text-ink-muted">٨ أحرف على الأقل.</p>
       </label>
 
       <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
