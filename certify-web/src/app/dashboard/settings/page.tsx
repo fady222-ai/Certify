@@ -49,7 +49,7 @@ export default function SettingsPage() {
     setError(null);
     setNotice(null);
     try {
-      const updated = await updateOrganization({ name, primaryColor });
+      const updated = await updateOrganization({ primaryColor });
       setOrg(updated);
       await refreshProfile();
       setNotice("تم حفظ التغييرات.");
@@ -110,7 +110,8 @@ export default function SettingsPage() {
             <form onSubmit={saveDetails} className="card space-y-5 p-6">
               <label className="block">
                 <span className="mb-1.5 block text-sm font-bold text-ink">اسم المنظمة</span>
-                <input value={name} onChange={(e) => setName(e.target.value)} className="input" required />
+                <input value={name} readOnly disabled className="input bg-surface-2/60 text-ink-soft cursor-not-allowed" />
+                <p className="mt-1 text-xs text-ink-muted">اسم الأكاديمية ثابت ولا يمكن تغييره بعد التسجيل.</p>
               </label>
 
               <div>

@@ -26,8 +26,9 @@ function presentOrganization(org) {
 }
 
 const HEX = /^#([0-9a-fA-F]{6})$/;
+// Note: the academy name is intentionally immutable after registration (anti-spam)
+// — it is not accepted here.
 const updateSchema = z.object({
-  name: z.string().trim().min(2, "اسم المنظمة قصير جداً.").max(120).optional(),
   primaryColor: z.string().regex(HEX, "لون غير صالح.").optional(),
   secondaryColor: z.string().regex(HEX, "لون غير صالح.").optional().or(z.literal("")),
 });
@@ -51,7 +52,6 @@ export async function updateOrganization(req, res) {
   }
 
   const data = {};
-  if (parsed.data.name !== undefined) data.name = parsed.data.name;
   if (parsed.data.primaryColor !== undefined) data.primaryColor = parsed.data.primaryColor;
   if (parsed.data.secondaryColor !== undefined) {
     data.secondaryColor = parsed.data.secondaryColor || null;

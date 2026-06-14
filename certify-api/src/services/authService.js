@@ -96,6 +96,19 @@ export async function register({ name, email, password, organizationName }) {
     throw err;
   }
 
+  // Academy name must be unique (normalized, case-insensitive) — blocks repeat
+  // spam accounts reusing the same academy name. The name is immutable later.
+  const orgName = String(organizationName ?? "").trim().replace(/\s+/g, " ");
+  const dupOrg = await prisma.organization.findFirst({
+    where: { name: { equals: orgName, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (dupOrg) {
+    const err = new Error("اسم الأكاديمية مستخدم بالفعل. اختر اسماً آخر.");
+    err.statusCode = 409;
+    throw err;
+  }
+
   const free = await prisma.plan.findUnique({ where: { slug: "free" } });
   const passwordHash = await hashPassword(password);
 
@@ -106,8 +119,8 @@ export async function register({ name, email, password, organizationName }) {
 
     await tx.organization.create({
       data: {
-        name: organizationName?.trim() || name,
-        slug: slugify(organizationName || name),
+        name: orgName,
+        slug: slugify(orgName),
         ownerId: user.id,
         planId: free?.id ?? null,
         members: { create: { userId: user.id, role: "owner" } },

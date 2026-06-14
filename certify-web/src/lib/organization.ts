@@ -20,7 +20,6 @@ export async function getOrganization(): Promise<Organization> {
 }
 
 export async function updateOrganization(input: {
-  name?: string;
   primaryColor?: string;
   secondaryColor?: string;
 }): Promise<Organization> {

@@ -135,8 +135,11 @@ export function RegisterForm() {
         <span className="mb-1.5 block text-sm font-bold text-ink">اسم المنظمة / الأكاديمية</span>
         <span className="relative block">
           <IconBadge className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
-          <input type="text" value={form.organizationName} onChange={update("organizationName")} placeholder="أكاديمية..." className="input pr-11" />
+          <input type="text" required minLength={2} value={form.organizationName} onChange={update("organizationName")} placeholder="أكاديمية..." className="input pr-11" />
         </span>
+        <p className="mt-1 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 ring-1 ring-amber-100">
+          ⚠️ مهم: اسم الأكاديمية يظهر على كل شهاداتك، ويجب أن يكون فريداً، ولا يمكن تغييره لاحقاً — اختره بعناية.
+        </p>
       </label>
 
       <label className="block">

@@ -11,7 +11,7 @@ const registerSchema = z.object({
   name: z.string().trim().min(2, "الاسم قصير جداً.").max(120),
   email: z.string().trim().email("بريد إلكتروني غير صالح."),
   password: passwordSchema,
-  organizationName: z.string().trim().max(160).optional(),
+  organizationName: z.string().trim().min(2, "اسم الأكاديمية مطلوب.").max(160),
 });
 
 const loginSchema = z.object({
