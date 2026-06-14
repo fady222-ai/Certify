@@ -6,6 +6,7 @@ import path from "node:path";
 import { config } from "./config/index.js";
 import { apiRouter } from "./routes/index.js";
 import { ensureAdmin } from "./services/ensureAdmin.js";
+import { ensureOrgNameIndex } from "./services/ensureOrgNameIndex.js";
 import { startRenewalJob } from "./jobs/renewSubscriptions.js";
 import { reportError } from "./services/errorReporter.js";
 
@@ -93,5 +94,7 @@ app.listen(config.port, "0.0.0.0", () => {
   console.log(`Certify API listening on http://0.0.0.0:${config.port}`);
   // Provision the super-admin from env (idempotent, best-effort).
   ensureAdmin().catch((e) => console.error("[admin] provisioning failed:", e.message));
+  // Enforce unique academy name at the DB level (idempotent, fault-tolerant).
+  ensureOrgNameIndex().catch((e) => console.error("[orgindex]", e.message));
   startRenewalJob();
 });

@@ -106,30 +106,38 @@ export async function register({ name, email, password, organizationName }) {
   const conflict = new Error("اسم الأكاديمية مستخدم بالفعل. اختر اسماً آخر.");
   conflict.statusCode = 409;
 
-  const { user } = await prisma.$transaction(async (tx) => {
-    // Re-check uniqueness inside the transaction to close the TOCTOU race.
-    const dupOrg = await tx.organization.findFirst({
-      where: { name: { equals: orgName, mode: "insensitive" } },
-      select: { id: true },
-    });
-    if (dupOrg) throw conflict;
+  let user;
+  try {
+    ({ user } = await prisma.$transaction(async (tx) => {
+      // Re-check uniqueness inside the transaction to close the TOCTOU race.
+      const dupOrg = await tx.organization.findFirst({
+        where: { name: { equals: orgName, mode: "insensitive" } },
+        select: { id: true },
+      });
+      if (dupOrg) throw conflict;
 
-    const user = await tx.user.create({
-      data: { name, email, passwordHash, emailVerified: false },
-    });
+      const u = await tx.user.create({
+        data: { name, email, passwordHash, emailVerified: false },
+      });
 
-    await tx.organization.create({
-      data: {
-        name: orgName,
-        slug: slugify(orgName),
-        ownerId: user.id,
-        planId: free?.id ?? null,
-        members: { create: { userId: user.id, role: "owner" } },
-      },
-    });
+      await tx.organization.create({
+        data: {
+          name: orgName,
+          slug: slugify(orgName),
+          ownerId: u.id,
+          planId: free?.id ?? null,
+          members: { create: { userId: u.id, role: "owner" } },
+        },
+      });
 
-    return { user };
-  });
+      return { user: u };
+    }));
+  } catch (e) {
+    // The DB unique index on lower(name) is the hard guarantee — map its
+    // violation to the same friendly message as the app-level check.
+    if (e === conflict || e?.code === "P2002") throw conflict;
+    throw e;
+  }
 
   await saveAndSendOtp(user.id, user.name, email);
   return { userId: user.id, requiresVerification: true };

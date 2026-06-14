@@ -117,6 +117,10 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - **الفرع النشط للتطوير:** `claude/youthful-johnson-qrd0un`
 - **المستودع:** `fady222-ai/Certify` (أُعيدت تسميته من `alfady-branch`)
 - بعد أي تعديل على schema: شغّل `npx prisma db push` على بيئة النشر.
+- **تفرّد اسم المنظمة:** مفروض بفهرس دالّي فريد `lower(name)` يُنشأ تلقائياً عند
+  الإقلاع (`ensureOrgNameIndex`, idempotent ومتسامح). إن فشل إنشاؤه بسبب أسماء
+  مكرّرة قديمة، شغّل `npm run check:dups` للكشف ثم `npm run check:dups -- --fix`
+  لحلّها، وأعد التشغيل.
 - **بريد مخصص:** لاستخدام دومين خاص — فعّل الدومين في Resend (DNS) ثم اضبط
   `EMAIL_FROM=noreply@your-domain.com`. لا تغيير في الكود.
 
