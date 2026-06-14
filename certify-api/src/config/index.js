@@ -45,6 +45,9 @@ export const config = {
   // Where generated PDFs are stored on disk (served at /storage).
   storageDir: process.env.CERTIFY_STORAGE_DIR ?? "storage",
 
+  // Optional alert webhook (Slack/Discord) for server errors — disabled if unset.
+  errorWebhookUrl: process.env.ERROR_WEBHOOK_URL || null,
+
   // Super-admin account — provisioned automatically on startup from these vars.
   // The account always has role="admin"; its password is whatever you set here.
   adminEmail: (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase(),

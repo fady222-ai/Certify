@@ -7,6 +7,7 @@ import { config } from "./config/index.js";
 import { apiRouter } from "./routes/index.js";
 import { ensureAdmin } from "./services/ensureAdmin.js";
 import { startRenewalJob } from "./jobs/renewSubscriptions.js";
+import { reportError } from "./services/errorReporter.js";
 
 const app = express();
 
@@ -69,20 +70,23 @@ app.use("/api", apiRouter);
 // 404 + error handlers
 app.use((req, res) => res.status(404).json({ message: "Not found" }));
 // eslint-disable-next-line no-unused-vars
-app.use((err, _req, res, _next) => {
+app.use((err, req, res, _next) => {
   const status = err.statusCode ?? 500;
-  // Never leak internal error details to clients on 5xx — log server-side only.
+  // Never leak internal error details to clients on 5xx — log/alert server-side.
   if (status >= 500) {
-    console.error(err);
+    reportError(err, { where: "request", method: req.method, path: req.originalUrl });
     return res.status(status).json({ message: "حدث خطأ في الخادم." });
   }
   res.status(status).json({ message: err.message ?? "Server error" });
 });
 
 // Keep the server alive if an async dependency (e.g. headless Chrome) emits an
-// error outside a request's try/catch; log it instead of crashing the process.
+// error outside a request's try/catch; log/alert instead of crashing.
 process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled rejection:", reason);
+  reportError(reason, { where: "unhandledRejection" });
+});
+process.on("uncaughtException", (err) => {
+  reportError(err, { where: "uncaughtException" });
 });
 
 app.listen(config.port, "0.0.0.0", () => {

@@ -124,6 +124,8 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 `DATABASE_URL`, `APP_KEY` (32+ حرف), `APP_URL`, `CERTIFY_VERIFY_BASE_URL`,
 `CORS_ALLOWED_ORIGINS`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `RESEND_API_KEY`,
 `EMAIL_FROM`, ومفاتيح `STRIPE_*` / `TAP_*` / `PAYMOB_*` (كلها اختيارية للبدء).
+`ERROR_WEBHOOK_URL` اختياري: عند ضبطه تُرسَل تنبيهات أخطاء الخادم (5xx + أخطاء
+غير ملتقطة) إلى webhook متوافق مع Slack/Discord (`{ text }`).
 
 ---
 
