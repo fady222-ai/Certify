@@ -5,7 +5,7 @@ const designSchema = z.object({
   width: z.number().optional(),
   height: z.number().optional(),
   background: z.string().optional(),
-  elements: z.array(z.record(z.string(), z.any())).default([]),
+  elements: z.array(z.record(z.string(), z.any())).max(120, "عدد عناصر التصميم كبير جداً.").default([]),
   // Optional theme metadata (accent colors + logo box) used by the lightweight
   // customizer; kept so customized templates remain re-customizable.
   theme: z.record(z.string(), z.any()).optional(),

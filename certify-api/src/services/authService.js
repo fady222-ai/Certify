@@ -99,20 +99,21 @@ export async function register({ name, email, password, organizationName }) {
   // Academy name must be unique (normalized, case-insensitive) — blocks repeat
   // spam accounts reusing the same academy name. The name is immutable later.
   const orgName = String(organizationName ?? "").trim().replace(/\s+/g, " ");
-  const dupOrg = await prisma.organization.findFirst({
-    where: { name: { equals: orgName, mode: "insensitive" } },
-    select: { id: true },
-  });
-  if (dupOrg) {
-    const err = new Error("اسم الأكاديمية مستخدم بالفعل. اختر اسماً آخر.");
-    err.statusCode = 409;
-    throw err;
-  }
 
   const free = await prisma.plan.findUnique({ where: { slug: "free" } });
   const passwordHash = await hashPassword(password);
 
+  const conflict = new Error("اسم الأكاديمية مستخدم بالفعل. اختر اسماً آخر.");
+  conflict.statusCode = 409;
+
   const { user } = await prisma.$transaction(async (tx) => {
+    // Re-check uniqueness inside the transaction to close the TOCTOU race.
+    const dupOrg = await tx.organization.findFirst({
+      where: { name: { equals: orgName, mode: "insensitive" } },
+      select: { id: true },
+    });
+    if (dupOrg) throw conflict;
+
     const user = await tx.user.create({
       data: { name, email, passwordHash, emailVerified: false },
     });

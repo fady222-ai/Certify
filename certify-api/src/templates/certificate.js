@@ -82,7 +82,7 @@ export function certificateHtml(ctx) {
   <div class="corner bl"></div><div class="corner br"></div>
 
   <div class="logo-wrap">
-    ${logoUrl ? `<img src="${logoUrl}" alt="${escapeHtml(orgName)}">` : `<div class="org-name-only">${escapeHtml(orgName)}</div>`}
+    ${logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="${escapeHtml(orgName)}">` : `<div class="org-name-only">${escapeHtml(orgName)}</div>`}
   </div>
 
   <div class="accent-bar"></div>
@@ -98,7 +98,7 @@ export function certificateHtml(ctx) {
 
   <div class="footer-row">
     <div class="sig-block">
-      ${signatureUrl ? `<img src="${signatureUrl}" alt="توقيع">` : ""}
+      ${signatureUrl ? `<img src="${escapeHtml(signatureUrl)}" alt="توقيع">` : ""}
       <div class="sig-line"></div>
       <div class="sig-label">توقيع المُصدر</div>
     </div>
