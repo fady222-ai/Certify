@@ -137,7 +137,20 @@ export async function processRenewals() {
     include: { organization: true },
   });
 
-  for (const sub of expired) {
+  // ── 3. Downgrade past_due subscriptions after a grace period ─────────────
+  // Failed renewals (Tap/Paymob) are marked past_due; keep access for a grace
+  // window, then downgrade to free. (Stripe handles its own dunning and emits
+  // customer.subscription.deleted, which downgrades via the webhook.)
+  const GRACE_DAYS = 7;
+  const graceCutoff = new Date(now.getTime() - GRACE_DAYS * 24 * 60 * 60 * 1000);
+  const pastDue = await prisma.subscription.findMany({
+    where: { status: "past_due", currentPeriodEnd: { lte: graceCutoff } },
+    include: { plan: true },
+  });
+
+  const toDowngrade = [...expired, ...pastDue];
+  let downgraded = 0;
+  for (const sub of toDowngrade) {
     try {
       const freePlan = await prisma.plan.findUnique({ where: { slug: "free" } });
       if (!freePlan) continue;
@@ -149,12 +162,16 @@ export async function processRenewals() {
           data: { status: "cancelled", planId: freePlan.id, cancelledAt: now, cancelAtPeriodEnd: false },
         }),
       ]);
+      downgraded++;
+      if (sub.status === "past_due" && sub.plan) {
+        sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
+      }
     } catch (err) {
       console.error(`Downgrade failed for sub ${sub.id}:`, err.message);
     }
   }
 
-  if (tapDue.length + paymobDue.length + expired.length + walletExpiring.length > 0) {
-    console.log(`Renewal job: tap=${tapDue.length}, paymob=${paymobDue.length}, downgraded=${expired.length}, reminders=${walletExpiring.length}`);
+  if (tapDue.length + paymobDue.length + downgraded + walletExpiring.length > 0) {
+    console.log(`Renewal job: tap=${tapDue.length}, paymob=${paymobDue.length}, downgraded=${downgraded}, reminders=${walletExpiring.length}`);
   }
 }

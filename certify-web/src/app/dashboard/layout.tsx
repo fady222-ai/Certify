@@ -25,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [checked, setChecked] = useState(false);
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     if (!getToken()) {
@@ -34,6 +35,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setProfile(getStoredUser());
     setChecked(true);
   }, [router]);
+
+  // Close the mobile drawer on route change.
+  useEffect(() => { setNavOpen(false); }, [pathname]);
 
   if (!checked) {
     return (
@@ -50,6 +54,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push("/");
   }
 
+  const navItems = (
+    <>
+      {nav.map((n) => {
+        const active =
+          n.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(n.href);
+        return (
+          <Link key={n.href} href={n.href}
+            className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
+              active ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
+                : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"}`}>
+            <n.icon className="h-5 w-5" />
+            {n.label}
+          </Link>
+        );
+      })}
+    </>
+  );
+
+  const planCard = (
+    <>
+      <div className="m-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white">
+        <p className="text-sm font-extrabold">{org?.plan?.name ?? "باقة مجانية"}</p>
+        <p className="mt-1 text-xs text-brand-100">
+          {org?.plan?.certificates_per_month != null
+            ? `${org.plan.certificates_per_month} شهادة شهرياً`
+            : "إصدار غير محدود"}
+        </p>
+        <Link href="/dashboard/billing" className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white/15 px-3 py-2 text-xs font-bold hover:bg-white/25">
+          ترقية الباقة
+        </Link>
+      </div>
+      {profile?.user?.is_admin && (
+        <div className="m-3 mt-0">
+          <Link
+            href="/admin"
+            className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 text-xs font-bold text-amber-400 hover:bg-gray-800 transition-colors"
+          >
+            <span>⚙️</span> لوحة الإدارة
+          </Link>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="flex min-h-screen bg-surface-2/40" dir="rtl">
       <IssueCertificateModal
@@ -61,58 +109,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }}
       />
 
-      {/* الشريط الجانبي */}
+      {/* الشريط الجانبي (حاسوب) */}
       <aside className="hidden w-64 shrink-0 flex-col border-l bg-white lg:flex">
         <div className="border-b px-5 py-4"><Logo /></div>
-        <nav className="flex-1 space-y-1 p-3">
-          {nav.map((n) => {
-            const active =
-              n.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(n.href);
-            return (
-              <Link key={n.href} href={n.href}
-                className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
-                  active ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
-                    : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"}`}>
-                <n.icon className="h-5 w-5" />
-                {n.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="m-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white">
-          <p className="text-sm font-extrabold">{org?.plan?.name ?? "باقة مجانية"}</p>
-          <p className="mt-1 text-xs text-brand-100">
-            {org?.plan?.certificates_per_month != null
-              ? `${org.plan.certificates_per_month} شهادة شهرياً`
-              : "إصدار غير محدود"}
-          </p>
-          <Link href="/dashboard/billing" className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white/15 px-3 py-2 text-xs font-bold hover:bg-white/25">
-            ترقية الباقة
-          </Link>
-        </div>
-        {profile?.user?.is_admin && (
-          <div className="m-3 mt-0">
-            <Link
-              href="/admin"
-              className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 py-2.5 text-xs font-bold text-amber-400 hover:bg-gray-800 transition-colors"
-            >
-              <span>⚙️</span> لوحة الإدارة
-            </Link>
-          </div>
-        )}
+        <nav className="flex-1 space-y-1 p-3">{navItems}</nav>
+        {planCard}
       </aside>
+
+      {/* درج التنقّل (جوال) */}
+      {navOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setNavOpen(false)} />
+          <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85%] flex-col border-l bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b px-5 py-4">
+              <Logo />
+              <button onClick={() => setNavOpen(false)} className="rounded-lg p-1.5 text-ink-muted hover:bg-surface-2" aria-label="إغلاق">✕</button>
+            </div>
+            <nav className="flex-1 space-y-1 overflow-y-auto p-3">{navItems}</nav>
+            {planCard}
+          </aside>
+        </div>
+      )}
 
       {/* المحتوى */}
       <div className="flex flex-1 flex-col">
-        <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-6 py-3.5">
-          <div className="flex items-center gap-3">
+        <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-4 py-3.5 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setNavOpen(true)}
+              className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 lg:hidden"
+              aria-label="القائمة"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
             <span className="lg:hidden"><Logo /></span>
-            <p className="text-sm font-bold text-ink-soft">{org?.name ?? "—"}</p>
+            <p className="hidden text-sm font-bold text-ink-soft sm:block">{org?.name ?? "—"}</p>
           </div>
           <div className="flex items-center gap-2">
             <button className="btn-primary" type="button" onClick={() => setModalOpen(true)}>
               <IconBadge className="h-4 w-4" />
-              إصدار شهادة جديدة
+              <span className="hidden sm:inline">إصدار شهادة جديدة</span>
+              <span className="sm:hidden">إصدار</span>
             </button>
             <button className="btn-ghost" type="button" onClick={onLogout}>خروج</button>
           </div>

@@ -31,12 +31,12 @@ export async function ensureAdmin() {
   if (existing) {
     await prisma.user.update({
       where: { email: adminEmail },
-      data: { role: "admin", passwordHash },
+      data: { role: "admin", passwordHash, emailVerified: true },
     });
     console.log(`[admin] Updated admin account: ${adminEmail}`);
   } else {
     await prisma.user.create({
-      data: { email: adminEmail, name: adminName, role: "admin", passwordHash },
+      data: { email: adminEmail, name: adminName, role: "admin", passwordHash, emailVerified: true },
     });
     console.log(`[admin] Created admin account: ${adminEmail}`);
   }

@@ -152,6 +152,12 @@ function BillingContent() {
         </div>
       ) : (
         <>
+          {sub?.status === "past_due" && (
+            <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 ring-1 ring-amber-200">
+              ⚠️ دفعتك متأخرة — لم يكتمل تجديد اشتراكك. جدّد خلال أيام قليلة لتفادي التخفيض التلقائي للباقة المجانية.
+            </div>
+          )}
+
           {/* Current Plan Card */}
           <div className="bg-white rounded-2xl border border-line shadow-sm p-6 space-y-5">
             <div className="flex items-start justify-between gap-3">
