@@ -126,34 +126,32 @@ export default function TemplatesPage() {
                   <p className="mt-1 text-xs text-ink-muted">
                     {t.design_data?.elements?.length ?? 0} عنصر
                   </p>
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-4 flex items-center gap-2">
                     {defaultId === t.id ? (
-                      <div className="flex items-center justify-center gap-1.5 rounded-lg bg-verify-50 px-3 py-2 text-xs font-bold text-verify-700 ring-1 ring-verify-200">
-                        <IconCheck className="h-3.5 w-3.5" /> القالب الافتراضي
+                      <div className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-verify-50 px-3 py-2 text-xs font-bold text-verify-700 ring-1 ring-verify-200">
+                        <IconCheck className="h-3.5 w-3.5" /> افتراضي
                       </div>
                     ) : (
                       <button onClick={() => assignDefault(t.id)} disabled={assigning === t.id}
-                        className="btn-primary w-full justify-center py-2 text-xs disabled:opacity-60">
-                        {assigning === t.id ? "جارٍ التعيين…" : "تعيين كقالب افتراضي"}
+                        className="btn-primary flex-1 justify-center py-2 text-xs disabled:opacity-60">
+                        {assigning === t.id ? "جارٍ…" : "تعيين"}
                       </button>
                     )}
-                    <div className="flex items-center gap-2">
-                      {t.is_public ? (
+                    {t.is_public ? (
+                      <Link href={editHref(t)} className="btn-ghost flex-1 justify-center py-2 text-xs">
+                        تخصيص
+                      </Link>
+                    ) : (
+                      <>
                         <Link href={editHref(t)} className="btn-ghost flex-1 justify-center py-2 text-xs">
-                          تخصيص
+                          {getTheme(t.design_data) ? "تخصيص" : "تعديل"} <IconArrow className="h-3.5 w-3.5" />
                         </Link>
-                      ) : (
-                        <>
-                          <Link href={editHref(t)} className="btn-ghost flex-1 justify-center py-2 text-xs">
-                            {getTheme(t.design_data) ? "تخصيص" : "تعديل"} <IconArrow className="h-3.5 w-3.5" />
-                          </Link>
-                          <button onClick={() => remove(t.id)}
-                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100">
-                            حذف
-                          </button>
-                        </>
-                      )}
-                    </div>
+                        <button onClick={() => remove(t.id)}
+                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100">
+                          حذف
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
