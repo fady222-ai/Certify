@@ -77,6 +77,22 @@ app.use("/api/auth/resend-otp", sensitiveAuthLimiter);
 // per-code attempt counter enforced in authService.verifyEmail).
 app.use("/api/auth/verify-email", sensitiveAuthLimiter);
 
+// Dedicated cap on the public, unauthenticated billing webhook/callback routes.
+// Forged webhooks are cheap to reject (signature check), but this bounds a flood
+// independently of the general /api budget. 60/min/IP comfortably covers real
+// gateway traffic (Stripe/Tap/Paymob send events at low rate, even with retries).
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests." },
+});
+app.use("/api/billing/webhook", webhookLimiter); // Tap
+app.use("/api/billing/stripe/webhook", webhookLimiter); // Stripe
+app.use("/api/billing/paymob/webhook", webhookLimiter); // Paymob (POST)
+app.use("/api/billing/paymob/callback", webhookLimiter); // Paymob (GET redirect)
+
 app.use("/api", apiRouter);
 
 // 404 + error handlers

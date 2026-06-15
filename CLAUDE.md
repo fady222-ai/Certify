@@ -67,6 +67,9 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - **توقيع webhooks في الإنتاج:** عند تفعيل أي بوابة في الإنتاج يجب ضبط سر الـ
   webhook (`STRIPE_WEBHOOK_SECRET`/`TAP_WEBHOOK_SECRET`/`PAYMOB_HMAC_SECRET`)؛
   الخادم يرفض أي webhook بلا توقيع صالح. التخطّي مسموح في dev فقط.
+- **محدِّد معدّل للـ webhooks:** مسارات الـ webhook/callback العامة (Tap/Stripe/Paymob)
+  محميّة بمحدِّد مخصّص 60/دقيقة لكل IP (`webhookLimiter` في `server.js`)، معزول عن
+  الميزانية العامة (120/دقيقة على `/api`) — يكفي حركة البوابات الحقيقية ويكبح الإغراق.
 - **التخفيض للمجاني** (`changePlan` أو checkout بسعر 0) يُلغي اشتراك Stripe
   النشط فوراً (`cancelActiveGatewaySubscription`) فيتوقف المحاسبة.
 - **وضع dev:** إن لم تُضبط مفاتيح بوابة، يتم التبديل المباشر للباقة بدون دفع.
