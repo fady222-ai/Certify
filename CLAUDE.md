@@ -203,7 +203,8 @@ cd certify-web && npm install && npm run dev
 - [x] معالجة حالة `past_due` (مهلة سماح 7 أيام ثم تخفيض للمجاني + بريد
   `sendPaymentFailed`) — منفّذة في `jobs/renewSubscriptions.js`.
 - [x] تحديث `DEPLOY.md`: اسم المستودع في Railway أصبح **Certify** (كان alfady-branch).
-- [ ] تحديث عنوان/وصف PR #1 (الوصف القديم يذكر Laravel/Next 14 خطأً).
+- [x] تحديث وصف PR #1 — أُضيف تصحيح للمكدّس (Node/Express/Prisma/Next 16 لا
+  Laravel/Next 14)؛ الـPR مغلق فالنص الأصلي محفوظ كسجلّ تاريخي.
 - [x] تحصين أمني + مراجعة pentest كاملة (PR #2) — راجع قسم نظام الأمان.
 
 > **تنبيه schema:** أُضيف حقل `attempts` إلى `VerificationToken` (حدّ محاولات
