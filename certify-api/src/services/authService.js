@@ -31,12 +31,13 @@ export function signToken(user) {
   return jwt.sign(
     { sub: user.id, email: user.email, jti: crypto.randomUUID() },
     config.appKey,
-    { expiresIn: TOKEN_TTL },
+    { expiresIn: TOKEN_TTL, algorithm: "HS256" },
   );
 }
 
 export function verifyToken(token) {
-  return jwt.verify(token, config.appKey);
+  // Pin the algorithm — never accept a token signed with anything but HS256.
+  return jwt.verify(token, config.appKey, { algorithms: ["HS256"] });
 }
 
 export function presentUser(user, org) {
@@ -66,7 +67,8 @@ export function presentUser(user, org) {
 }
 
 function generateOtp() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  // Cryptographically secure, uniformly distributed 6-digit code (100000–999999).
+  return crypto.randomInt(100000, 1000000).toString();
 }
 
 async function saveAndSendOtp(userId, userName, email) {

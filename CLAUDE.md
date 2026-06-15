@@ -130,6 +130,32 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
   في رفع الدفعات؛ حماية `getStoredUser` بالواجهة.
 - **سليم بعد التحقق:** حقن SQL، XSS، SSRF (`safeImageSrc`)، CSRF (Bearer token).
 
+### تحصينات إضافية (مراجعة pentest كاملة — الجولة الثانية)
+
+- **OTP آمن تشفيرياً:** `generateOtp` يستخدم `crypto.randomInt` (كان `Math.random`
+  القابل للتنبؤ).
+- **تثبيت خوارزمية JWT:** `signToken`/`verifyToken` يثبّتان `HS256` صراحةً —
+  يُرفض أي توكن بخوارزمية مختلفة (`authService.js`).
+- **Puppeteer بلا JS:** `renderPdf` يستدعي `setJavaScriptEnabled(false)` قبل
+  `setContent` (دفاع عمق — الشهادة HTML/CSS ثابت لا يحتاج سكربت).
+- **منع تكرار الـ webhooks (idempotency):** نموذج `WebhookEvent` (فريد
+  `[gateway, eventId]`) + `isFreshWebhookEvent` في `billingController.js`؛ يمنع
+  تكرار Stripe لـ`invoice.paid` من تمديد الفترة مرّتين، وإعادة إرسال Tap/Paymob
+  من إعادة تفعيل اشتراك. مفاتيح: Stripe `event.id`، Tap `chargeId:status`،
+  Paymob `obj.id`.
+- **محدِّد معدّل لمسارات التحقق العامة:** `/api/verify` محدودة 60/دقيقة/IP (دفاع
+  عمق فوق العام 120/دقيقة).
+- **بلاغ خاطئ صُحِّح:** مقارنة إبطال التوكن `<=` صحيحة ومقصودة (ترفض ما صدر
+  في/قبل الإبطال) — لا تُغيَّر لـ`<`.
+- **تعداد البريد عند التسجيل:** بريد مفعّل يُرجِع 409 صريحاً (مقايضة UX مقبولة،
+  مكبوحة بـ5/دقيقة) — الادّعاء بأن التسجيل «آمن ضد التعداد» دقيق فقط للبريد *غير*
+  المفعّل (يُعيد إرسال OTP بصمت).
+- **اختبارات:** تثبيت خوارزمية JWT (`auth.test.js`) + منع تكرار webhooks
+  (`billing.test.js`) ضمن `npm test`.
+
+> **تنبيه schema:** أُضيف نموذج `WebhookEvent`. شغّل `npx prisma db push` على بيئة
+> النشر بعد سحب هذا التحديث.
+
 ---
 
 ## Git والنشر

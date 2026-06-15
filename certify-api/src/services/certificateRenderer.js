@@ -175,6 +175,9 @@ export async function renderPdf(cert) {
   }
 
   try {
+    // Certificates are static HTML/CSS — no scripts needed. Disabling JS is
+    // defense-in-depth against any script sneaking into rendered template data.
+    await page.setJavaScriptEnabled(false);
     await page.setContent(html, { waitUntil: "networkidle0" });
     const pdf = await page.pdf({
       format: "A4",

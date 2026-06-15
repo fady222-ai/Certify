@@ -29,9 +29,22 @@ const { prisma } = await import("../src/db/prisma.js");
 // ── In-memory Prisma fake ────────────────────────────────────────────────────
 let calls;
 
-function installFakePrisma({ subscriptions = [], plans = [], org = null } = {}) {
-  calls = { subUpdate: [], subUpdateMany: [], subUpsert: [], orgUpdate: [] };
+function installFakePrisma({ subscriptions = [], plans = [], org = null, seenEvents = [] } = {}) {
+  calls = { subUpdate: [], subUpdateMany: [], subUpsert: [], orgUpdate: [], webhookEvents: [] };
   const subs = subscriptions;
+
+  // Idempotency store: create throws a P2002-shaped error on a duplicate
+  // (gateway,eventId), exactly like the unique constraint in the schema.
+  const events = new Set(seenEvents);
+  prisma.webhookEvent = {
+    create: async ({ data }) => {
+      const key = `${data.gateway}:${data.eventId}`;
+      if (events.has(key)) { const e = new Error("dup"); e.code = "P2002"; throw e; }
+      events.add(key);
+      calls.webhookEvents.push(data);
+      return { id: "we_" + key, ...data };
+    },
+  };
 
   prisma.subscription = {
     // Reads return shallow clones so a caller mutating its result doesn't alter
@@ -313,4 +326,44 @@ test("processRenewals: downgrades past_due (beyond grace) and cancel-at-period-e
 
   // STILL within the grace window → must NOT be downgraded (regression guard)
   assert.equal(pastDueInGrace.status, "past_due");
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 4. Webhook idempotency (retry/replay protection)
+// ═════════════════════════════════════════════════════════════════════════════
+
+test("Tap webhook: a replayed CAPTURED event is processed only once", async () => {
+  const sub = { id: "s1", organizationId: "o1", gateway: "tap", status: "inactive", tapChargeId: "chg_1", interval: "monthly", amount: 9, plan: { id: "p1", name: "Pro" } };
+  installFakePrisma({ subscriptions: [sub], org: { id: "o1" } });
+  const rawBody = JSON.stringify({ id: "chg_1", status: "CAPTURED" });
+  const req = { headers: { hashdigest: signTap(rawBody) }, rawBody };
+
+  await handleTapWebhook(req, makeRes());
+  assert.equal(sub.status, "active");
+  const firstUpserts = calls.subUpsert.length;
+
+  // replay the identical signed event → must be a no-op (already recorded)
+  await handleTapWebhook(req, makeRes());
+  assert.equal(calls.subUpsert.length, firstUpserts, "replayed event did not re-apply the plan");
+});
+
+test("Paymob webhook: a duplicate transaction id is ignored", async () => {
+  const sub = { id: "s1", organizationId: "o1", gateway: "paymob", status: "inactive", interval: "monthly", amount: 9, plan: { id: "p1", name: "Pro" } };
+  // pre-seed the event as already processed
+  installFakePrisma({ subscriptions: [sub], org: { id: "o1" }, seenEvents: ["paymob:77"] });
+
+  const obj = {
+    amount_cents: 900, created_at: "2026-06-15T10:00:00", currency: "USD", error_occured: false,
+    has_parent_transaction: false, id: 77, integration_id: 999, is_3d_secure: true, is_auth: false,
+    is_capture: false, is_refunded: false, is_standalone_payment: true, is_voided: false,
+    order: { id: 555, merchant_order_id: "certify_o1_123" }, owner: 42, pending: false,
+    source_data: { pan: "1234", sub_type: "MasterCard", type: "card" }, success: true,
+  };
+  const hmac = signPaymobParams(paymobParamsFromObj(obj));
+  const res = makeRes();
+  await handlePaymobWebhook({ body: { type: "TRANSACTION", obj, hmac } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(sub.status, "inactive", "duplicate event must not activate the subscription");
+  assert.equal(calls.subUpsert.length, 0);
 });

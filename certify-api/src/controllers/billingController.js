@@ -112,6 +112,24 @@ async function cancelActiveGatewaySubscription(orgId) {
   // which the renewal cron skips — no gateway-side cancellation needed.
 }
 
+/**
+ * Idempotency guard for webhooks. Returns true if this (gateway, eventId) is new
+ * and should be processed; false if it was already handled (a retry/replay).
+ * Gateways re-deliver events (e.g. Stripe `invoice.paid`), and without this a
+ * retry would extend a period twice or re-activate a cancelled subscription.
+ * Best-effort: if eventId is missing we process (can't dedupe) rather than drop.
+ */
+async function isFreshWebhookEvent(gateway, eventId) {
+  if (!eventId) return true;
+  try {
+    await prisma.webhookEvent.create({ data: { gateway, eventId: String(eventId) } });
+    return true;
+  } catch (err) {
+    if (err?.code === "P2002") return false; // unique violation → already processed
+    throw err;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Public — plan list
 // ─────────────────────────────────────────────────────────────────────────────
@@ -367,6 +385,11 @@ export async function handleTapWebhook(req, res) {
   const status = event?.status ?? event?.charge?.status;
   if (!chargeId) return res.json({ received: true });
 
+  // Idempotency: don't re-process a replayed charge event (keyed by charge+status
+  // so a genuine later transition — e.g. CAPTURED then a refund — still applies).
+  if (!(await isFreshWebhookEvent("tap", `${chargeId}:${status}`)))
+    return res.json({ received: true });
+
   try {
     if (status === "CAPTURED") {
       const sub = await prisma.subscription.findFirst({ where: { tapChargeId: chargeId }, include: { plan: true } });
@@ -478,6 +501,10 @@ export async function handlePaymobWebhook(req, res) {
   if (!paymobVerifyHmac(hmacParams, hmac))
     return res.status(401).json({ message: "Invalid HMAC." });
 
+  // Idempotency: Paymob may re-deliver a transaction notification.
+  if (!(await isFreshWebhookEvent("paymob", obj.id)))
+    return res.json({ received: true });
+
   const merchantOrderId = obj.order?.merchant_order_id ?? "";
   const orgId = merchantOrderId.startsWith("certify_") ? merchantOrderId.split("_")[1] : null;
   if (!orgId) return res.json({ received: true });
@@ -524,6 +551,10 @@ export async function handleStripeWebhook(req, res) {
   } catch (err) {
     return res.status(400).json({ message: `Webhook error: ${err.message}` });
   }
+
+  // Stripe re-delivers events on timeout/retry — process each one only once.
+  if (!(await isFreshWebhookEvent("stripe", event.id)))
+    return res.json({ received: true });
 
   try {
     switch (event.type) {

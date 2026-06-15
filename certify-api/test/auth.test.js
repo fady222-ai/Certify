@@ -1,8 +1,10 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { prisma } from "../src/db/prisma.js";
-import { verifyToken, login, verifyEmail } from "../src/services/authService.js";
+import { config } from "../src/config/index.js";
+import { signToken, verifyToken, login, verifyEmail } from "../src/services/authService.js";
 
 // These are integration tests for the auth flow. The Prisma singleton is a
 // plain object, so we isolate the DB by swapping its model methods with an
@@ -198,4 +200,14 @@ test("login: correct password but unverified email throws 403 and (re)sends an O
   assert.equal(err.userId, "u1", "exposes the userId so the client can prompt for the OTP");
   assert.ok(calls.otpDeleted, "old codes cleared");
   assert.equal(calls.vTokenCreate.length, 1, "a fresh OTP is issued");
+});
+
+// ── JWT hardening ────────────────────────────────────────────────────────────
+test("verifyToken: accepts our own HS256 token and rejects a non-HS256 one", () => {
+  const token = signToken({ id: "u1", email: "a@x.com" });
+  assert.equal(verifyToken(token).sub, "u1");
+
+  // a token signed with a different algorithm must be rejected (algorithm pinning)
+  const hs384 = jwt.sign({ sub: "u1" }, config.appKey, { algorithm: "HS384" });
+  assert.throws(() => verifyToken(hs384), /invalid algorithm/i);
 });
