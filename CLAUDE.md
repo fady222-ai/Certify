@@ -176,6 +176,18 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - **بريد مخصص:** لاستخدام دومين خاص — فعّل الدومين في Resend (DNS) ثم اضبط
   `EMAIL_FROM=noreply@your-domain.com`. لا تغيير في الكود.
 
+### تحسينات الجودة (تنظيف منخفض الأولوية)
+- **مصدر أسعار موحّد (الواجهة):** `certify-web/src/lib/pricing.ts` هو المصدر
+  الوحيد لأسعار/أسماء الباقات المعروضة (يجب أن يطابق `prisma/seed.js`). صفحتا
+  الهبوط `app/page.tsx` و`app/pricing/page.tsx` تستوردانه؛ نصوص التسويق (المزايا/
+  الوسوم) تبقى محليّة بكل صفحة. (كانت الأسعار مكرّرة ومختلفة — الهبوط أظهر $49/$99 خطأً.)
+- **ترقيم صفحات الشهادات:** `GET /api/certificates` يقبل `page`/`pageSize`
+  (افتراضي 50، سقف 100) ويُعيد `{ data, total, page, pageSize }`؛ الواجهة
+  (`dashboard/certificates`) تعرض أزرار السابق/التالي.
+- **تسجيل أخطاء البريد:** `logMailFailure(context)` في `services/email/index.js`
+  يحلّ محلّ `.catch(() => {})` الصامت في إرسال البريد (best-effort يبقى غير حاجب،
+  لكن الفشل يظهر في السجلّ).
+
 ### متغيرات البيئة الأساسية (certify-api)
 `DATABASE_URL`, `APP_KEY` (32+ حرف), `APP_URL`, `CERTIFY_VERIFY_BASE_URL`,
 `CORS_ALLOWED_ORIGINS`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `RESEND_API_KEY`,

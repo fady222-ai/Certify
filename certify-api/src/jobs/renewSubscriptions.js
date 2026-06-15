@@ -3,6 +3,7 @@ import { prisma } from "../db/prisma.js";
 import { createTokenCharge as tapTokenCharge } from "../services/tapService.js";
 import { createTokenCharge as paymobTokenCharge } from "../services/paymobService.js";
 import { sendPaymentReceipt, sendRenewalReminder, sendPaymentFailed } from "../services/billingMailer.js";
+import { logMailFailure } from "../services/email/index.js";
 
 /**
  * Runs daily at 03:00.
@@ -51,15 +52,15 @@ export async function processRenewals() {
           where: { id: sub.id },
           data: { tapChargeId: charge.id, currentPeriodStart: sub.currentPeriodEnd, currentPeriodEnd: next },
         });
-        sendPaymentReceipt(sub.organizationId, sub.plan, { ...sub, currentPeriodEnd: next }, { isRenewal: true }).catch(() => {});
+        sendPaymentReceipt(sub.organizationId, sub.plan, { ...sub, currentPeriodEnd: next }, { isRenewal: true }).catch(logMailFailure(`renewal receipt for sub ${sub.id}`));
       } else {
         await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } });
-        sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
+        sendPaymentFailed(sub.organizationId, sub.plan).catch(logMailFailure(`payment-failed mail for sub ${sub.id}`));
       }
     } catch (err) {
       console.error(`Tap renewal failed for sub ${sub.id}:`, err.message);
       await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } }).catch(() => {});
-      sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
+      sendPaymentFailed(sub.organizationId, sub.plan).catch(logMailFailure(`payment-failed mail for sub ${sub.id}`));
     }
   }
 
@@ -95,15 +96,15 @@ export async function processRenewals() {
           where: { id: sub.id },
           data: { currentPeriodStart: sub.currentPeriodEnd, currentPeriodEnd: next },
         });
-        sendPaymentReceipt(sub.organizationId, sub.plan, { ...sub, currentPeriodEnd: next }, { isRenewal: true }).catch(() => {});
+        sendPaymentReceipt(sub.organizationId, sub.plan, { ...sub, currentPeriodEnd: next }, { isRenewal: true }).catch(logMailFailure(`renewal receipt for sub ${sub.id}`));
       } else {
         await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } });
-        sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
+        sendPaymentFailed(sub.organizationId, sub.plan).catch(logMailFailure(`payment-failed mail for sub ${sub.id}`));
       }
     } catch (err) {
       console.error(`Paymob renewal failed for sub ${sub.id}:`, err.message);
       await prisma.subscription.update({ where: { id: sub.id }, data: { status: "past_due" } }).catch(() => {});
-      sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
+      sendPaymentFailed(sub.organizationId, sub.plan).catch(logMailFailure(`payment-failed mail for sub ${sub.id}`));
     }
   }
 
@@ -125,7 +126,7 @@ export async function processRenewals() {
   });
 
   for (const sub of walletExpiring) {
-    sendRenewalReminder(sub.organizationId, sub.plan, sub, 3).catch(() => {});
+    sendRenewalReminder(sub.organizationId, sub.plan, sub, 3).catch(logMailFailure(`renewal reminder for sub ${sub.id}`));
   }
 
   // ── 2. Downgrade cancelled/expired subscriptions ─────────────────────────
@@ -164,7 +165,7 @@ export async function processRenewals() {
       ]);
       downgraded++;
       if (sub.status === "past_due" && sub.plan) {
-        sendPaymentFailed(sub.organizationId, sub.plan).catch(() => {});
+        sendPaymentFailed(sub.organizationId, sub.plan).catch(logMailFailure(`payment-failed mail for sub ${sub.id}`));
       }
     } catch (err) {
       console.error(`Downgrade failed for sub ${sub.id}:`, err.message);

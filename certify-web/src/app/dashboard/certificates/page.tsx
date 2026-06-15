@@ -31,6 +31,9 @@ export default function CertificatesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const PAGE_SIZE = 50;
   const [revoking, setRevoking] = useState<string | null>(null);
   const [resending, setResending] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -41,15 +44,17 @@ export default function CertificatesPage() {
       const qs = new URLSearchParams();
       if (search.trim()) qs.set("search", search.trim());
       if (status) qs.set("status", status);
+      qs.set("page", String(page));
       const res = await authedFetch(`certificates?${qs.toString()}`);
       const data = await res.json();
       setCerts(data.data ?? []);
+      setTotal(data.total ?? 0);
     } catch {
       router.push("/login");
     } finally {
       setLoading(false);
     }
-  }, [search, status, router]);
+  }, [search, status, page, router]);
 
   useEffect(() => {
     if (!getToken()) { router.push("/login"); return; }
@@ -112,14 +117,14 @@ export default function CertificatesPage() {
             <IconSearch className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="ابحث بالاسم، البريد، الدورة، أو رمز التحقق…"
               className="input pr-11"
             />
           </div>
           <div className="flex gap-1.5 rounded-xl bg-white p-1 ring-1 ring-surface-3">
             {FILTERS.map((f) => (
-              <button key={f.key} onClick={() => setStatus(f.key)}
+              <button key={f.key} onClick={() => { setStatus(f.key); setPage(1); }}
                 className={`rounded-lg px-4 py-2 text-sm font-bold transition ${
                   status === f.key ? "bg-brand-600 text-white" : "text-ink-soft hover:bg-surface-2"
                 }`}>
@@ -195,6 +200,29 @@ export default function CertificatesPage() {
             </div>
           )}
         </div>
+
+        {/* Pagination — only shown when results span more than one page */}
+        {total > PAGE_SIZE && (
+          <div className="flex items-center justify-between gap-4 text-sm">
+            <span className="text-ink-muted">
+              صفحة {page} من {Math.ceil(total / PAGE_SIZE)} · {total} شهادة
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || loading}
+                className="rounded-lg px-4 py-2 font-bold text-ink-soft ring-1 ring-surface-3 transition hover:bg-surface-2 disabled:opacity-40">
+                السابق
+              </button>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page >= Math.ceil(total / PAGE_SIZE) || loading}
+                className="rounded-lg px-4 py-2 font-bold text-ink-soft ring-1 ring-surface-3 transition hover:bg-surface-2 disabled:opacity-40">
+                التالي
+              </button>
+            </div>
+          </div>
+        )}
       </main>
   );
 }

@@ -26,7 +26,7 @@ describe("verifyCertificate", () => {
   });
 
   test("url-encodes the verification code", async () => {
-    const spy = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ found: true }) }));
+    const spy = vi.fn(async (_url: string) => ({ ok: true, status: 200, json: async () => ({ found: true }) }));
     global.fetch = spy as unknown as typeof fetch;
     await verifyCertificate("a/b c");
     expect(spy.mock.calls[0][0]).toContain("a%2Fb%20c");

@@ -42,6 +42,11 @@ export async function listCertificates(req, res) {
   const search = (req.query.search ?? "").toString().trim();
   const status = (req.query.status ?? "").toString().trim();
 
+  // Pagination: page is 1-based; pageSize is capped so a single request can
+  // never pull an unbounded result set (keeps the list fast for big orgs).
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 50));
+
   const where = { organizationId: req.organization.id };
   if (status && ["active", "revoked", "expired"].includes(status)) {
     where.status = status;
@@ -59,12 +64,13 @@ export async function listCertificates(req, res) {
     prisma.certificate.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      take: 100,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     }),
     prisma.certificate.count({ where }),
   ]);
 
-  res.json({ data: data.map(presentCertificate), total });
+  res.json({ data: data.map(presentCertificate), total, page, pageSize });
 }
 
 /** GET /api/certificates/:id — single certificate detail with recent events. */

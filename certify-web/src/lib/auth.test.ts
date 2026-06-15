@@ -98,7 +98,7 @@ describe("authedFetch", () => {
 
   test("attaches the bearer token when present", async () => {
     localStorage.setItem(TOKEN_KEY, "jwt-123");
-    const spy = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({}) }));
+    const spy = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, status: 200, json: async () => ({}) }));
     global.fetch = spy as unknown as typeof fetch;
     await authedFetch("auth/me");
     const headers = (spy.mock.calls[0][1] as RequestInit).headers as Record<string, string>;

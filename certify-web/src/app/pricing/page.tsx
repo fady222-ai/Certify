@@ -6,48 +6,15 @@ import { useRouter } from "next/navigation";
 import { createCheckout, type Gateway } from "@/lib/billing";
 import { GatewayPicker } from "@/components/GatewayPicker";
 import { getToken } from "@/lib/auth";
+import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
 
+// Prices/names come from the canonical pricing module; only marketing copy
+// (feature bullets, CTA, highlight) is defined here.
 const PLANS = [
-  {
-    slug: "free",
-    name: "Free",
-    monthly: 0,
-    yearly: 0,
-    certs: "10 شهادات / شهر",
-    features: ["قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"],
-    cta: "ابدأ مجاناً",
-    highlight: false,
-  },
-  {
-    slug: "starter",
-    name: "Starter",
-    monthly: 9,
-    yearly: 90,
-    certs: "200 شهادة / شهر",
-    features: ["كل ميزات Free", "قوالب غير محدودة", "إرسال بريد إلكتروني", "إصدار جماعي CSV"],
-    cta: "ابدأ الآن",
-    highlight: false,
-  },
-  {
-    slug: "pro",
-    name: "Pro",
-    monthly: 29,
-    yearly: 290,
-    certs: "2,000 شهادة / شهر",
-    features: ["كل ميزات Starter", "3 أعضاء فريق", "وصول API", "تقارير متقدمة"],
-    cta: "ابدأ الآن",
-    highlight: true,
-  },
-  {
-    slug: "business",
-    name: "Business",
-    monthly: 79,
-    yearly: 790,
-    certs: "10,000 شهادة / شهر",
-    features: ["كل ميزات Pro", "10 أعضاء فريق", "علامة بيضاء (White-label)", "دعم مخصص"],
-    cta: "ابدأ الآن",
-    highlight: false,
-  },
+  { ...PLAN_PRICING.free, features: ["قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجاناً", highlight: false },
+  { ...PLAN_PRICING.starter, features: ["كل ميزات Free", "قوالب غير محدودة", "إرسال بريد إلكتروني", "إصدار جماعي CSV"], cta: "ابدأ الآن", highlight: false },
+  { ...PLAN_PRICING.pro, features: ["كل ميزات Starter", "3 أعضاء فريق", "وصول API", "تقارير متقدمة"], cta: "ابدأ الآن", highlight: true },
+  { ...PLAN_PRICING.business, features: ["كل ميزات Pro", "10 أعضاء فريق", "علامة بيضاء (White-label)", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
 ];
 
 export default function PricingPage() {
@@ -80,7 +47,7 @@ export default function PricingPage() {
     }
   }
 
-  const annualSaving = 17;
+  const annualSaving = ANNUAL_SAVING_PCT;
 
   return (
     <div className="min-h-screen bg-surface-2/40" dir="rtl">
@@ -161,7 +128,7 @@ export default function PricingPage() {
                 )}
 
                 <h3 className="text-lg font-bold text-ink">{plan.name}</h3>
-                <p className="text-sm text-ink-muted mt-1 mb-4">{plan.certs}</p>
+                <p className="text-sm text-ink-muted mt-1 mb-4">{plan.certsLabel}</p>
 
                 <div className="mb-6">
                   {price === 0 ? (

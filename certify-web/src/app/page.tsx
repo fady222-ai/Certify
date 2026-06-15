@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PLAN_PRICING } from "@/lib/pricing";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import {
@@ -28,10 +29,12 @@ const stats = [
   { value: "∞", label: "قوالب لا محدودة" },
 ];
 
+// Prices/names come from the canonical pricing module (single source of truth,
+// kept in sync with the backend seed); only marketing copy lives here.
 const plans = [
-  { name: "مجاني", price: "0", unit: "$", tag: "للتجربة", certs: "١٠ شهادات/شهر", features: ["محرر القوالب", "صفحة تحقق عامة", "تكامل لينكدإن"], cta: "ابدأ مجاناً", highlight: false },
-  { name: "Pro", price: "49", unit: "$", tag: "الأكثر اختياراً", certs: "٢٠٠٠ شهادة/شهر", features: ["كل ميزات المجاني", "إصدار جماعي من Excel", "توقيع رقمي مخصص", "تحليلات متقدمة", "٣ أعضاء فريق"], cta: "ابدأ الآن", highlight: true },
-  { name: "Business", price: "99", unit: "$", tag: "للأكاديميات", certs: "١٠٬٠٠٠ شهادة/شهر", features: ["كل ميزات Pro", "White-label", "نطاق فرعي مخصص", "API كامل", "١٠ أعضاء فريق"], cta: "تواصل معنا", highlight: false },
+  { ...PLAN_PRICING.free, tag: "للتجربة", features: ["محرر القوالب", "صفحة تحقق عامة", "تكامل لينكدإن"], cta: "ابدأ مجاناً", highlight: false },
+  { ...PLAN_PRICING.pro, tag: "الأكثر اختياراً", features: ["كل ميزات المجاني", "إصدار جماعي من Excel", "توقيع رقمي مخصص", "تحليلات متقدمة", "٣ أعضاء فريق"], cta: "ابدأ الآن", highlight: true },
+  { ...PLAN_PRICING.business, tag: "للأكاديميات", features: ["كل ميزات Pro", "White-label", "نطاق فرعي مخصص", "API كامل", "١٠ أعضاء فريق"], cta: "تواصل معنا", highlight: false },
 ];
 
 export default function Home() {
@@ -214,10 +217,10 @@ export default function Home() {
                 <h3 className="text-lg font-extrabold text-ink">{p.name}</h3>
                 {!p.highlight && <span className="mt-1 text-xs font-bold text-ink-muted">{p.tag}</span>}
                 <div className="mt-4 flex items-end gap-1">
-                  <span className="font-display text-5xl font-black text-ink">{p.price}</span>
-                  <span className="mb-2 text-lg font-bold text-ink-muted">{p.unit}/شهر</span>
+                  <span className="font-display text-5xl font-black text-ink">{p.monthly}</span>
+                  <span className="mb-2 text-lg font-bold text-ink-muted">$/شهر</span>
                 </div>
-                <p className="mt-2 text-sm font-bold text-brand-700">{p.certs}</p>
+                <p className="mt-2 text-sm font-bold text-brand-700">{p.certsLabel}</p>
 
                 <ul className="mt-6 flex-1 space-y-3 text-sm text-ink-soft">
                   {p.features.map((f) => (

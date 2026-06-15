@@ -50,6 +50,16 @@ async function sendViaResend({ to, subject, html, text }) {
   }
 }
 
+/**
+ * Returns a `.catch` handler for best-effort (fire-and-forget) mail sends.
+ * Email is intentionally non-blocking — issuance/billing must not fail if mail
+ * does — but a thrown error (e.g. a missing recipient record) should still be
+ * visible in the logs rather than silently swallowed by `.catch(() => {})`.
+ */
+export function logMailFailure(context) {
+  return (err) => console.warn(`[email] ${context} failed:`, err?.message ?? err);
+}
+
 function sendViaConsole({ to, subject }) {
   console.log(`\n📧 [email:console] → ${to}\n   subject: ${subject}\n   (set RESEND_API_KEY to send for real)\n`);
   return { ok: true, transport: "console" };

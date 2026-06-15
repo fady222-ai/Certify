@@ -18,6 +18,7 @@ import {
   isConfigured as paymobConfigured,
 } from "../services/paymobService.js";
 import { sendPaymentReceipt } from "../services/billingMailer.js";
+import { logMailFailure } from "../services/email/index.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -87,7 +88,7 @@ async function applyPlanToOrg(orgId, plan, subData, { notify = false } = {}) {
   ]);
 
   if (notify && amount > 0) {
-    sendPaymentReceipt(orgId, plan, { ...subData, currentPeriodEnd: periodEnd }).catch(() => {});
+    sendPaymentReceipt(orgId, plan, { ...subData, currentPeriodEnd: periodEnd }).catch(logMailFailure(`payment receipt for org ${orgId}`));
   }
 }
 
@@ -601,7 +602,7 @@ export async function handleStripeWebhook(req, res) {
         // Fire renewal receipt email (best-effort)
         const renewedPlan = await prisma.plan.findUnique({ where: { id: sub.planId } });
         if (renewedPlan) {
-          sendPaymentReceipt(sub.organizationId, renewedPlan, { ...sub, currentPeriodEnd: next }, { isRenewal: true }).catch(() => {});
+          sendPaymentReceipt(sub.organizationId, renewedPlan, { ...sub, currentPeriodEnd: next }, { isRenewal: true }).catch(logMailFailure(`renewal receipt for sub ${sub.id}`));
         }
         break;
       }

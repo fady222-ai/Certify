@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 import { prisma } from "../db/prisma.js";
 import { config } from "../config/index.js";
-import { sendEmail } from "./email/index.js";
+import { sendEmail, logMailFailure } from "./email/index.js";
 import { otpEmail, passwordResetEmail } from "./email/authTemplates.js";
 
 const TOKEN_TTL = "7d";
@@ -79,7 +79,7 @@ async function saveAndSendOtp(userId, userName, email) {
   await prisma.verificationToken.create({ data: { userId, code, expiresAt } });
 
   const msg = otpEmail({ userName, code, expiresMinutes: OTP_TTL_MINUTES });
-  sendEmail({ to: email, ...msg }).catch(() => {});
+  sendEmail({ to: email, ...msg }).catch(logMailFailure(`OTP to ${email}`));
 }
 
 export async function register({ name, email, password, organizationName }) {
@@ -282,7 +282,7 @@ export async function forgotPassword({ email }) {
 
   const resetUrl = `${config.verifyBaseUrl}/reset-password?token=${token}`;
   const msg = passwordResetEmail({ userName: user.name, resetUrl, expiresHours: RESET_TTL_HOURS });
-  sendEmail({ to: user.email, ...msg }).catch(() => {});
+  sendEmail({ to: user.email, ...msg }).catch(logMailFailure(`password reset to ${user.email}`));
 }
 
 export async function resetPassword({ token, newPassword }) {
