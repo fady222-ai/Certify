@@ -111,7 +111,7 @@ export function IssueCertificateModal({
             </p>
             <div className="mt-6 flex gap-3">
               <button onClick={reset} className="btn-ghost flex-1" type="button">إلغاء</button>
-              <Link href="/dashboard/templates" className="btn-primary flex-1 justify-center">
+              <Link href="/dashboard/templates" onClick={reset} className="btn-primary flex-1 justify-center">
                 اذهب لاختيار قالب
               </Link>
             </div>
@@ -147,7 +147,7 @@ export function IssueCertificateModal({
                 <span className="text-ink-soft">
                   القالب: <span className="font-bold text-ink">{defaultTemplateName ?? "القالب الافتراضي"}</span>
                 </span>
-                <Link href="/dashboard/templates" className="text-xs font-bold text-brand-600 hover:underline">
+                <Link href="/dashboard/templates" onClick={reset} className="text-xs font-bold text-brand-600 hover:underline">
                   تغيير القالب
                 </Link>
               </div>
