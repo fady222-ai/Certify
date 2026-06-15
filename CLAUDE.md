@@ -162,6 +162,9 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 
 - **الفرع النشط للتطوير:** `claude/youthful-johnson-qrd0un`
 - **المستودع:** `fady222-ai/Certify` (أُعيدت تسميته من `alfady-branch`)
+- **CI:** `.github/workflows/ci.yml` يشغّل اختبارات `certify-api` (`npm ci` →
+  `npx prisma generate` → `npm test`) على Node 20 لكل push وPR. لا قاعدة بيانات
+  مطلوبة (الاختبارات تعزل DB بنسخة في الذاكرة).
 - بعد أي تعديل على schema: شغّل `npx prisma db push` على بيئة النشر.
 - **تفرّد اسم المنظمة:** مفروض بفهرس دالّي فريد `lower(name)` يُنشأ تلقائياً عند
   الإقلاع (`ensureOrgNameIndex`, idempotent ومتسامح). إن فشل إنشاؤه بسبب أسماء
