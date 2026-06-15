@@ -162,9 +162,12 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 
 - **الفرع النشط للتطوير:** `claude/youthful-johnson-qrd0un`
 - **المستودع:** `fady222-ai/Certify` (أُعيدت تسميته من `alfady-branch`)
-- **CI:** `.github/workflows/ci.yml` يشغّل اختبارات `certify-api` (`npm ci` →
-  `npx prisma generate` → `npm test`) على Node 20 لكل push وPR. لا قاعدة بيانات
-  مطلوبة (الاختبارات تعزل DB بنسخة في الذاكرة).
+- **CI:** `.github/workflows/ci.yml` (Node 20، لكل push وPR) بوظيفتين:
+  `api-tests` (`npm ci` → `npx prisma generate` → `npm test`، بلا قاعدة بيانات —
+  عزل DB بالذاكرة) و`web-tests` (`certify-web`: `npm ci` → `npm test` عبر Vitest).
+- **اختبارات الواجهة:** Vitest + jsdom (`certify-web/vitest.config.ts`، `npm test`)
+  تغطّي منطق `src/lib/auth.ts` (تخزين/إبطال التوكن، تدفّق الدخول والتحقق، `authedFetch`
+  يُسجّل الخروج على 401) و`src/lib/api.ts` (`verifyCertificate`: نجاح/404/خطأ شبكة).
 - بعد أي تعديل على schema: شغّل `npx prisma db push` على بيئة النشر.
 - **تفرّد اسم المنظمة:** مفروض بفهرس دالّي فريد `lower(name)` يُنشأ تلقائياً عند
   الإقلاع (`ensureOrgNameIndex`, idempotent ومتسامح). إن فشل إنشاؤه بسبب أسماء
