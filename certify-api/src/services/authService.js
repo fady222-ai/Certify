@@ -9,8 +9,6 @@ import { otpEmail, passwordResetEmail } from "./email/authTemplates.js";
 const TOKEN_TTL = "7d";
 const OTP_TTL_MINUTES = 15;
 const RESET_TTL_HOURS = 1;
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_MINUTES = 15;
 const MAX_OTP_ATTEMPTS = 5;
 
 export function slugify(name) {
@@ -226,25 +224,15 @@ export async function login({ identifier, password }) {
     throw err;
   }
 
-  if (user.lockedUntil && new Date() < user.lockedUntil) {
-    const remaining = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
-    const err = new Error(`الحساب مقفل مؤقتاً بسبب محاولات كثيرة. حاول مجدداً بعد ${remaining} دقيقة.`);
-    err.statusCode = 423;
-    throw err;
-  }
-
   const ok = await bcrypt.compare(password, user.passwordHash);
 
   if (!ok) {
-    const attempts = (user.failedLoginAttempts ?? 0) + 1;
-    const lockData =
-      attempts >= MAX_FAILED_ATTEMPTS
-        ? { lockedUntil: new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000) }
-        : {};
-
+    // عدّاد المحاولات الفاشلة (للمراقبة) — بلا قفل لكل‑حساب: القفل كان قابلاً
+    // للتسليح كـ DoS عبر اسم الأكاديمية العام. الحماية من التخمين عبر محدِّدات
+    // المعدّل لكل IP (انظر loginFailureLimiter في server.js).
     await prisma.user.update({
       where: { id: user.id },
-      data: { failedLoginAttempts: attempts, ...lockData },
+      data: { failedLoginAttempts: (user.failedLoginAttempts ?? 0) + 1 },
     });
 
     const err = new Error("البريد الإلكتروني/اسم الأكاديمية أو كلمة المرور غير صحيحة.");
@@ -252,10 +240,10 @@ export async function login({ identifier, password }) {
     throw err;
   }
 
-  if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+  if (user.failedLoginAttempts > 0) {
     await prisma.user.update({
       where: { id: user.id },
-      data: { failedLoginAttempts: 0, lockedUntil: null },
+      data: { failedLoginAttempts: 0 },
     });
   }
 

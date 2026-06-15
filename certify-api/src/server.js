@@ -44,6 +44,16 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
 });
+// يَعُدّ المحاولات الفاشلة فقط لكل IP — يحظر المهاجم دون إقفال حساب الضحية.
+// يحلّ محلّ قفل الحساب لكل‑مستخدم الذي كان قابلاً للتسليح عبر المعرّف العام.
+const loginFailureLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "محاولات دخول فاشلة كثيرة. حاول مجدداً بعد قليل." },
+});
 const registerLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
@@ -59,6 +69,7 @@ const sensitiveAuthLimiter = rateLimit({
   message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
 });
 app.use("/api/auth/login", loginLimiter);
+app.use("/api/auth/login", loginFailureLimiter);
 app.use("/api/auth/register", registerLimiter);
 app.use("/api/auth/forgot-password", sensitiveAuthLimiter);
 app.use("/api/auth/resend-otp", sensitiveAuthLimiter);
