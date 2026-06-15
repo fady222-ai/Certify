@@ -98,6 +98,8 @@ export function IssueCertificateModal({
               <button onClick={reset} className="btn-primary flex-1" type="button">تم</button>
             </div>
           </div>
+        ) : !ready ? (
+          <div className="py-10 text-center text-sm text-ink-muted">جارٍ التحميل…</div>
         ) : ready && !defaultTemplateId ? (
           <div className="text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-600 text-3xl">
