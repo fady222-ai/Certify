@@ -135,7 +135,7 @@ export async function getBatch(req, res) {
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 /** Lightweight email sanity check; invalid addresses are dropped (email is optional). */
-function isValidEmail(value) {
+export function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
@@ -144,7 +144,7 @@ function isValidEmail(value) {
  * Uses exceljs (xlsx) and csv-parse (csv) — both free of the Prototype
  * Pollution / ReDoS vulnerabilities present in the old `xlsx` package.
  */
-async function parseFile(file) {
+export async function parseFile(file) {
   const isCsv =
     file.mimetype === "text/csv" ||
     file.mimetype === "application/csv" ||
@@ -230,13 +230,15 @@ function parseCsvBuffer(buffer) {
   }
 }
 
-async function processBatchAsync(batchId, rows, organization, defaultCourse, templateId) {
+// `issue` is injectable so the aggregation logic can be unit-tested without
+// launching headless Chrome; production callers use the real issueCertificate.
+export async function processBatchAsync(batchId, rows, organization, defaultCourse, templateId, issue = issueCertificate) {
   let successCount = 0;
   let failedCount = 0;
 
   for (const row of rows) {
     try {
-      await issueCertificate(
+      await issue(
         organization,
         {
           ...row,
