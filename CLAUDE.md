@@ -98,6 +98,11 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - ملفات: `authController.js`, `authService.js`, `middleware/auth.js`,
   `services/email/authTemplates.js`. الواجهة: `RegisterForm.tsx` (خطوتان)،
   `LoginForm.tsx`، صفحتا `/forgot-password` و`/reset-password`.
+- **اختبارات** (`test/auth.test.js`، تُشغَّل بـ `npm test`): تثبّت دفاعات التخمين
+  دون قاعدة بيانات حقيقية (عزل Prisma بإحلال دوالّ الكائن المفرد في الذاكرة) — تدفّق
+  OTP (نجاح، رمز خاطئ يزيد العدّاد، تجاوز 5 محاولات يُبطل الرمز 429، انتهاء الصلاحية)
+  وتسجيل الدخول (نجاح يصفّر العدّاد، خطأ 401 بلا قفل حساب، عدم كشف وجود الحساب،
+  الدخول باسم الأكاديمية، بريد غير مفعّل → 403 مع إعادة إرسال OTP).
 
 نماذج Prisma المضافة: `VerificationToken` (يحوي `attempts`), `PasswordResetToken`.
 حقول `User` المضافة: `emailVerified`, `failedLoginAttempts`, `lockedUntil`,
@@ -153,7 +158,8 @@ cd certify-web && npm install && npm run dev
 
 ## مهام معلّقة / أفكار مستقبلية
 
-- [ ] معالجة حالة `past_due` (تنبيه المستخدم + مهلة سماح قبل التخفيض).
+- [x] معالجة حالة `past_due` (مهلة سماح 7 أيام ثم تخفيض للمجاني + بريد
+  `sendPaymentFailed`) — منفّذة في `jobs/renewSubscriptions.js`.
 - [x] تحديث `DEPLOY.md`: اسم المستودع في Railway أصبح **Certify** (كان alfady-branch).
 - [ ] تحديث عنوان/وصف PR #1 (الوصف القديم يذكر Laravel/Next 14 خطأً).
 - [x] تحصين أمني + مراجعة pentest كاملة (PR #2) — راجع قسم نظام الأمان.
