@@ -70,6 +70,13 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - **التخفيض للمجاني** (`changePlan` أو checkout بسعر 0) يُلغي اشتراك Stripe
   النشط فوراً (`cancelActiveGatewaySubscription`) فيتوقف المحاسبة.
 - **وضع dev:** إن لم تُضبط مفاتيح بوابة، يتم التبديل المباشر للباقة بدون دفع.
+- **اختبارات** (`test/billing.test.js` + `test/billing-prod-security.test.js`، `npm test`):
+  تثبّت منطق كودنا (لا منطق البوابة) دون DB/شبكة حقيقية — التحقق من التوقيع
+  (Tap HMAC-SHA256، Paymob HMAC-SHA512 على 20 حقلاً، Stripe عبر الـ SDK: قبول الصحيح
+  ورفض المزيّف)؛ معالِجات الـ webhook (توقيع خاطئ → 401، `CAPTURED`/`success` → تفعيل
+  وحفظ البطاقة، `FAILED`/فشل → `past_due`)؛ منطق المهلة في `processRenewals` (تخفيض
+  `past_due` المتجاوز للمهلة و`cancelAtPeriodEnd` المنتهية للمجاني، وعدم تخفيض ما هو
+  داخل المهلة)؛ وضمان الإنتاج: رفض أي webhook غير موقّع عند غياب السر.
 
 ---
 
