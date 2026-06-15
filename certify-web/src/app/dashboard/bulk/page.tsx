@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getToken, authedFetch } from "@/lib/auth";
-import { listTemplates, type Template } from "@/lib/templates";
+import { listTemplates } from "@/lib/templates";
+import { getOrganization } from "@/lib/organization";
 import { IconUpload, IconCheck, IconArrow } from "@/components/icons";
 
 type BatchStatus = {
@@ -22,8 +23,8 @@ export default function BulkPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [templateId, setTemplateId] = useState("");
+  const [defaultTemplateId, setDefaultTemplateId] = useState<string | null>(null);
+  const [defaultTemplateName, setDefaultTemplateName] = useState<string | null>(null);
   const [courseName, setCourseName] = useState("");
   const [batchName, setBatchName] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -50,7 +51,13 @@ export default function BulkPage() {
 
   useEffect(() => {
     if (!getToken()) { router.push("/login"); return; }
-    listTemplates().then(setTemplates).catch(() => {});
+    Promise.all([getOrganization(), listTemplates().catch(() => [])])
+      .then(([org, templates]) => {
+        const id = org.default_template_id ?? null;
+        setDefaultTemplateId(id);
+        setDefaultTemplateName(templates.find((t) => t.id === id)?.name ?? null);
+      })
+      .catch(() => {});
     loadBatches();
   }, [router, loadBatches]);
 
@@ -64,6 +71,7 @@ export default function BulkPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) { setError("يرجى اختيار ملف."); return; }
+    if (!defaultTemplateId) { setError("اختر قالباً أولاً قبل إصدار الشهادات."); return; }
     setError(null);
     setUploading(true);
     try {
@@ -71,7 +79,7 @@ export default function BulkPage() {
       fd.append("file", file);
       if (batchName) fd.append("name", batchName);
       if (courseName) fd.append("courseName", courseName);
-      if (templateId) fd.append("templateId", templateId);
+      fd.append("templateId", defaultTemplateId);
 
       const res = await authedFetch("batches", { method: "POST", body: fd });
       const data = await res.json();
@@ -89,7 +97,6 @@ export default function BulkPage() {
     setFile(null);
     setBatchName("");
     setCourseName("");
-    setTemplateId("");
     setError(null);
     setSubmitted(null);
     if (fileRef.current) fileRef.current.value = "";
@@ -180,16 +187,22 @@ export default function BulkPage() {
                 placeholder="يُستخدم إذا لم يكن في الملف" className="input" />
             </label>
 
-            {templates.length > 0 && (
-              <label className="block">
-                <span className="mb-1.5 block text-sm font-bold text-ink">القالب (اختياري)</span>
-                <select value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="input">
-                  <option value="">القالب الافتراضي</option>
-                  {templates.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </label>
+            {defaultTemplateId ? (
+              <div className="flex items-center justify-between rounded-xl bg-surface-2/60 px-4 py-3 text-sm">
+                <span className="text-ink-soft">
+                  القالب: <span className="font-bold text-ink">{defaultTemplateName ?? "القالب الافتراضي"}</span>
+                </span>
+                <Link href="/dashboard/templates" className="text-xs font-bold text-brand-600 hover:underline">
+                  تغيير القالب
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 ring-1 ring-amber-200">
+                <span>🎨 لم تعيّن قالباً افتراضياً بعد — عيّنه أولاً لإصدار الشهادات.</span>
+                <Link href="/dashboard/templates" className="whitespace-nowrap font-extrabold text-amber-900 hover:underline">
+                  اختيار قالب ←
+                </Link>
+              </div>
             )}
 
             {error && (
@@ -198,7 +211,7 @@ export default function BulkPage() {
               </div>
             )}
 
-            <button type="submit" disabled={uploading || !file} className="btn-primary w-full disabled:opacity-60">
+            <button type="submit" disabled={uploading || !file || !defaultTemplateId} className="btn-primary w-full disabled:opacity-60">
               <IconUpload className="h-4 w-4" />
               {uploading ? "جارٍ الرفع…" : "رفع وإصدار الشهادات"}
             </button>

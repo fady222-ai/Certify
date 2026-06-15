@@ -53,7 +53,7 @@ async function generateCode() {
  * and be either public or owned by the org. Prevents cross-tenant template use
  * (IDOR) where org B issues a certificate rendered with org A's private design.
  */
-async function assertTemplateAccessible(organization, templateId) {
+export async function assertTemplateAccessible(organization, templateId) {
   if (!templateId) return;
   const template = await prisma.template.findUnique({ where: { id: templateId } });
   const accessible =
@@ -107,7 +107,11 @@ async function incrementUsage(organizationId) {
  */
 export async function issueCertificate(organization, data, render = true, options = {}) {
   const { sendMail = true } = options;
-  await assertTemplateAccessible(organization, data.templateId);
+  // Fall back to the organization's assigned default template when the caller
+  // doesn't specify one, so issuers (single + bulk) no longer pick a template
+  // each time. Verified accessible to block cross-tenant template use (IDOR).
+  const templateId = data.templateId ?? organization.defaultTemplateId ?? null;
+  await assertTemplateAccessible(organization, templateId);
   await assertWithinPlanLimit(organization);
 
   const id = crypto.randomUUID();
@@ -128,7 +132,7 @@ export async function issueCertificate(organization, data, render = true, option
     data: {
       id,
       organizationId: organization.id,
-      templateId: data.templateId ?? null,
+      templateId,
       batchId: data.batchId ?? null,
       recipientName: data.recipientName,
       recipientEmail: data.recipientEmail ?? null,

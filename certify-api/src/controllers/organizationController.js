@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
 import { config } from "../config/index.js";
+import { assertTemplateAccessible } from "../services/certificateIssuer.js";
 
 /** Resolve a stored asset path to an absolute URL (passthrough if already absolute). */
 function assetUrl(url) {
@@ -22,6 +23,7 @@ function presentOrganization(org) {
     logo_url: assetUrl(org.logoUrl),
     signature_url: assetUrl(org.signatureUrl),
     verify_domain: org.verifyDomain,
+    default_template_id: org.defaultTemplateId ?? null,
   };
 }
 
@@ -62,6 +64,33 @@ export async function updateOrganization(req, res) {
     data,
   });
   res.json(presentOrganization(org));
+}
+
+/**
+ * PUT /api/organization/default-template — set (or clear) the org's default
+ * certificate template. Used so issuers don't pick a template every time.
+ * Body: { templateId: string | null }.
+ */
+export async function setDefaultTemplate(req, res, next) {
+  try {
+    if (!req.organization) return res.status(404).json({ message: "لا توجد منظمة." });
+
+    const templateId = req.body?.templateId ?? null;
+    if (templateId !== null && typeof templateId !== "string") {
+      return res.status(422).json({ message: "معرّف القالب غير صالح." });
+    }
+
+    // Guard against assigning a template the org can't use (IDOR); throws 404.
+    await assertTemplateAccessible(req.organization, templateId);
+
+    const org = await prisma.organization.update({
+      where: { id: req.organization.id },
+      data: { defaultTemplateId: templateId },
+    });
+    res.json(presentOrganization(org));
+  } catch (e) {
+    next(e);
+  }
 }
 
 const EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };

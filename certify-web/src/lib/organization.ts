@@ -11,6 +11,7 @@ export type Organization = {
   logo_url: string | null;
   signature_url: string | null;
   verify_domain: string | null;
+  default_template_id: string | null;
 };
 
 export async function getOrganization(): Promise<Organization> {
@@ -30,6 +31,19 @@ export async function updateOrganization(input: {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? "تعذّر الحفظ.");
+  return data;
+}
+
+export async function setDefaultTemplate(
+  templateId: string | null,
+): Promise<Organization> {
+  const res = await authedFetch("organization/default-template", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ templateId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message ?? "تعذّر تعيين القالب.");
   return data;
 }
 

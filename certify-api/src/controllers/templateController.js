@@ -121,6 +121,11 @@ export async function deleteTemplate(req, res, next) {
       return res.status(404).json({ message: "القالب غير موجود." });
     }
     await prisma.template.delete({ where: { id: req.params.id } });
+    // Clear any dangling default-template reference so issuance falls back to none.
+    await prisma.organization.updateMany({
+      where: { defaultTemplateId: req.params.id },
+      data: { defaultTemplateId: null },
+    });
     res.json({ ok: true });
   } catch (e) {
     next(e);

@@ -45,6 +45,7 @@ import {
 import {
   getOrganization,
   updateOrganization,
+  setDefaultTemplate,
   uploadBranding,
   deleteBranding,
 } from "../controllers/organizationController.js";
@@ -112,6 +113,7 @@ apiRouter.post("/billing/plan", requireAuth, changePlan);
 
 apiRouter.get("/organization", requireAuth, getOrganization);
 apiRouter.patch("/organization", requireAuth, updateOrganization);
+apiRouter.put("/organization/default-template", requireAuth, setDefaultTemplate);
 apiRouter.post("/organization/branding/:kind", requireAuth, (req, res, next) => {
   uploadImage(req, res, (err) => {
     if (err) return res.status(400).json({ message: err.message });

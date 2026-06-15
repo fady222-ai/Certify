@@ -5,15 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import { listTemplates, deleteTemplate, type Template } from "@/lib/templates";
-import { getOrganization } from "@/lib/organization";
+import { getOrganization, setDefaultTemplate } from "@/lib/organization";
 import { getTheme, injectLogo } from "@/lib/customize";
 import { DesignPreview } from "@/components/DesignPreview";
-import { IconPalette, IconArrow } from "@/components/icons";
+import { IconPalette, IconArrow, IconCheck } from "@/components/icons";
 
 export default function TemplatesPage() {
   const router = useRouter();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [defaultId, setDefaultId] = useState<string | null>(null);
+  const [assigning, setAssigning] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<Template | null>(null);
 
@@ -22,10 +24,23 @@ export default function TemplatesPage() {
       const [tpls, org] = await Promise.all([listTemplates(), getOrganization().catch(() => null)]);
       setTemplates(tpls);
       setLogoUrl(org?.logo_url ?? null);
+      setDefaultId(org?.default_template_id ?? null);
     } catch {
       router.push("/login");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function assignDefault(id: string) {
+    setAssigning(id);
+    try {
+      const org = await setDefaultTemplate(id);
+      setDefaultId(org.default_template_id ?? id);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "تعذّر تعيين القالب.");
+    } finally {
+      setAssigning(null);
     }
   }
 
@@ -111,27 +126,34 @@ export default function TemplatesPage() {
                   <p className="mt-1 text-xs text-ink-muted">
                     {t.design_data?.elements?.length ?? 0} عنصر
                   </p>
-                  <div className="mt-4 flex items-center gap-2">
-                    {t.is_public ? (
-                      <>
-                        <button onClick={() => setPreview(t)} className="btn-ghost flex-1 justify-center py-2 text-xs">
-                          معاينة
-                        </button>
-                        <Link href={editHref(t)} className="btn-primary flex-1 justify-center py-2 text-xs">
+                  <div className="mt-4 space-y-2">
+                    {defaultId === t.id ? (
+                      <div className="flex items-center justify-center gap-1.5 rounded-lg bg-verify-50 px-3 py-2 text-xs font-bold text-verify-700 ring-1 ring-verify-200">
+                        <IconCheck className="h-3.5 w-3.5" /> القالب الافتراضي
+                      </div>
+                    ) : (
+                      <button onClick={() => assignDefault(t.id)} disabled={assigning === t.id}
+                        className="btn-primary w-full justify-center py-2 text-xs disabled:opacity-60">
+                        {assigning === t.id ? "جارٍ التعيين…" : "تعيين كقالب افتراضي"}
+                      </button>
+                    )}
+                    <div className="flex items-center gap-2">
+                      {t.is_public ? (
+                        <Link href={editHref(t)} className="btn-ghost flex-1 justify-center py-2 text-xs">
                           تخصيص
                         </Link>
-                      </>
-                    ) : (
-                      <>
-                        <Link href={editHref(t)} className="btn-ghost flex-1 justify-center py-2 text-xs">
-                          {getTheme(t.design_data) ? "تخصيص" : "تعديل"} <IconArrow className="h-3.5 w-3.5" />
-                        </Link>
-                        <button onClick={() => remove(t.id)}
-                          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100">
-                          حذف
-                        </button>
-                      </>
-                    )}
+                      ) : (
+                        <>
+                          <Link href={editHref(t)} className="btn-ghost flex-1 justify-center py-2 text-xs">
+                            {getTheme(t.design_data) ? "تخصيص" : "تعديل"} <IconArrow className="h-3.5 w-3.5" />
+                          </Link>
+                          <button onClick={() => remove(t.id)}
+                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-100">
+                            حذف
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
