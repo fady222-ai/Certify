@@ -13,7 +13,7 @@ const registerSchema = z.object({
 });
 
 const loginSchema = z.object({
-  email: z.string().trim().email("بريد إلكتروني غير صالح."),
+  identifier: z.string().trim().min(1, "أدخل البريد الإلكتروني أو اسم الأكاديمية."),
   password: z.string().min(1, "كلمة المرور مطلوبة."),
 });
 

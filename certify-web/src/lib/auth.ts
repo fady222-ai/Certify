@@ -125,7 +125,7 @@ export async function resetPassword(token: string, password: string): Promise<vo
 }
 
 export async function login(input: {
-  email: string;
+  identifier: string;
   password: string;
 }): Promise<AuthUser | { userId: string; requires_verification: true; message: string }> {
   const res = await fetch(`${API_URL}/api/auth/login`, {

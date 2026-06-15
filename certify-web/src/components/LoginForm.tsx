@@ -10,7 +10,7 @@ export function LoginForm() {
   const router = useRouter();
   const [step, setStep] = useState<"form" | "otp">("form");
   const [userId, setUserId] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
     try {
-      const result = await login({ email, password });
+      const result = await login({ identifier, password });
       if ("requires_verification" in result) {
         setUserId(result.userId);
         setStep("otp");
@@ -65,8 +65,7 @@ export function LoginForm() {
     return (
       <form className="space-y-4" onSubmit={onOtpSubmit}>
         <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-700 ring-1 ring-blue-100">
-          بريدك الإلكتروني لم يُفعَّل بعد. تم إرسال رمز تحقق جديد إلى{" "}
-          <strong className="font-bold">{email}</strong>.
+          بريدك الإلكتروني لم يُفعَّل بعد. تم إرسال رمز تحقق جديد إلى بريدك المسجّل.
         </div>
 
         {error && (
@@ -121,17 +120,16 @@ export function LoginForm() {
       )}
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-bold text-ink">البريد الإلكتروني</span>
+        <span className="mb-1.5 block text-sm font-bold text-ink">البريد الإلكتروني أو اسم الأكاديمية</span>
         <span className="relative block">
           <IconMail className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
           <input
-            type="email"
+            type="text"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="you@example.com أو اسم أكاديميتك"
             className="input pr-11"
-            dir="ltr"
           />
         </span>
       </label>
