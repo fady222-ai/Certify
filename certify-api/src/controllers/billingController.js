@@ -84,6 +84,10 @@ export async function createCheckout(req, res) {
   const planSlug = (req.body?.plan_slug ?? "").toString().trim();
   const interval = req.body?.interval === "annual" ? "annual" : "monthly";
   const gw = req.body?.gateway;
+  // Reject an explicit unknown gateway rather than silently defaulting it; an
+  // omitted gateway still defaults to stripe (used by the free-plan path).
+  if (gw != null && gw !== "" && gw !== "stripe" && gw !== "tap" && gw !== "paymob")
+    return res.status(400).json({ message: "بوّابة دفع غير معروفة." });
   const gateway = gw === "tap" ? "tap" : gw === "paymob" ? "paymob" : "stripe";
 
   const plan = await prisma.plan.findUnique({ where: { slug: planSlug } });
@@ -98,14 +102,27 @@ export async function createCheckout(req, res) {
     return res.json({ message: `تم التحويل إلى باقة ${plan.name}.`, plan: presentPlan(plan) });
   }
 
+  // A paid plan needs a configured gateway. In production an unconfigured or
+  // disabled gateway is refused outright — NEVER grant a paid plan for free.
+  // Only outside production do we fall back to a direct dev-mode switch (local DX).
+  const available =
+    gateway === "tap" ? tapConfigured() : gateway === "paymob" ? paymobConfigured() : stripeConfigured();
+  if (!available) {
+    if (config.isProduction)
+      return res.status(503).json({
+        message: "بوّابة الدفع غير مفعّلة حالياً. تواصل مع مدير المنصّة.",
+        gateway_unavailable: true,
+      });
+    await applyPlanToOrg(req.organization.id, plan, { gateway, interval, amount });
+    return res.json({
+      message: `تم تفعيل باقة ${plan.name} (وضع تجريبي — لا توجد مفاتيح ${gateway}).`,
+      plan: presentPlan(plan),
+      dev_mode: true,
+    });
+  }
+
   // ── Stripe ────────────────────────────────────────────────────────────────
   if (gateway === "stripe") {
-    if (!stripeConfigured()) {
-      // dev mode — switch directly
-      await applyPlanToOrg(req.organization.id, plan, { gateway: "stripe", interval, amount });
-      return res.json({ message: `تم تفعيل باقة ${plan.name} (وضع تجريبي — لا توجد مفاتيح Stripe).`, plan: presentPlan(plan), dev_mode: true });
-    }
-
     const existingSub = await prisma.subscription.findUnique({ where: { organizationId: req.organization.id } });
     const webUrl = config.verifyBaseUrl;
 
@@ -148,11 +165,6 @@ export async function createCheckout(req, res) {
 
   // ── Tap ───────────────────────────────────────────────────────────────────
   if (gateway === "tap") {
-    if (!tapConfigured()) {
-      await applyPlanToOrg(req.organization.id, plan, { gateway: "tap", interval, amount });
-      return res.json({ message: `تم تفعيل باقة ${plan.name} (وضع تجريبي — لا توجد مفاتيح Tap).`, plan: presentPlan(plan), dev_mode: true });
-    }
-
     const callbackUrl = `${config.appUrl}/api/billing/callback`;
     const charge = await createCharge({
       amount,
@@ -191,11 +203,6 @@ export async function createCheckout(req, res) {
   }
 
   // ── Paymob ────────────────────────────────────────────────────────────────
-  if (!paymobConfigured()) {
-    await applyPlanToOrg(req.organization.id, plan, { gateway: "paymob", interval, amount });
-    return res.json({ message: `تم تفعيل باقة ${plan.name} (وضع تجريبي — لا توجد مفاتيح Paymob).`, plan: presentPlan(plan), dev_mode: true });
-  }
-
   const session = await paymobCheckout({ amountUsd: amount, plan, org: req.organization, user: req.user });
 
   await prisma.subscription.upsert({

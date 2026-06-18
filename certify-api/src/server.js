@@ -94,6 +94,16 @@ app.use("/api/billing/stripe/webhook", webhookLimiter); // Stripe
 app.use("/api/billing/paymob/webhook", webhookLimiter); // Paymob (POST)
 app.use("/api/billing/paymob/callback", webhookLimiter); // Paymob (GET redirect)
 
+// Authenticated checkout: each call may create a gateway session/charge, so cap
+// per IP to blunt abuse/automated probing on top of the general /api budget.
+app.use("/api/billing/checkout", rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
+}));
+
 // Public, unauthenticated certificate-verification routes — bound per IP on top
 // of the general /api budget (codes have ~80 bits entropy, so this is depth).
 app.use("/api/verify", rateLimit({

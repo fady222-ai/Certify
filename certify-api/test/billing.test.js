@@ -23,7 +23,9 @@ const { verifyWebhookSignature } = await import("../src/services/tapService.js")
 const { verifyHmac } = await import("../src/services/paymobService.js");
 const { constructWebhookEvent } = await import("../src/services/stripeService.js");
 const { handleTapWebhook, handlePaymobWebhook } = await import("../src/controllers/billingWebhookController.js");
+const { createCheckout } = await import("../src/controllers/billingController.js");
 const { processRenewals } = await import("../src/jobs/renewSubscriptions.js");
+const { config } = await import("../src/config/index.js");
 const { prisma } = await import("../src/db/prisma.js");
 
 // ── In-memory Prisma fake ────────────────────────────────────────────────────
@@ -366,4 +368,57 @@ test("Paymob webhook: a duplicate transaction id is ignored", async () => {
   assert.equal(res.statusCode, 200);
   assert.equal(sub.status, "inactive", "duplicate event must not activate the subscription");
   assert.equal(calls.subUpsert.length, 0);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 5. Checkout gateway guard (no free paid plans in production)
+// ═════════════════════════════════════════════════════════════════════════════
+// Tap/Paymob have no secret keys set in this test env (only Stripe does), so
+// "tap" is an unconfigured gateway — exactly the "admin hasn't set it up" case.
+
+const checkoutReq = () => ({
+  user: { id: "u1", name: "T", email: "t@x.io" },
+  organization: { id: "o1", ownerId: "u1" },
+  body: { plan_slug: "pro", interval: "monthly", gateway: "tap" },
+});
+
+test("checkout: in production an unconfigured gateway is refused (503) and grants nothing", async () => {
+  installFakePrisma({ plans: [{ id: "p1", slug: "pro", name: "Pro", isActive: true, priceMonthly: 29, priceYearly: 290 }], org: { id: "o1" } });
+  const prev = config.isProduction;
+  config.isProduction = true;
+  try {
+    const res = makeRes();
+    await createCheckout(checkoutReq(), res);
+    assert.equal(res.statusCode, 503);
+    assert.equal(res.body.gateway_unavailable, true);
+    assert.equal(calls.orgUpdate.length, 0, "no plan applied");
+    assert.equal(calls.subUpsert.length, 0, "no subscription created");
+  } finally {
+    config.isProduction = prev;
+  }
+});
+
+test("checkout: outside production an unconfigured gateway falls back to a dev-mode switch", async () => {
+  installFakePrisma({ plans: [{ id: "p1", slug: "pro", name: "Pro", isActive: true, priceMonthly: 29, priceYearly: 290 }], org: { id: "o1" } });
+  const prev = config.isProduction;
+  config.isProduction = false;
+  try {
+    const res = makeRes();
+    await createCheckout(checkoutReq(), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.dev_mode, true);
+    assert.equal(calls.orgUpdate.length, 1, "plan applied in dev mode");
+  } finally {
+    config.isProduction = prev;
+  }
+});
+
+test("checkout: an unknown gateway is rejected with 400", async () => {
+  installFakePrisma({ plans: [{ id: "p1", slug: "pro", name: "Pro", isActive: true, priceMonthly: 29, priceYearly: 290 }], org: { id: "o1" } });
+  const req = checkoutReq();
+  req.body.gateway = "bitcoin";
+  const res = makeRes();
+  await createCheckout(req, res);
+  assert.equal(res.statusCode, 400);
+  assert.equal(calls.orgUpdate.length, 0);
 });

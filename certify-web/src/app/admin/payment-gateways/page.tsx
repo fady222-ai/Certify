@@ -159,6 +159,15 @@ export default function PaymentGatewaysPage() {
                 </label>
               </div>
 
+              {g.enabled && !g.available && (
+                <div className="mt-4 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 ring-1 ring-amber-100">
+                  ⚠️ هذه البوّابة مُفعّلة لكن ينقصها حقل مطلوب — لن تعمل حتى تُكمل
+                  {g.fields.filter((f) => f.required && !f.set).length > 0
+                    ? ` الحقول: ${g.fields.filter((f) => f.required && !f.set).map((f) => f.label).join("، ")}.`
+                    : " الحقول المطلوبة."}
+                </div>
+              )}
+
               <div className="mt-5 space-y-4">
                 {g.fields.map((f) => (
                   <label key={f.key} className="block">
