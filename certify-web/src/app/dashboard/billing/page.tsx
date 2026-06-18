@@ -6,13 +6,7 @@ import Link from "next/link";
 import { getBilling, createCheckout, cancelSubscription, type Billing, type Gateway } from "@/lib/billing";
 import { GatewayPicker } from "@/components/GatewayPicker";
 import { IconCheck } from "@/components/icons";
-
-const PLAN_NAMES: Record<string, string> = {
-  free: "مجاني",
-  starter: "Starter",
-  pro: "Pro",
-  business: "Business",
-};
+import { PLAN_PRICING } from "@/lib/pricing";
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   active:    { label: "نشط",        cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
@@ -27,12 +21,14 @@ const GATEWAY_LABELS: Record<string, { label: string; cls: string }> = {
   paymob: { label: "Paymob 🇪🇬",   cls: "bg-amber-50 text-amber-700 ring-1 ring-amber-100" },
 };
 
+// Prices/names come from the canonical pricing module; only marketing copy
+// (feature bullets, "popular" flag) is defined here.
 const UPGRADE_PLANS = [
-  { slug: "starter", label: "Starter", monthly: 9, yearly: 90, popular: false,
+  { ...PLAN_PRICING.starter, popular: false,
     features: ["٢٠٠ شهادة شهرياً", "كل القوالب الجاهزة", "تحقّق عام بـ QR"] },
-  { slug: "pro", label: "Pro", monthly: 29, yearly: 290, popular: true,
+  { ...PLAN_PRICING.pro, popular: true,
     features: ["٢٠٠٠ شهادة شهرياً", "الإصدار الجماعي", "توقيع رقمي مخصص", "تكامل لينكدإن"] },
-  { slug: "business", label: "Business", monthly: 79, yearly: 790, popular: false,
+  { ...PLAN_PRICING.business, popular: false,
     features: ["١٠٬٠٠٠ شهادة شهرياً", "شهادات بشعار وألوان أكاديميتك", "تتبّع مشاهدات وتحميلات الشهادات", "دعم أولوية"] },
 ];
 
@@ -164,7 +160,7 @@ function BillingContent() {
               <div>
                 <p className="text-xs text-ink-muted mb-1">الباقة الحالية</p>
                 <p className="text-2xl font-bold text-ink">
-                  {PLAN_NAMES[plan?.slug ?? "free"] ?? plan?.name ?? "مجاني"}
+                  {PLAN_PRICING[plan?.slug ?? "free"]?.name ?? plan?.name ?? "Free"}
                 </p>
                 {isPaid && sub?.amount != null && (
                   <p className="text-sm text-ink-soft mt-0.5">
@@ -290,7 +286,7 @@ function BillingContent() {
                           الأكثر شيوعاً
                         </span>
                       )}
-                      <p className="font-display text-lg font-black text-ink">{p.label}</p>
+                      <p className="font-display text-lg font-black text-ink">{p.name}</p>
                       <div className="mt-2 flex items-end gap-1">
                         <span className="font-display text-3xl font-black text-ink">${price}</span>
                         <span className="mb-1 text-sm text-ink-muted">{cycle === "monthly" ? "/شهر" : "/سنة"}</span>
@@ -317,7 +313,7 @@ function BillingContent() {
                             : "border border-line bg-surface-2 text-ink hover:bg-white hover:border-brand-300"
                         }`}
                       >
-                        {checkoutLoading ? "…" : `الترقية إلى ${p.label}`}
+                        {checkoutLoading ? "…" : `الترقية إلى ${p.name}`}
                       </button>
                     </div>
                   );
