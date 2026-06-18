@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createCheckout, listPlans, type Gateway } from "@/lib/billing";
+import { createCheckout, listPlans, resolveGatewayChoice, type Gateway } from "@/lib/billing";
 import { GatewayPicker } from "@/components/GatewayPicker";
 import { getToken } from "@/lib/auth";
 import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
@@ -34,9 +34,8 @@ export default function PricingPage() {
   function handleSelect(slug: string) {
     if (!getToken()) return router.push(`/register?plan=${slug}&interval=${interval}`);
     if (slug === "free") return doCheckout(slug, interval, "stripe");
-    // Skip the picker when there's no real choice (one or zero gateways → dev mode).
-    const available = (["stripe", "tap", "paymob"] as Gateway[]).filter((g) => gateways[g]);
-    if (available.length <= 1) return doCheckout(slug, interval, available[0] ?? "stripe");
+    const choice = resolveGatewayChoice(gateways);
+    if (!choice.showPicker) return doCheckout(slug, interval, choice.gateway);
     setPending({ slug, interval });
   }
 

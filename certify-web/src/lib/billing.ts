@@ -18,6 +18,23 @@ export type Plan = {
 
 export type Gateway = "stripe" | "tap" | "paymob";
 
+const GATEWAYS: Gateway[] = ["stripe", "tap", "paymob"];
+
+/**
+ * Decide whether the gateway picker is worth showing. With two or more
+ * configured gateways the user gets a real choice; with one we use it directly,
+ * and with zero we fall back to "stripe" — in that case the backend is in dev
+ * mode and switches the plan without a real charge. Keeping this here means
+ * /pricing and /dashboard/billing share one tested rule instead of duplicating it.
+ */
+export function resolveGatewayChoice(
+  gateways: { stripe: boolean; tap: boolean; paymob: boolean },
+): { showPicker: boolean; gateway: Gateway } {
+  const available = GATEWAYS.filter((g) => gateways[g]);
+  if (available.length <= 1) return { showPicker: false, gateway: available[0] ?? "stripe" };
+  return { showPicker: true, gateway: available[0] };
+}
+
 export type Subscription = {
   gateway: Gateway;
   status: "inactive" | "active" | "past_due" | "cancelled";

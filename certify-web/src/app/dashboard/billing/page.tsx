@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { getBilling, createCheckout, cancelSubscription, type Billing, type Gateway } from "@/lib/billing";
+import { getBilling, createCheckout, cancelSubscription, resolveGatewayChoice, type Billing, type Gateway } from "@/lib/billing";
 import { GatewayPicker } from "@/components/GatewayPicker";
 import { IconCheck } from "@/components/icons";
 import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
@@ -76,10 +76,9 @@ function BillingContent() {
       doCheckout("free", interval, "stripe");
       return;
     }
-    // Skip the picker when there's no real choice (one or zero gateways → dev mode).
-    const available = (["stripe", "tap", "paymob"] as Gateway[]).filter((g) => gateways[g]);
-    if (available.length <= 1) {
-      doCheckout(slug, interval, available[0] ?? "stripe");
+    const choice = resolveGatewayChoice(gateways);
+    if (!choice.showPicker) {
+      doCheckout(slug, interval, choice.gateway);
       return;
     }
     setPending({ slug, interval });
