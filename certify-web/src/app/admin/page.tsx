@@ -22,7 +22,7 @@ function StatCard({
         <div>
           <p className="text-sm font-bold text-ink-soft">{label}</p>
           <p className="mt-2 font-display text-4xl font-black text-ink">
-            {loading ? "…" : value.toLocaleString("ar-SA")}
+            {loading ? "…" : value.toLocaleString("en-US")}
           </p>
           {sub && <p className="mt-1 text-xs text-ink-muted">{sub}</p>}
         </div>

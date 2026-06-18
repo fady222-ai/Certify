@@ -51,9 +51,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="m-3 mt-0 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-5 text-white">
       <p className="text-sm font-extrabold text-amber-400">لوحة الإدارة</p>
       <p className="mt-1 text-xs text-gray-300">{profile?.user?.email ?? "مدير المنصّة"}</p>
-      <Link href="/dashboard" className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white/10 px-3 py-2 text-xs font-bold hover:bg-white/20">
-        العودة للداشبورد
-      </Link>
     </div>
   );
 
@@ -123,10 +120,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <p className="hidden text-sm font-bold text-ink-soft sm:block">لوحة الإدارة</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/dashboard" className="btn-ghost">
-              <span className="hidden sm:inline">العودة للداشبورد</span>
-              <span className="sm:hidden">الداشبورد</span>
-            </Link>
             <button className="btn-ghost" type="button" onClick={onLogout}>خروج</button>
           </div>
         </header>
