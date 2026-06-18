@@ -33,8 +33,8 @@ const stats = [
 // kept in sync with the backend seed); only marketing copy lives here.
 const plans = [
   { ...PLAN_PRICING.free, tag: "للتجربة", features: ["محرر القوالب", "صفحة تحقق عامة", "تكامل لينكدإن"], cta: "ابدأ مجاناً", highlight: false },
-  { ...PLAN_PRICING.pro, tag: "الأكثر اختياراً", features: ["كل ميزات المجاني", "إصدار جماعي من Excel", "توقيع رقمي مخصص", "تحليلات متقدمة", "٣ أعضاء فريق"], cta: "ابدأ الآن", highlight: true },
-  { ...PLAN_PRICING.business, tag: "للأكاديميات", features: ["كل ميزات Pro", "White-label", "نطاق فرعي مخصص", "API كامل", "١٠ أعضاء فريق"], cta: "تواصل معنا", highlight: false },
+  { ...PLAN_PRICING.pro, tag: "الأكثر اختياراً", features: ["كل ميزات المجاني", "إصدار جماعي من Excel", "توقيع رقمي مخصص", "تحليلات متقدمة", "تتبّع مشاهدات وتحميلات الشهادة"], cta: "ابدأ الآن", highlight: true },
+  { ...PLAN_PRICING.business, tag: "للأكاديميات", features: ["كل ميزات Pro", "White-label", "نطاق فرعي مخصص", "API كامل", "أولوية في الدعم الفني"], cta: "تواصل معنا", highlight: false },
 ];
 
 export default function Home() {

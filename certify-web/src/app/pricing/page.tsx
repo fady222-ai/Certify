@@ -13,8 +13,8 @@ import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
 const PLANS = [
   { ...PLAN_PRICING.free, features: ["قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجاناً", highlight: false },
   { ...PLAN_PRICING.starter, features: ["كل ميزات Free", "قوالب غير محدودة", "إرسال بريد إلكتروني", "إصدار جماعي CSV"], cta: "ابدأ الآن", highlight: false },
-  { ...PLAN_PRICING.pro, features: ["كل ميزات Starter", "3 أعضاء فريق", "وصول API", "تقارير متقدمة"], cta: "ابدأ الآن", highlight: true },
-  { ...PLAN_PRICING.business, features: ["كل ميزات Pro", "10 أعضاء فريق", "علامة بيضاء (White-label)", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
+  { ...PLAN_PRICING.pro, features: ["كل ميزات Starter", "تكامل لينكدإن", "وصول API", "تقارير متقدمة"], cta: "ابدأ الآن", highlight: true },
+  { ...PLAN_PRICING.business, features: ["كل ميزات Pro", "تتبّع مشاهدات الشهادات", "علامة بيضاء (White-label)", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
 ];
 
 export default function PricingPage() {
