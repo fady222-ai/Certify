@@ -323,10 +323,6 @@ function BillingContent() {
                   );
                 })}
               </div>
-
-              <Link href="/pricing" className="inline-block text-sm font-bold text-brand-600 hover:underline">
-                مقارنة الباقات الكاملة ←
-              </Link>
             </div>
           )}
 
