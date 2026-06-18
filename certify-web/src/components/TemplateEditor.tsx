@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   type DesignData,
@@ -13,14 +13,17 @@ import {
 } from "@/lib/templates";
 import { getToken } from "@/lib/auth";
 import { IconBadge, IconPalette, IconUpload, IconCheck, IconArrow } from "./icons";
-
-const STAGE_W = 1123;
-const STAGE_H = 794;
-
-// Minimal typing for the bits of Fabric we use (kept loose to avoid version churn).
-/* eslint-disable @typescript-eslint/no-explicit-any */
-type FabricNS = any;
-type FObj = any;
+import {
+  STAGE_W,
+  STAGE_H,
+  centerX,
+  buildObject,
+  normColor,
+  objectToElement,
+  type FabricNS,
+  type FObj,
+} from "./templateEditor/canvas";
+import { Panel, ToolBtn, NumberRow, ColorRow } from "./templateEditor/controls";
 
 export function TemplateEditor({ templateId }: { templateId?: string }) {
   const router = useRouter();
@@ -38,63 +41,6 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-
-  // ---- Build a fabric object from a design element ----
-  const buildObject = useCallback((fabric: FabricNS, el: DesignElement): FObj | Promise<FObj> => {
-    const common = { left: el.left, top: el.top, angle: el.angle ?? 0 };
-    if (el.type === "text" || el.type === "variable") {
-      const t = new fabric.Textbox(
-        el.type === "variable" ? `«${variableLabel(el.variableKey)}»` : el.text ?? "نص",
-        {
-          ...common,
-          width: el.width ?? 300,
-          fontSize: el.fontSize ?? 28,
-          fontWeight: el.fontWeight ?? 700,
-          fill: el.fill ?? "#111827",
-          textAlign: el.textAlign ?? "center",
-          fontFamily: el.fontFamily ?? "Cairo",
-          direction: "rtl",
-        },
-      );
-      t.set({ editable: el.type === "text" });
-      (t as FObj).variableKey = el.type === "variable" ? el.variableKey : undefined;
-      lockVerticalScale(t);
-      return t;
-    }
-    if (el.type === "rect" || el.type === "line") {
-      return new fabric.Rect({
-        ...common,
-        width: el.width ?? 200,
-        height: el.type === "line" ? el.strokeWidth ?? 3 : el.height ?? 120,
-        fill: el.fill ?? (el.type === "line" ? el.stroke ?? "#000" : "transparent"),
-        stroke: el.stroke ?? null,
-        strokeWidth: el.strokeWidth ?? (el.type === "line" ? 0 : 2),
-        rx: el.rx ?? 0,
-        ry: el.rx ?? 0,
-      });
-    }
-    if (el.type === "qr") {
-      const r = new fabric.Rect({
-        ...common,
-        width: el.width ?? 90,
-        height: el.width ?? 90,
-        fill: "#e2e8f0",
-        stroke: "#94a3b8",
-        strokeDashArray: [5, 4],
-        strokeWidth: 1,
-      });
-      (r as FObj).isQr = true;
-      return r;
-    }
-    if (el.type === "image" && el.src) {
-      return fabric.FabricImage.fromURL(el.src, { crossOrigin: "anonymous" }).then((img: FObj) => {
-        img.set({ ...common });
-        if (el.width) img.scaleToWidth(el.width);
-        return img;
-      });
-    }
-    return new fabric.Rect({ ...common, width: 100, height: 100, fill: "#ddd" });
-  }, []);
 
   // ---- Init canvas ----
   useEffect(() => {
@@ -157,7 +103,7 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
       canvasRef.current?.dispose?.();
       canvasRef.current = null;
     };
-  }, [templateId, buildObject, router]);
+  }, [templateId, router]);
 
   // ---- Toolbar actions ----
   function add(el: DesignElement) {
@@ -173,26 +119,24 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
     });
   }
 
-  const center = (w: number) => Math.round((STAGE_W - w) / 2);
-
   function addText() {
-    add({ type: "text", left: center(360), top: 320, width: 360, text: "نص جديد", fontSize: 30, fontWeight: 700, fill: "#111827", textAlign: "center" });
+    add({ type: "text", left: centerX(360), top: 320, width: 360, text: "نص جديد", fontSize: 30, fontWeight: 700, fill: "#111827", textAlign: "center" });
   }
   function addVariable(key: string) {
-    add({ type: "variable", variableKey: key, left: center(420), top: 360, width: 420, fontSize: 34, fontWeight: 800, fill: "#1f2937", textAlign: "center" });
+    add({ type: "variable", variableKey: key, left: centerX(420), top: 360, width: 420, fontSize: 34, fontWeight: 800, fill: "#1f2937", textAlign: "center" });
   }
   function addRect() {
     add({ type: "rect", left: 60, top: 60, width: STAGE_W - 120, height: STAGE_H - 120, fill: "transparent", stroke: "#4f46e5", strokeWidth: 3, rx: 8 });
   }
   function addLine() {
-    add({ type: "line", left: center(400), top: 500, width: 400, stroke: "#cbd5e1", strokeWidth: 2 });
+    add({ type: "line", left: centerX(400), top: 500, width: 400, stroke: "#cbd5e1", strokeWidth: 2 });
   }
   function addQr() {
     add({ type: "qr", left: 90, top: 620, width: 96 });
   }
   function addImageFromFile(file: File) {
     const reader = new FileReader();
-    reader.onload = () => add({ type: "image", left: center(180), top: 70, width: 180, src: String(reader.result) });
+    reader.onload = () => add({ type: "image", left: centerX(180), top: 70, width: 180, src: String(reader.result) });
     reader.readAsDataURL(file);
   }
 
@@ -228,23 +172,8 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
     const canvas = canvasRef.current;
     const elements: DesignElement[] = [];
     for (const obj of canvas?.getObjects() ?? []) {
-      const left = Math.round(obj.left);
-      const top = Math.round(obj.top);
-      const angle = Math.round(obj.angle ?? 0);
-      const w = Math.round(obj.getScaledWidth());
-      const h = Math.round(obj.getScaledHeight());
-
-      if (obj.isQr) {
-        elements.push({ type: "qr", left, top, width: w });
-      } else if (obj.variableKey) {
-        elements.push({ type: "variable", variableKey: obj.variableKey, left, top, width: w, fontSize: Math.round(obj.fontSize), fontWeight: obj.fontWeight, fill: obj.fill, textAlign: obj.textAlign, angle });
-      } else if (obj.type === "textbox") {
-        elements.push({ type: "text", text: obj.text, left, top, width: w, fontSize: Math.round(obj.fontSize), fontWeight: obj.fontWeight, fill: obj.fill, textAlign: obj.textAlign, angle });
-      } else if (obj.type === "image") {
-        elements.push({ type: "image", left, top, width: w, height: h, src: obj.getSrc?.() ?? obj._element?.src, angle });
-      } else if (obj.type === "rect") {
-        elements.push({ type: "rect", left, top, width: w, height: h, fill: obj.fill, stroke: obj.stroke, strokeWidth: obj.strokeWidth, rx: obj.rx, angle });
-      }
+      const el = objectToElement(obj);
+      if (el) elements.push(el);
     }
     return { width: STAGE_W, height: STAGE_H, background: bg, elements };
   }
@@ -413,53 +342,6 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
           </Panel>
         </aside>
       </div>
-    </div>
-  );
-}
-
-function lockVerticalScale(obj: FObj) {
-  // Allow horizontal width resize only; font size is controlled via the panel.
-  obj.setControlsVisibility({ mt: false, mb: false, tl: false, tr: false, bl: false, br: false, ml: true, mr: true });
-}
-
-function normColor(c: unknown) {
-  return typeof c === "string" && c.startsWith("#") ? c : "#000000";
-}
-
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="card p-4">
-      <h3 className="mb-3 text-sm font-extrabold text-ink">{title}</h3>
-      <div className="space-y-2">{children}</div>
-    </div>
-  );
-}
-
-function ToolBtn({ icon: Icon, label, onClick }: { icon: typeof IconBadge; label: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="btn-ghost w-full justify-start">
-      <Icon className="h-4 w-4" /> {label}
-    </button>
-  );
-}
-
-function NumberRow({ label, value, min, max, onChange }: { label: string; value: number; min: number; max: number; onChange: (n: number) => void }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-xs font-bold text-ink-muted">{label}</span>
-      <input type="number" value={value} min={min} max={max}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-20 rounded-lg border border-line bg-white px-2 py-1 text-sm" />
-    </div>
-  );
-}
-
-function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (c: string) => void }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-xs font-bold text-ink-muted">{label}</span>
-      <input type="color" value={value} onChange={(e) => onChange(e.target.value)}
-        className="h-8 w-12 cursor-pointer rounded border border-line bg-white" />
     </div>
   );
 }

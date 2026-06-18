@@ -177,6 +177,11 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
   `EMAIL_FROM=noreply@your-domain.com`. لا تغيير في الكود.
 
 ### تحسينات الجودة (تنظيف منخفض الأولوية)
+- **تقسيم محرّر القوالب:** `components/TemplateEditor.tsx` (كان 465 سطراً) قُسِّم:
+  منطق الكانفس النقي (`buildObject`/`objectToElement`/`normColor`/الثوابت) في
+  `components/templateEditor/canvas.ts`، وعناصر الواجهة الصغيرة (`Panel`/`ToolBtn`/
+  `NumberRow`/`ColorRow`) في `components/templateEditor/controls.tsx`. المنطق النقي
+  مُغطّى باختبار `canvas.test.ts`. `vitest.config.ts` يحلّ الآن alias `@/` كـtsconfig.
 - **مصدر حقائق الباقات موحّد (الخلفية = المرجع):** الكتالوج المرجعي للباقات
   (الأسعار + الحصة الشهرية + الحدود) في `certify-api/src/config/plans.js`؛
   `prisma/seed.js` يستورده ويكتبه للـDB. الواجهة تحمل **نسخة عرض** في
