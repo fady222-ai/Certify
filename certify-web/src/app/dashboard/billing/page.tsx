@@ -6,7 +6,7 @@ import Link from "next/link";
 import { getBilling, createCheckout, cancelSubscription, type Billing, type Gateway } from "@/lib/billing";
 import { GatewayPicker } from "@/components/GatewayPicker";
 import { IconCheck } from "@/components/icons";
-import { PLAN_PRICING } from "@/lib/pricing";
+import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   active:    { label: "نشط",        cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
@@ -21,15 +21,16 @@ const GATEWAY_LABELS: Record<string, { label: string; cls: string }> = {
   paymob: { label: "Paymob 🇪🇬",   cls: "bg-amber-50 text-amber-700 ring-1 ring-amber-100" },
 };
 
-// Prices/names come from the canonical pricing module; only marketing copy
-// (feature bullets, "popular" flag) is defined here.
+// Prices/names/quota come from the canonical pricing module; only the extra
+// marketing bullets and the "popular" flag are defined here. The quota label is
+// prepended from certsLabel at render time so it never drifts.
 const UPGRADE_PLANS = [
   { ...PLAN_PRICING.starter, popular: false,
-    features: ["٢٠٠ شهادة شهرياً", "كل القوالب الجاهزة", "تحقّق عام بـ QR"] },
+    features: ["كل القوالب الجاهزة", "تحقّق عام بـ QR"] },
   { ...PLAN_PRICING.pro, popular: true,
-    features: ["٢٠٠٠ شهادة شهرياً", "الإصدار الجماعي", "توقيع رقمي مخصص", "تكامل لينكدإن"] },
+    features: ["الإصدار الجماعي", "توقيع رقمي مخصص", "تكامل لينكدإن"] },
   { ...PLAN_PRICING.business, popular: false,
-    features: ["١٠٬٠٠٠ شهادة شهرياً", "شهادات بشعار وألوان أكاديميتك", "تتبّع مشاهدات وتحميلات الشهادات", "دعم أولوية"] },
+    features: ["شهادات بشعار وألوان أكاديميتك", "تتبّع مشاهدات وتحميلات الشهادات", "دعم أولوية"] },
 ];
 
 type PendingUpgrade = { slug: string; interval: "monthly" | "annual" };
@@ -270,7 +271,7 @@ function BillingContent() {
                     <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
                       cycle === "annual" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
                     }`}>
-                      وفّر ١٧٪
+                      وفّر {ANNUAL_SAVING_PCT}%
                     </span>
                   </button>
                 </div>
@@ -302,7 +303,7 @@ function BillingContent() {
                       </p>
 
                       <ul className="mt-4 flex-1 space-y-2">
-                        {p.features.map((f) => (
+                        {[p.certsLabel, ...p.features].map((f) => (
                           <li key={f} className="flex items-center gap-2 text-sm text-ink-soft">
                             <IconCheck className="h-4 w-4 shrink-0 text-emerald-500" />
                             {f}
