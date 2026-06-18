@@ -125,11 +125,33 @@ test("processBatchAsync: marks the batch failed when every row fails", async () 
   assert.equal(calls.batchUpdate[0].data.failedCount, 2);
 });
 
-// ── createBatch request guards ───────────────────────────────────────────────
+// ── createBatch entitlement gate ─────────────────────────────────────────────
+// Bulk issuance is a paid feature; the org's plan must carry hasBulkIssuance.
+const bulkOrg = { id: "o1", plan: { hasBulkIssuance: true } };
+
+test("createBatch: blocks a plan without bulk entitlement (403) before any file work", async () => {
+  installFakePrisma();
+  const res = makeRes();
+  // free plan → hasBulkIssuance falsy
+  await createBatch({ file: csvFile("name\nAhmed\n"), body: {}, organization: { id: "o1", plan: { hasBulkIssuance: false } }, user: { id: "u1" } }, res);
+  assert.equal(res.statusCode, 403);
+  assert.match(res.body.message, /الباقات المدفوعة/);
+  assert.equal(calls.batchCreate.length, 0, "no batch created for an unentitled plan");
+});
+
+test("createBatch: blocks when the org has no plan at all (403)", async () => {
+  installFakePrisma();
+  const res = makeRes();
+  await createBatch({ file: csvFile("name\nAhmed\n"), body: {}, organization: { id: "o1" }, user: { id: "u1" } }, res);
+  assert.equal(res.statusCode, 403);
+  assert.equal(calls.batchCreate.length, 0);
+});
+
+// ── createBatch request guards (entitled plan reaches file validation) ────────
 test("createBatch: rejects a request with no file (400)", async () => {
   installFakePrisma();
   const res = makeRes();
-  await createBatch({ body: {}, organization: { id: "o1" }, user: { id: "u1" } }, res);
+  await createBatch({ body: {}, organization: bulkOrg, user: { id: "u1" } }, res);
   assert.equal(res.statusCode, 400);
   assert.equal(calls.batchCreate.length, 0);
 });
@@ -137,7 +159,7 @@ test("createBatch: rejects a request with no file (400)", async () => {
 test("createBatch: rejects an empty file (400)", async () => {
   installFakePrisma();
   const res = makeRes();
-  await createBatch({ file: csvFile("name,email\n"), body: {}, organization: { id: "o1" }, user: { id: "u1" } }, res);
+  await createBatch({ file: csvFile("name,email\n"), body: {}, organization: bulkOrg, user: { id: "u1" } }, res);
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /فارغ/);
   assert.equal(calls.batchCreate.length, 0);
@@ -148,7 +170,7 @@ test("createBatch: rejects more than 500 rows (400) before creating a batch", as
   const header = "name,email\n";
   const body = Array.from({ length: 501 }, (_, i) => `User${i},u${i}@x.com`).join("\n");
   const res = makeRes();
-  await createBatch({ file: csvFile(header + body), body: {}, organization: { id: "o1" }, user: { id: "u1" } }, res);
+  await createBatch({ file: csvFile(header + body), body: {}, organization: bulkOrg, user: { id: "u1" } }, res);
   assert.equal(res.statusCode, 400);
   assert.match(res.body.message, /500/);
   assert.equal(calls.batchCreate.length, 0, "no batch created when over the limit");

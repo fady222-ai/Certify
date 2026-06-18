@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getToken, authedFetch } from "@/lib/auth";
 import { listTemplates } from "@/lib/templates";
 import { getOrganization } from "@/lib/organization";
+import { getBilling } from "@/lib/billing";
 import { IconUpload, IconCheck, IconArrow } from "@/components/icons";
 
 type BatchStatus = {
@@ -36,6 +37,8 @@ export default function BulkPage() {
 
   const [batches, setBatches] = useState<BatchStatus[]>([]);
   const [loadingBatches, setLoadingBatches] = useState(true);
+  // null = still loading the entitlement; false = plan can't bulk (show upgrade).
+  const [canBulk, setCanBulk] = useState<boolean | null>(null);
 
   const loadBatches = useCallback(async () => {
     try {
@@ -58,6 +61,9 @@ export default function BulkPage() {
         setDefaultTemplateName(templates.find((t) => t.id === id)?.name ?? null);
       })
       .catch(() => {});
+    getBilling()
+      .then((b) => setCanBulk(b.plan?.has_bulk_issuance ?? false))
+      .catch(() => setCanBulk(false));
     loadBatches();
   }, [router, loadBatches]);
 
@@ -109,8 +115,23 @@ export default function BulkPage() {
           <p className="mt-1 text-sm text-ink-soft">ارفع ملف Excel أو CSV يحتوي على أسماء المتدربين وسيتم إصدار الشهادات تلقائياً.</p>
         </div>
 
-        {/* Upload card */}
-        {submitted ? (
+        {/* Upgrade gate — bulk issuance is a paid feature */}
+        {canBulk === false ? (
+          <div className="card p-8 text-center">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+              <IconUpload className="h-8 w-8" />
+            </div>
+            <h2 className="mt-5 font-display text-xl font-black text-ink">الإصدار الجماعي ميزة مدفوعة</h2>
+            <p className="mt-2 text-sm text-ink-soft">
+              باقتك الحالية لا تتيح الإصدار الجماعي. رقِّ إلى Pro أو Business لإصدار مئات الشهادات من ملف واحد.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <Link href="/dashboard/billing" className="btn-primary">
+                ترقية الباقة <IconArrow className="inline h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        ) : submitted ? (
           <div className="card p-8 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-verify-50 text-verify-600">
               <IconCheck className="h-8 w-8" />

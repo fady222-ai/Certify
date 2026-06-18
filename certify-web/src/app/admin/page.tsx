@@ -98,9 +98,8 @@ export default function AdminOverviewPage() {
 function PlanBadge({ slug, name }: { slug?: string; name?: string }) {
   const colors: Record<string, string> = {
     free: "bg-gray-100 text-gray-600",
-    starter: "bg-blue-50 text-blue-700",
     pro: "bg-brand-50 text-brand-700",
-    enterprise: "bg-amber-50 text-amber-700",
+    business: "bg-amber-50 text-amber-700",
   };
   const cls = colors[slug ?? ""] ?? "bg-gray-100 text-gray-600";
   return (

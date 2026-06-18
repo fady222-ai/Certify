@@ -71,6 +71,7 @@ model Plan {
   templatesLimit       Int?    @map("templates_limit")
   teamMembersLimit     Int     @default(1) @map("team_members_limit")
   features             String? // JSON string
+  hasBulkIssuance      Boolean @default(false) @map("has_bulk_issuance")
   hasApi               Boolean @default(false) @map("has_api")
   hasWhiteLabel        Boolean @default(false) @map("has_white_label")
   isActive             Boolean @default(true) @map("is_active")

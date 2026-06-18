@@ -26,6 +26,13 @@ fs.mkdirSync(storageDir, { recursive: true });
  */
 export async function createBatch(req, res) {
   try {
+    // Entitlement gate: bulk issuance is a paid feature. Checked here (the
+    // authoritative point) before any file work, using the plan flag eager-loaded
+    // onto req.organization.plan by requireAuth.
+    if (!req.organization?.plan?.hasBulkIssuance) {
+      return res.status(403).json({ message: "الإصدار الجماعي متاح في الباقات المدفوعة. يرجى ترقية باقتك." });
+    }
+
     if (!req.file) {
       return res.status(400).json({ message: "يرجى رفع ملف Excel أو CSV." });
     }

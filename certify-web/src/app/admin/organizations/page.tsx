@@ -8,13 +8,12 @@ import {
   type AdminOrg,
 } from "@/lib/admin";
 
-const PLAN_SLUGS = ["free", "starter", "pro", "enterprise"];
+const PLAN_SLUGS = ["free", "pro", "business"];
 
 const PLAN_COLORS: Record<string, string> = {
   free: "bg-gray-100 text-gray-600",
-  starter: "bg-blue-50 text-blue-700",
   pro: "bg-brand-50 text-brand-700",
-  enterprise: "bg-amber-50 text-amber-700",
+  business: "bg-amber-50 text-amber-700",
 };
 
 export default function AdminOrganizationsPage() {

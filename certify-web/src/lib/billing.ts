@@ -12,6 +12,7 @@ export type Plan = {
   certificates_per_month: number;
   templates_limit: number | null;
   team_members_limit: number;
+  has_bulk_issuance: boolean;
   has_api: boolean;
   has_white_label: boolean;
 };

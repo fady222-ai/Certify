@@ -12,8 +12,7 @@ import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
 // (feature bullets, CTA, highlight) is defined here.
 const PLANS = [
   { ...PLAN_PRICING.free, features: ["قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجاناً", highlight: false },
-  { ...PLAN_PRICING.starter, features: ["كل ميزات Free", "قوالب غير محدودة", "إرسال بريد إلكتروني", "إصدار جماعي CSV"], cta: "ابدأ الآن", highlight: false },
-  { ...PLAN_PRICING.pro, features: ["كل ميزات Starter", "تكامل لينكدإن", "تتبّع مشاهدات الشهادات", "تقارير متقدمة"], cta: "ابدأ الآن", highlight: true },
+  { ...PLAN_PRICING.pro, features: ["كل ميزات Free", "إصدار جماعي", "تكامل لينكدإن", "تتبّع مشاهدات الشهادات", "تقارير متقدمة"], cta: "ابدأ الآن", highlight: true },
   { ...PLAN_PRICING.business, features: ["كل ميزات Pro", "تتبّع مشاهدات الشهادات", "شهادات بشعار وألوان أكاديميتك", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
 ];
 

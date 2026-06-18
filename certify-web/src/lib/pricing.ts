@@ -28,7 +28,6 @@ function plan(slug: string, name: string, monthly: number, yearly: number, certs
 
 export const PLAN_PRICING: Record<string, PlanPricing> = {
   free:     plan("free",     "مجاني",    0,  0,   10),
-  starter:  plan("starter",  "Starter",  9,  90,  200),
   pro:      plan("pro",      "Pro",      29, 290, 2000),
   business: plan("business", "Business", 79, 790, 10000),
 };

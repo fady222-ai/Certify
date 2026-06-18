@@ -12,6 +12,13 @@ async function main() {
   for (const p of plans) {
     await prisma.plan.upsert({ where: { slug: p.slug }, create: p, update: p });
   }
+  // Deactivate any plan no longer in the catalogue (e.g. the dropped "starter")
+  // so it stops appearing in /api/plans, without deleting historical rows that
+  // existing subscriptions may still reference.
+  await prisma.plan.updateMany({
+    where: { slug: { notIn: plans.map((p) => p.slug) } },
+    data: { isActive: false },
+  });
   const free = await prisma.plan.findUnique({ where: { slug: "free" } });
 
   // --- Demo user + organization ---

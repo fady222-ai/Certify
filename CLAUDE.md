@@ -49,7 +49,17 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 
 ## بوابات الدفع (3 بوابات)
 
-التسعير بالدولار: Free $0 · Starter $9 · Pro $29 · Business $79 (شهري).
+التسعير بالدولار (3 باقات): Free $0 · Pro $29 · Business $79 (شهري). الحصص:
+مجاني 10 · Pro 2000 · Business 10000 شهادة/شهر. (أُزيلت Starter القديمة؛ `seed.js`
+يعطّل أي باقة لم تعد في الكتالوج عبر `isActive:false` فتختفي من `/api/plans`.)
+
+**علم ميزة الإصدار الجماعي (`hasBulkIssuance`):** الباقة المجانية **لا** تستطيع
+الإصدار الجماعي — الإنفاذ الموثوق في `controllers/batchController.js` (`createBatch`
+يرفض بـ403 إن `!req.organization?.plan?.hasBulkIssuance` قبل أي معالجة ملف). الواجهة
+(`dashboard/bulk/page.tsx`) تقرأ نفس العلم عبر `getBilling()` وتعرض بطاقة ترقية بدل
+أداة الرفع. العلم مكشوف في API عبر `presentPlan` (`has_bulk_issuance`)، ومصدره
+الكتالوج `config/plans.js` (free=false، pro/business=true). نمط مطابق لـ`hasApi`/
+`hasWhiteLabel`.
 
 | البوابة | المنطقة | التجديد التلقائي |
 |---------|---------|------------------|
@@ -161,6 +171,10 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 
 > **تنبيه schema:** أُضيف نموذج `WebhookEvent`. شغّل `npx prisma db push` على بيئة
 > النشر بعد سحب هذا التحديث.
+
+> **تنبيه schema:** أُضيف حقل `hasBulkIssuance` إلى `Plan` (علم ميزة الإصدار
+> الجماعي). شغّل `npx prisma db push` ثم `node prisma/seed.js` على بيئة النشر بعد
+> سحب هذا التحديث (الـseed يكتب العلم ويعطّل باقة Starter القديمة).
 
 ---
 

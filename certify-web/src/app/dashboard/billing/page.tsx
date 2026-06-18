@@ -25,8 +25,6 @@ const GATEWAY_LABELS: Record<string, { label: string; cls: string }> = {
 // marketing bullets and the "popular" flag are defined here. The quota label is
 // prepended from certsLabel at render time so it never drifts.
 const UPGRADE_PLANS = [
-  { ...PLAN_PRICING.starter, popular: false,
-    features: ["كل القوالب الجاهزة", "تحقّق عام بـ QR"] },
   { ...PLAN_PRICING.pro, popular: true,
     features: ["الإصدار الجماعي", "توقيع رقمي مخصص", "تكامل لينكدإن"] },
   { ...PLAN_PRICING.business, popular: false,
