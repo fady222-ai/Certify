@@ -31,9 +31,9 @@ const UPGRADE_PLANS = [
   { slug: "starter", label: "Starter", monthly: 9, yearly: 90, popular: false,
     features: ["٢٠٠ شهادة شهرياً", "كل القوالب الجاهزة", "تحقّق عام بـ QR"] },
   { slug: "pro", label: "Pro", monthly: 29, yearly: 290, popular: true,
-    features: ["٢٠٠٠ شهادة شهرياً", "الإصدار الجماعي", "وصول API", "٣ أعضاء فريق"] },
+    features: ["٢٠٠٠ شهادة شهرياً", "الإصدار الجماعي", "توقيع رقمي مخصص", "تكامل لينكدإن"] },
   { slug: "business", label: "Business", monthly: 79, yearly: 790, popular: false,
-    features: ["١٠٬٠٠٠ شهادة شهرياً", "API + إزالة العلامة", "١٠ أعضاء فريق", "دعم أولوية"] },
+    features: ["١٠٬٠٠٠ شهادة شهرياً", "إزالة العلامة (White-label)", "تتبّع مشاهدات وتحميلات الشهادات", "دعم أولوية"] },
 ];
 
 type PendingUpgrade = { slug: string; interval: "monthly" | "annual" };
