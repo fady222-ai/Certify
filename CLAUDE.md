@@ -58,7 +58,13 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 | **Paymob** | مصر (فودافون كاش/إنستاباي/فوري) | بطاقات: cron + token؛ المحافظ: تذكير بالبريد فقط |
 
 - ملفات الخدمات: `certify-api/src/services/{stripe,tap,paymob}Service.js`
-- التحكم: `certify-api/src/controllers/billingController.js`
+- **التحكم (مقسّم لثلاثة، مسؤولية واحدة لكلٍّ):**
+  `controllers/billingController.js` (المعالِجات المُصادَقة: `listPlans`/`getBilling`/
+  `createCheckout`/`cancelSubscription`/`changePlan`) ·
+  `controllers/billingWebhookController.js` (callbacks/webhooks للبوابات الثلاث:
+  تحقّق توقيع + idempotency + تطبيق الحالة) ·
+  `services/billingService.js` (المساعدات المشتركة: `presentPlan`/`presentSubscription`/
+  `applyPlanToOrg`/`cancelActiveGatewaySubscription`/`isFreshWebhookEvent`).
 - التجديد المجدول: `certify-api/src/jobs/renewSubscriptions.js` (cron يومي 03:00 UTC)
 - **مهم للـ webhooks:** `server.js` يتخطّى `express.json` على مساري
   `/billing/webhook` و`/billing/stripe/webhook` (للحفاظ على raw body لتوقيع HMAC).
@@ -165,9 +171,13 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - **CI:** `.github/workflows/ci.yml` (Node 20، لكل push وPR) بوظيفتين:
   `api-tests` (`npm ci` → `npx prisma generate` → `npm test`، بلا قاعدة بيانات —
   عزل DB بالذاكرة) و`web-tests` (`certify-web`: `npm ci` → `npm test` عبر Vitest).
-- **اختبارات الواجهة:** Vitest + jsdom (`certify-web/vitest.config.ts`، `npm test`)
-  تغطّي منطق `src/lib/auth.ts` (تخزين/إبطال التوكن، تدفّق الدخول والتحقق، `authedFetch`
-  يُسجّل الخروج على 401) و`src/lib/api.ts` (`verifyCertificate`: نجاح/404/خطأ شبكة).
+- **اختبارات الواجهة:** Vitest + jsdom (`certify-web/vitest.config.ts` — يحلّ alias `@/`
+  كـtsconfig، `npm test`) تغطّي: منطق `src/lib/auth.ts` (تخزين/إبطال التوكن، الدخول
+  والتحقق، التسجيل بخطوتين `register`/`resendOtp` دون إنشاء جلسة، استعادة كلمة المرور
+  `forgot`/`resetPassword`، `refreshProfile`، و`authedFetch` يُسجّل الخروج على 401)؛
+  `src/lib/api.ts` (`verifyCertificate`: نجاح/404/خطأ شبكة)؛ `src/lib/billing.ts`
+  (`resolveGatewayChoice`: صفر/واحد بوابة → دفع مباشر، بوابتان+ → نافذة الاختيار)؛
+  ومنطق كانفس محرّر القوالب `components/templateEditor/canvas.ts`.
 - بعد أي تعديل على schema: شغّل `npx prisma db push` على بيئة النشر.
 - **تفرّد اسم المنظمة:** مفروض بفهرس دالّي فريد `lower(name)` يُنشأ تلقائياً عند
   الإقلاع (`ensureOrgNameIndex`, idempotent ومتسامح). إن فشل إنشاؤه بسبب أسماء
@@ -196,6 +206,8 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - **بوّابات الدفع في الواجهة:** `GatewayPicker` يعرض البوابات المُفعّلة فقط، وصفحتا
   `/pricing` و`/dashboard/billing` تتخطّيان المودال وتذهبان للدفع مباشرة عند توفّر
   بوّابة واحدة أو صفر (وضع dev). `/pricing` يقرأ التوفّر من `/api/plans` عبر `listPlans`.
+  قرار «نافذة أم دفع مباشر» مُستخرَج في دالّة نقيّة واحدة `resolveGatewayChoice`
+  (`src/lib/billing.ts`) يشترك فيها المساران (مغطّاة باختبار).
 - **ترقيم صفحات الشهادات:** `GET /api/certificates` يقبل `page`/`pageSize`
   (افتراضي 50، سقف 100) ويُعيد `{ data, total, page, pageSize }`؛ الواجهة
   (`dashboard/certificates`) تعرض أزرار السابق/التالي.
