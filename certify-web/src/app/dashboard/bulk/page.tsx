@@ -115,8 +115,12 @@ export default function BulkPage() {
           <p className="mt-1 text-sm text-ink-soft">ارفع ملف Excel أو CSV يحتوي على أسماء المتدربين وسيتم إصدار الشهادات تلقائياً.</p>
         </div>
 
-        {/* Upgrade gate — bulk issuance is a paid feature */}
-        {canBulk === false ? (
+        {/* Upgrade gate — bulk issuance is a paid feature. While the entitlement
+            is still loading (canBulk === null) show a placeholder, not the form,
+            to avoid flashing the uploader before the gate resolves. */}
+        {canBulk === null ? (
+          <div className="card p-12 text-center text-sm text-ink-muted">جارٍ التحميل…</div>
+        ) : canBulk === false ? (
           <div className="card p-8 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
               <IconUpload className="h-8 w-8" />
