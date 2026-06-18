@@ -14,7 +14,7 @@ const PLANS = [
   { ...PLAN_PRICING.free, features: ["قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجاناً", highlight: false },
   { ...PLAN_PRICING.starter, features: ["كل ميزات Free", "قوالب غير محدودة", "إرسال بريد إلكتروني", "إصدار جماعي CSV"], cta: "ابدأ الآن", highlight: false },
   { ...PLAN_PRICING.pro, features: ["كل ميزات Starter", "تكامل لينكدإن", "تتبّع مشاهدات الشهادات", "تقارير متقدمة"], cta: "ابدأ الآن", highlight: true },
-  { ...PLAN_PRICING.business, features: ["كل ميزات Pro", "تتبّع مشاهدات الشهادات", "علامة بيضاء (White-label)", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
+  { ...PLAN_PRICING.business, features: ["كل ميزات Pro", "تتبّع مشاهدات الشهادات", "شهادات بشعار وألوان أكاديميتك", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
 ];
 
 export default function PricingPage() {
