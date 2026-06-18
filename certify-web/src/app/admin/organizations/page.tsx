@@ -7,6 +7,7 @@ import {
   adminToggleSuspend,
   type AdminOrg,
 } from "@/lib/admin";
+import { IconSearch } from "@/components/icons";
 
 const PLAN_SLUGS = ["free", "pro", "business"];
 
@@ -72,52 +73,52 @@ export default function AdminOrganizationsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <main className="space-y-6 p-6">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-white border border-line text-ink px-5 py-2.5 rounded-xl shadow-lg text-sm">
+        <div className="fixed top-5 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-brand-50 px-5 py-2.5 text-sm font-bold text-brand-700 shadow-lg ring-1 ring-brand-100">
           {toast}
         </div>
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-ink">إدارة المنظمات</h1>
-        <p className="text-ink-muted text-sm mt-1">كل المنظمات المسجّلة على المنصة</p>
+        <h1 className="font-display text-2xl font-black text-ink">إدارة المنظمات</h1>
+        <p className="mt-1 text-sm text-ink-soft">كل المنظمات المسجّلة على المنصة.</p>
       </div>
 
       {/* Search */}
-      <form onSubmit={handleSearch} className="flex gap-3">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="ابحث بالاسم أو البريد الإلكتروني..."
-          className="flex-1 bg-white border border-line rounded-xl px-4 py-2 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition"
-        />
-        <button
-          type="submit"
-          className="bg-brand-600 hover:bg-brand-700 text-white text-sm px-5 py-2 rounded-xl font-medium transition-colors shadow-sm"
-        >
-          بحث
-        </button>
-        {search && (
-          <button
-            type="button"
-            onClick={() => { setSearch(""); load(); }}
-            className="text-ink-muted hover:text-ink text-sm px-3 py-2 rounded-xl transition-colors"
-          >
-            مسح
-          </button>
-        )}
+      <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <IconSearch className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="ابحث بالاسم أو البريد الإلكتروني…"
+            className="input pr-11"
+          />
+        </div>
+        <div className="flex gap-2">
+          <button type="submit" className="btn-primary">بحث</button>
+          {search && (
+            <button type="button" onClick={() => { setSearch(""); load(); }} className="btn-ghost">
+              مسح
+            </button>
+          )}
+        </div>
       </form>
 
       {/* Table */}
-      <div className="bg-white border border-line rounded-2xl overflow-hidden shadow-sm">
+      <div className="card overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center h-48">
-            <div className="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
-          </div>
+          <div className="px-6 py-16 text-center text-sm text-ink-muted">جارٍ التحميل…</div>
         ) : orgs.length === 0 ? (
-          <div className="text-center text-ink-muted py-16">لا توجد نتائج.</div>
+          <div className="px-6 py-16 text-center">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
+              <IconSearch className="h-8 w-8" />
+            </div>
+            <h3 className="mt-5 font-display text-xl font-black text-ink">لا توجد نتائج</h3>
+            <p className="mt-2 text-sm text-ink-soft">جرّب تعديل كلمات البحث.</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[900px]">
@@ -232,6 +233,6 @@ export default function AdminOrganizationsPage() {
           </span>
         )}
       </p>
-    </div>
+    </main>
   );
 }

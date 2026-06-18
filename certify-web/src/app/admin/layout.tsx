@@ -3,22 +3,36 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { getStoredUser, getToken } from "@/lib/auth";
+import { Logo } from "@/components/Logo";
+import { getStoredUser, getToken, logout, type AuthUser } from "@/lib/auth";
+import { IconChart, IconBuilding, IconCreditCard } from "@/components/icons";
+
+const nav = [
+  { label: "نظرة عامة", icon: IconChart, href: "/admin" },
+  { label: "المنظمات", icon: IconBuilding, href: "/admin/organizations" },
+  { label: "بوابات الدفع", icon: IconCreditCard, href: "/admin/payment-gateways" },
+];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [checked, setChecked] = useState(false);
+  const [profile, setProfile] = useState<AuthUser | null>(null);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     const token = getToken();
-    const profile = getStoredUser();
-    if (!token || !profile?.user?.is_admin) {
+    const stored = getStoredUser();
+    if (!token || !stored?.user?.is_admin) {
       router.replace("/dashboard");
       return;
     }
+    setProfile(stored);
     setChecked(true);
   }, [router]);
+
+  // Close the mobile drawer on route change.
+  useEffect(() => { setNavOpen(false); }, [pathname]);
 
   if (!checked) {
     return (
@@ -28,51 +42,96 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  const nav = [
-    { href: "/admin", label: "نظرة عامة", icon: "📊" },
-    { href: "/admin/organizations", label: "المنظمات", icon: "🏢" },
-    { href: "/admin/payment-gateways", label: "بوابات الدفع", icon: "💳" },
-  ];
+  function onLogout() {
+    logout();
+    router.push("/");
+  }
+
+  const adminBadge = (
+    <div className="m-3 mt-0 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-5 text-white">
+      <p className="text-sm font-extrabold text-amber-400">لوحة الإدارة</p>
+      <p className="mt-1 text-xs text-gray-300">{profile?.user?.email ?? "مدير المنصّة"}</p>
+      <Link href="/dashboard" className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white/10 px-3 py-2 text-xs font-bold hover:bg-white/20">
+        العودة للداشبورد
+      </Link>
+    </div>
+  );
+
+  const navItems = (
+    <>
+      {nav.map((n) => {
+        const active =
+          n.href === "/admin" ? pathname === "/admin" : pathname.startsWith(n.href);
+        return (
+          <Link key={n.href} href={n.href}
+            className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
+              active ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
+                : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"}`}>
+            <n.icon className="h-5 w-5" />
+            {n.label}
+          </Link>
+        );
+      })}
+    </>
+  );
 
   return (
-    <div className="min-h-screen flex bg-surface-2/40 text-ink" dir="rtl">
-      {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 bg-white border-l border-line flex flex-col shadow-sm">
-        <div className="px-5 py-6 border-b border-line">
-          <span className="text-lg font-bold text-brand-600">Certify</span>
-          <span className="text-xs text-ink-muted block mt-0.5">لوحة المدير</span>
+    <div className="flex min-h-screen bg-surface-2/40 text-ink" dir="rtl">
+      {/* الشريط الجانبي (حاسوب) */}
+      <aside className="hidden w-64 shrink-0 flex-col border-l bg-white lg:flex">
+        <div className="flex flex-col gap-1 border-b px-5 py-4">
+          <Logo />
+          <span className="text-[11px] font-bold tracking-wide text-ink-muted">لوحة المدير</span>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {nav.map((item) => {
-            const active = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  active
-                    ? "bg-brand-600 text-white shadow-[0_4px_12px_rgba(79,70,229,0.2)]"
-                    : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"
-                }`}
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="px-5 py-4 border-t border-line">
-          <Link
-            href="/dashboard"
-            className="text-xs text-ink-muted hover:text-brand-600 transition-colors"
-          >
-            ← العودة للداشبورد
-          </Link>
-        </div>
+        <nav className="flex-1 space-y-1 p-3">{navItems}</nav>
+        {adminBadge}
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-auto">{children}</main>
+      {/* درج التنقّل (جوال) */}
+      {navOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setNavOpen(false)} />
+          <aside className="absolute right-0 top-0 flex h-full w-72 max-w-[85%] flex-col border-l bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b px-5 py-4">
+              <div className="flex flex-col gap-1">
+                <Logo />
+                <span className="text-[11px] font-bold tracking-wide text-ink-muted">لوحة المدير</span>
+              </div>
+              <button onClick={() => setNavOpen(false)} className="rounded-lg p-1.5 text-ink-muted hover:bg-surface-2" aria-label="إغلاق">✕</button>
+            </div>
+            <nav className="flex-1 space-y-1 overflow-y-auto p-3">{navItems}</nav>
+            {adminBadge}
+          </aside>
+        </div>
+      )}
+
+      {/* المحتوى */}
+      <div className="flex flex-1 flex-col">
+        <header className="glass sticky top-0 z-30 flex items-center justify-between border-b px-4 py-3.5 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setNavOpen(true)}
+              className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 lg:hidden"
+              aria-label="القائمة"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <span className="lg:hidden"><Logo /></span>
+            <p className="hidden text-sm font-bold text-ink-soft sm:block">لوحة الإدارة</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard" className="btn-ghost">
+              <span className="hidden sm:inline">العودة للداشبورد</span>
+              <span className="sm:hidden">الداشبورد</span>
+            </Link>
+            <button className="btn-ghost" type="button" onClick={onLogout}>خروج</button>
+          </div>
+        </header>
+        <div className="flex-1">{children}</div>
+      </div>
     </div>
   );
 }

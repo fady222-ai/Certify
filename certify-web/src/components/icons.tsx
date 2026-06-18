@@ -72,6 +72,12 @@ export const IconBan = (p: IconProps) => (
 export const IconDownload = (p: IconProps) => (
   <svg {...base(p)}><path d="M12 4v12M8 12l4 4 4-4" /><path d="M4 18v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" /></svg>
 );
+export const IconBuilding = (p: IconProps) => (
+  <svg {...base(p)}><rect x="4" y="3" width="16" height="18" rx="1.5" /><path d="M9 21v-4h6v4" /><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01" /></svg>
+);
+export const IconCreditCard = (p: IconProps) => (
+  <svg {...base(p)}><rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M2.5 9.5h19M6 15h4" /></svg>
+);
 export const IconGoogle = (p: IconProps) => (
   <svg viewBox="0 0 24 24" {...p}>
     <path fill="#4285F4" d="M22 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.6a4.8 4.8 0 0 1-2 3.2v2.6h3.3c1.9-1.8 3-4.4 3-7.6Z" />

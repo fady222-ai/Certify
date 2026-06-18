@@ -104,9 +104,9 @@ export default function PaymentGatewaysPage() {
   }
 
   return (
-    <div className="p-8 max-w-3xl mx-auto" dir="rtl">
-      <h1 className="text-2xl font-bold text-ink">بوابات الدفع</h1>
-      <p className="text-sm text-ink-muted mt-1">
+    <main className="mx-auto max-w-3xl p-6">
+      <h1 className="font-display text-2xl font-black text-ink">بوابات الدفع</h1>
+      <p className="text-sm text-ink-soft mt-1">
         أدخل مفاتيح كل بوابة لتفعيل الدفع. المفاتيح السرّية تُخزَّن مشفّرة ولا تُعرَض كاملة مرة أخرى — اترك
         الحقل السرّي فارغاً للإبقاء على القيمة المحفوظة.
       </p>
@@ -127,11 +127,11 @@ export default function PaymentGatewaysPage() {
         {gateways?.map((g) => {
           const note = notice[g.gateway];
           return (
-            <section key={g.gateway} className="bg-white rounded-2xl border border-line shadow-sm p-6">
+            <section key={g.gateway} className="card p-6">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-ink">{g.label}</h2>
+                    <h2 className="font-display text-lg font-black text-ink">{g.label}</h2>
                     <span className="text-xs text-ink-muted">({g.region})</span>
                     {g.available ? (
                       <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-bold text-green-700">
@@ -184,7 +184,7 @@ export default function PaymentGatewaysPage() {
                             : "أدخل القيمة"
                           : "أدخل القيمة"
                       }
-                      className="w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+                      className="input"
                     />
                   </label>
                 ))}
@@ -206,7 +206,7 @@ export default function PaymentGatewaysPage() {
                 <button
                   onClick={() => onSave(g)}
                   disabled={savingId === g.gateway}
-                  className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
+                  className="btn-primary disabled:opacity-60"
                 >
                   {savingId === g.gateway ? "جارٍ الحفظ…" : "حفظ"}
                 </button>
@@ -224,6 +224,6 @@ export default function PaymentGatewaysPage() {
           );
         })}
       </div>
-    </div>
+    </main>
   );
 }
