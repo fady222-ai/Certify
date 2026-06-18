@@ -165,6 +165,11 @@ export function presentAllGateways() {
   return Object.keys(GATEWAY_SPECS).map(presentGateway);
 }
 
+// Upper bound on any single stored field. Real gateway keys/ids are far shorter;
+// this caps the encrypted blob so a malicious/compromised admin can't store
+// megabytes that get decrypted into memory on every cache load.
+const MAX_FIELD_LEN = 1024;
+
 /** Validate an incoming partial field set. Returns an error message or null. */
 export function validateGatewayFields(gateway, incoming) {
   const spec = GATEWAY_SPECS[gateway];
@@ -174,6 +179,7 @@ export function validateGatewayFields(gateway, incoming) {
     const raw = incoming[f.key];
     if (raw == null || String(raw).trim() === "") continue;
     const v = String(raw).trim();
+    if (v.length > MAX_FIELD_LEN) return `قيمة «${f.label}» طويلة جداً.`;
     if (f.numeric && !(parseFloat(v) > 0)) return `قيمة «${f.label}» يجب أن تكون رقماً موجباً.`;
   }
   if (gateway === "stripe") {

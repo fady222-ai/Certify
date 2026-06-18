@@ -103,8 +103,14 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
     بادئات Stripe؛ كل المسارات `requireAuth + requireAdmin`؛ تسجيل `updatedById`.
   - المسارات: `GET/PUT/DELETE /api/admin/payment-gateways[/:gateway]`
     (`adminController.js`). الواجهة: `lib/admin.ts` + صفحة `admin/payment-gateways`.
+  - **حدّ طول الحقول:** `validateGatewayFields` يرفض أي حقل > 1024 حرفاً
+    (`MAX_FIELD_LEN`) فلا يُخزَّن blob مشفّر ضخم يُفكّ بالذاكرة عند كل تحميل كاش.
+  - **قيد الكاش متعدّد النسخ:** كاش `gatewayConfig` بالذاكرة لكل process. على نشر
+    بأكثر من نسخة API، كتابة الأدمن (تدوير/تعطيل مفتاح) لا تنتشر للنسخ الأخرى حتى
+    إعادة الإقلاع. نشر Railway الحالي بنسخة واحدة غير متأثّر؛ عند التوسّع أفقياً
+    يلزم آلية إبطال كاش مشترَكة (إشعار/إعادة قراءة).
   - **اختبارات** (`test/gateway-config.test.js`): دورة تشفير/فكّ + كشف العبث،
-    التقنيع، الدمج الجزئي، التحقق، وأن قيمة DB تُرجِّح وتُقنَّع في عرض الـAPI.
+    التقنيع، الدمج الجزئي، التحقق (شامل حدّ الطول)، وأن قيمة DB تُرجِّح وتُقنَّع في عرض الـAPI.
 - **اختبارات** (`test/billing.test.js` + `test/billing-prod-security.test.js`، `npm test`):
   تثبّت منطق كودنا (لا منطق البوابة) دون DB/شبكة حقيقية — التحقق من التوقيع
   (Tap HMAC-SHA256، Paymob HMAC-SHA512 على 20 حقلاً، Stripe عبر الـ SDK: قبول الصحيح

@@ -63,6 +63,11 @@ test("validateGatewayFields: enforces Stripe key prefixes and numeric rate", () 
   assert.equal(validateGatewayFields("paymob", { egpRate: "50.5" }), null);
 });
 
+test("validateGatewayFields: rejects an over-long field, accepts one within the cap", () => {
+  assert.equal(validateGatewayFields("stripe", { secretKey: "sk_" + "a".repeat(1000) }), null);
+  assert.match(validateGatewayFields("stripe", { secretKey: "sk_" + "a".repeat(2000) }), /طويلة/);
+});
+
 // ── resolver + presentation (DB overrides env, secrets never leak) ────────────
 test("admin-set credentials override env, resolve internally, and mask in the API view", async () => {
   prisma.gatewayConfig = {
