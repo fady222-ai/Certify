@@ -2,17 +2,13 @@ import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { computeHash, toDateOnly } from "../src/services/certificateHasher.js";
 import { presetTemplates } from "../src/templates/presetTemplates.js";
+import { PLANS } from "../src/config/plans.js";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // --- Plans (from pricing model) ---
-  const plans = [
-    { slug: "free",     name: "Free",     priceMonthly: 0,  priceYearly: 0,   certificatesPerMonth: 10,    teamMembersLimit: 1 },
-    { slug: "starter",  name: "Starter",  priceMonthly: 9,  priceYearly: 90,  certificatesPerMonth: 200,   teamMembersLimit: 1 },
-    { slug: "pro",      name: "Pro",      priceMonthly: 29, priceYearly: 290, certificatesPerMonth: 2000,  teamMembersLimit: 3, hasApi: true },
-    { slug: "business", name: "Business", priceMonthly: 79, priceYearly: 790, certificatesPerMonth: 10000, teamMembersLimit: 10, hasApi: true, hasWhiteLabel: true },
-  ];
+  // --- Plans (canonical catalogue in src/config/plans.js) ---
+  const plans = PLANS;
   for (const p of plans) {
     await prisma.plan.upsert({ where: { slug: p.slug }, create: p, update: p });
   }

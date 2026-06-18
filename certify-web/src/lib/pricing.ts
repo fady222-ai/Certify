@@ -1,25 +1,36 @@
-// Single source of truth for the plan prices shown across the marketing site
-// (landing page + /pricing). These values MUST match the canonical plans in
-// certify-api/prisma/seed.js — the backend always charges from the database by
-// `slug`, so keeping the displayed numbers here in one place prevents the two
-// pages from drifting apart (or from the real price).
+// Display mirror of the plan facts shown across the site (landing page,
+// /pricing, /dashboard/billing). The canonical source is the backend catalogue
+// at certify-api/src/config/plans.js — the API always charges/limits from the
+// DB by `slug`. These numbers MUST match it; certify-api's
+// test/plan-pricing-sync.test.js fails CI if they drift.
 //
-// Marketing copy (feature bullets, tags, CTA labels) intentionally stays in
-// each page — only the price-tier facts (name, price, monthly quota) live here.
+// Only price-tier facts (name, price, monthly quota) live here. Marketing copy
+// (feature bullets, tags, CTA labels) intentionally stays in each page.
 
 export type PlanPricing = {
   slug: string;
   name: string;
   monthly: number; // USD / month
   yearly: number; // USD / year
-  certsLabel: string; // human label for the monthly certificate quota
+  certsPerMonth: number; // monthly certificate quota (matches backend)
+  certsLabel: string; // derived human label for the quota
 };
 
+/** Arabic-correct quota label, derived from the numeric quota. */
+function certsLabel(n: number): string {
+  const noun = n >= 3 && n <= 10 ? "شهادات" : "شهادة";
+  return `${n.toLocaleString("en-US")} ${noun} / شهر`;
+}
+
+function plan(slug: string, name: string, monthly: number, yearly: number, certsPerMonth: number): PlanPricing {
+  return { slug, name, monthly, yearly, certsPerMonth, certsLabel: certsLabel(certsPerMonth) };
+}
+
 export const PLAN_PRICING: Record<string, PlanPricing> = {
-  free:     { slug: "free",     name: "مجاني",    monthly: 0,  yearly: 0,   certsLabel: "10 شهادات / شهر" },
-  starter:  { slug: "starter",  name: "Starter",  monthly: 9,  yearly: 90,  certsLabel: "200 شهادة / شهر" },
-  pro:      { slug: "pro",      name: "Pro",      monthly: 29, yearly: 290, certsLabel: "2,000 شهادة / شهر" },
-  business: { slug: "business", name: "Business", monthly: 79, yearly: 790, certsLabel: "10,000 شهادة / شهر" },
+  free:     plan("free",     "مجاني",    0,  0,   10),
+  starter:  plan("starter",  "Starter",  9,  90,  200),
+  pro:      plan("pro",      "Pro",      29, 290, 2000),
+  business: plan("business", "Business", 79, 790, 10000),
 };
 
 /** Approximate % saved by paying yearly instead of monthly (≈ 2 months free). */
