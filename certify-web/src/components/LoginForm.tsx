@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { login, verifyEmail, resendOtp } from "@/lib/auth";
+import { login, verifyEmail, resendOtp, getToken, getStoredUser } from "@/lib/auth";
 import { IconMail, IconLock, IconArrow } from "./icons";
 
 export function LoginForm() {
@@ -16,6 +16,18 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Already-authenticated guard: if a session exists, bounce to the dashboard
+  // (or admin) instead of showing the form. Starts true to avoid flashing the
+  // form before the localStorage check resolves.
+  const [redirecting, setRedirecting] = useState(true);
+
+  useEffect(() => {
+    if (getToken()) {
+      router.replace(getStoredUser()?.user.is_admin ? "/admin" : "/dashboard");
+      return;
+    }
+    setRedirecting(false);
+  }, [router]);
 
   async function onLoginSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -59,6 +71,14 @@ export function LoginForm() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ ما.");
     }
+  }
+
+  if (redirecting) {
+    return (
+      <div className="flex justify-center py-8">
+        <div className="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   if (step === "otp") {
