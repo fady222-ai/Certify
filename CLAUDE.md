@@ -89,6 +89,22 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - **التخفيض للمجاني** (`changePlan` أو checkout بسعر 0) يُلغي اشتراك Stripe
   النشط فوراً (`cancelActiveGatewaySubscription`) فيتوقف المحاسبة.
 - **وضع dev:** إن لم تُضبط مفاتيح بوابة، يتم التبديل المباشر للباقة بدون دفع.
+- **إدارة المفاتيح من لوحة الإدارة (مشفّرة):** المدير يضبط مفاتيح البوابات الثلاث من
+  `/admin/payment-gateways` بدل متغيّرات البيئة فقط. المصدر الموحَّد
+  `services/gatewayConfig.js`: قِيَم قاعدة البيانات (إن وُجدت) تُرجِّح على متغيّرات
+  البيئة (fallback)، مع كاش بالذاكرة يُحمَّل عند الإقلاع (`loadGatewayConfigs` في
+  `server.js`) ويُحدَّث عند كل كتابة (`refreshGatewayConfig`) فيبقى مسار الدفع/الـ
+  webhook متزامناً بلا استعلام لكل طلب. الخدمات الثلاث تقرأ عبر
+  `stripeConfig()`/`tapConfig()`/`paymobConfig()` و`isConfigured()` صارت
+  `isGatewayAvailable()` (مُفعّلة + الحقول المطلوبة موجودة).
+  - **الأمان:** الأسرار تُخزَّن مشفّرة AES-256-GCM (`services/secretCrypto.js`،
+    مفتاح مشتقّ من `APP_KEY`)؛ الـAPI لا يُعيد السرّ كاملاً أبداً — فقط معاينة
+    مقنّعة (`••••1234`). تحديث جزئي (الحقل السرّي الفارغ يُبقي المحفوظ)؛ تحقّق
+    بادئات Stripe؛ كل المسارات `requireAuth + requireAdmin`؛ تسجيل `updatedById`.
+  - المسارات: `GET/PUT/DELETE /api/admin/payment-gateways[/:gateway]`
+    (`adminController.js`). الواجهة: `lib/admin.ts` + صفحة `admin/payment-gateways`.
+  - **اختبارات** (`test/gateway-config.test.js`): دورة تشفير/فكّ + كشف العبث،
+    التقنيع، الدمج الجزئي، التحقق، وأن قيمة DB تُرجِّح وتُقنَّع في عرض الـAPI.
 - **اختبارات** (`test/billing.test.js` + `test/billing-prod-security.test.js`، `npm test`):
   تثبّت منطق كودنا (لا منطق البوابة) دون DB/شبكة حقيقية — التحقق من التوقيع
   (Tap HMAC-SHA256، Paymob HMAC-SHA512 على 20 حقلاً، Stripe عبر الـ SDK: قبول الصحيح
@@ -175,6 +191,9 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 > **تنبيه schema:** أُضيف حقل `hasBulkIssuance` إلى `Plan` (علم ميزة الإصدار
 > الجماعي). شغّل `npx prisma db push` ثم `node prisma/seed.js` على بيئة النشر بعد
 > سحب هذا التحديث (الـseed يكتب العلم ويعطّل باقة Starter القديمة).
+
+> **تنبيه schema:** أُضيف نموذج `GatewayConfig` (مفاتيح بوابات الدفع المشفّرة).
+> شغّل `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
 
 ---
 

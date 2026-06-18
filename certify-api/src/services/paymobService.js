@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { config } from "../config/index.js";
+import { paymobConfig, isGatewayAvailable } from "./gatewayConfig.js";
 
 const BASE = "https://accept.paymob.com/api";
 
@@ -7,7 +8,7 @@ async function authToken() {
   const res = await fetch(`${BASE}/auth/tokens`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ api_key: config.paymobApiKey }),
+    body: JSON.stringify({ api_key: paymobConfig().apiKey }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? "Paymob authentication failed");
@@ -41,7 +42,7 @@ async function requestPaymentKey(token, { orderId, amountCents, billingData, sav
       order_id: orderId,
       billing_data: billingData,
       currency: "EGP",
-      integration_id: parseInt(config.paymobIntegrationId),
+      integration_id: parseInt(paymobConfig().integrationId),
       lock_order_when_paid: false,
       ...(saveCard ? { save_card: true } : {}),
     }),
@@ -75,7 +76,7 @@ function buildBillingData(user) {
  * Returns { paymobOrderId, merchantOrderId, amountEgp, redirect_url }.
  */
 export async function createHostedCheckout({ amountUsd, plan, org, user }) {
-  const amountEgp = Math.round(amountUsd * config.paymobEgpRate);
+  const amountEgp = Math.round(amountUsd * paymobConfig().egpRate);
   const amountCents = amountEgp * 100;
   const merchantOrderId = `certify_${org.id}_${Date.now()}`;
 
@@ -92,7 +93,7 @@ export async function createHostedCheckout({ amountUsd, plan, org, user }) {
     paymobOrderId: String(order.id),
     merchantOrderId,
     amountEgp,
-    redirect_url: `https://accept.paymob.com/api/acceptance/iframes/${config.paymobIframeId}?payment_token=${paymentKey}`,
+    redirect_url: `https://accept.paymob.com/api/acceptance/iframes/${paymobConfig().iframeId}?payment_token=${paymentKey}`,
   };
 }
 
@@ -101,7 +102,7 @@ export async function createHostedCheckout({ amountUsd, plan, org, user }) {
  * Returns { id, success, status }.
  */
 export async function createTokenCharge({ amountUsd, cardToken, description }) {
-  const amountEgp = Math.round(amountUsd * config.paymobEgpRate);
+  const amountEgp = Math.round(amountUsd * paymobConfig().egpRate);
   const amountCents = amountEgp * 100;
   const merchantOrderId = `certify_renew_${Date.now()}`;
 
@@ -139,7 +140,8 @@ export async function createTokenCharge({ amountUsd, cardToken, description }) {
  * Paymob computes HMAC over these 20 fields in exactly this order.
  */
 export function verifyHmac(params, receivedHmac) {
-  if (!config.paymobHmacSecret) {
+  const { hmacSecret } = paymobConfig();
+  if (!hmacSecret) {
     // In production refuse to trust an unsigned payload; only skip in dev.
     return !config.isProduction;
   }
@@ -167,7 +169,7 @@ export function verifyHmac(params, receivedHmac) {
   ]
     .map((v) => String(v ?? ""))
     .join("");
-  const computed = crypto.createHmac("sha512", config.paymobHmacSecret).update(str).digest("hex");
+  const computed = crypto.createHmac("sha512", hmacSecret).update(str).digest("hex");
   // Constant-time comparison to avoid leaking the HMAC via timing.
   try {
     return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(String(receivedHmac ?? "")));
@@ -177,5 +179,5 @@ export function verifyHmac(params, receivedHmac) {
 }
 
 export function isConfigured() {
-  return !!(config.paymobApiKey && config.paymobIntegrationId && config.paymobIframeId);
+  return isGatewayAvailable("paymob");
 }

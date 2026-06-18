@@ -276,3 +276,19 @@ model WebhookEvent {
   @@unique([gateway, eventId])
   @@map("webhook_events")
 }
+
+// Admin-managed payment-gateway credentials, encrypted at rest (AES-256-GCM via
+// services/secretCrypto.js, keyed by APP_KEY). `secrets` holds an encrypted JSON
+// blob of all fields for the gateway; when present these override the env-var
+// fallback. Raw values are never returned by the API — only masked previews.
+model GatewayConfig {
+  id          Int      @id @default(autoincrement())
+  gateway     String   @unique // stripe | tap | paymob
+  enabled     Boolean  @default(true)
+  secrets     String // AES-256-GCM encrypted JSON blob of the gateway's fields
+  updatedById String?  @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("gateway_configs")
+}

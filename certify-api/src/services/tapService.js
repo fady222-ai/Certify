@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { config } from "../config/index.js";
+import { tapConfig, isGatewayAvailable } from "./gatewayConfig.js";
 
 const TAP_API = "https://api.tap.company/v2";
 
@@ -7,7 +8,7 @@ async function tapRequest(method, path, body) {
   const res = await fetch(`${TAP_API}${path}`, {
     method,
     headers: {
-      "Authorization": `Bearer ${config.tapSecretKey}`,
+      "Authorization": `Bearer ${tapConfig().secretKey}`,
       "Content-Type": "application/json",
       "Accept": "application/json",
     },
@@ -77,13 +78,14 @@ export async function retrieveCharge(chargeId) {
  * Tap sends hashDigest header = HMAC-SHA256(rawBody, webhookSecret).
  */
 export function verifyWebhookSignature(rawBody, hashDigest) {
-  if (!config.tapWebhookSecret) {
+  const { webhookSecret } = tapConfig();
+  if (!webhookSecret) {
     // In production a missing secret means we cannot trust the payload — reject
     // rather than silently accept forged webhooks. Only skipped in dev.
     return !config.isProduction;
   }
   const expected = crypto
-    .createHmac("sha256", config.tapWebhookSecret)
+    .createHmac("sha256", webhookSecret)
     .update(rawBody)
     .digest("hex");
   try {
@@ -94,5 +96,5 @@ export function verifyWebhookSignature(rawBody, hashDigest) {
 }
 
 export function isConfigured() {
-  return !!config.tapSecretKey;
+  return isGatewayAvailable("tap");
 }

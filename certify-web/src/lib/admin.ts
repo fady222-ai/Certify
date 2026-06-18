@@ -54,3 +54,47 @@ export async function adminToggleSuspend(
 ): Promise<{ message: string; organization: AdminOrg }> {
   return json(await authedFetch(`admin/organizations/${orgId}/suspend`, { method: "PATCH" }));
 }
+
+// ── Payment gateways ─────────────────────────────────────────────────────────
+
+export type GatewayField = {
+  key: string;
+  label: string;
+  secret: boolean;
+  required: boolean;
+  set: boolean;
+  preview: string | null;
+};
+
+export type PaymentGateway = {
+  gateway: string;
+  label: string;
+  region: string;
+  enabled: boolean;
+  available: boolean;
+  source: "db" | "env" | "none";
+  fields: GatewayField[];
+};
+
+export async function listPaymentGateways(): Promise<{ data: PaymentGateway[] }> {
+  return json(await authedFetch("admin/payment-gateways"));
+}
+
+export async function savePaymentGateway(
+  gateway: string,
+  payload: { enabled?: boolean; fields: Record<string, string> }
+): Promise<{ message: string; gateway: PaymentGateway }> {
+  return json(
+    await authedFetch(`admin/payment-gateways/${gateway}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+  );
+}
+
+export async function resetPaymentGateway(
+  gateway: string
+): Promise<{ message: string; gateway: PaymentGateway }> {
+  return json(await authedFetch(`admin/payment-gateways/${gateway}`, { method: "DELETE" }));
+}

@@ -1,9 +1,10 @@
 import Stripe from "stripe";
-import { config } from "../config/index.js";
+import { stripeConfig, isGatewayAvailable } from "./gatewayConfig.js";
 
 function getStripe() {
-  if (!config.stripeSecretKey) return null;
-  return new Stripe(config.stripeSecretKey, { apiVersion: "2024-11-20.acacia" });
+  const { secretKey } = stripeConfig();
+  if (!secretKey) return null;
+  return new Stripe(secretKey, { apiVersion: "2024-11-20.acacia" });
 }
 
 /**
@@ -71,9 +72,9 @@ export async function cancelSubscription(stripeSubscriptionId, atPeriodEnd = tru
 export function constructWebhookEvent(rawBody, signature) {
   const stripe = getStripe();
   if (!stripe) throw new Error("STRIPE_SECRET_KEY is not configured.");
-  return stripe.webhooks.constructEvent(rawBody, signature, config.stripeWebhookSecret);
+  return stripe.webhooks.constructEvent(rawBody, signature, stripeConfig().webhookSecret);
 }
 
 export function isConfigured() {
-  return !!config.stripeSecretKey;
+  return isGatewayAvailable("stripe");
 }

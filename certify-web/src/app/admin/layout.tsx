@@ -31,6 +31,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const nav = [
     { href: "/admin", label: "نظرة عامة", icon: "📊" },
     { href: "/admin/organizations", label: "المنظمات", icon: "🏢" },
+    { href: "/admin/payment-gateways", label: "بوابات الدفع", icon: "💳" },
   ];
 
   return (

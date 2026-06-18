@@ -1,4 +1,14 @@
 import { prisma } from "../db/prisma.js";
+import {
+  GATEWAY_SPECS,
+  presentAllGateways,
+  presentGateway,
+  validateGatewayFields,
+  mergeGatewayFields,
+  readStoredFields,
+  saveGatewayConfig,
+  deleteGatewayConfig,
+} from "../services/gatewayConfig.js";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -141,4 +151,41 @@ export async function adminToggleSuspend(req, res) {
 
   const action = updated.suspendedAt ? "إيقاف" : "تفعيل";
   res.json({ message: `تم ${action} منظمة ${updated.name}.`, organization: presentOrg(updated, null, 0) });
+}
+
+// ── Payment gateway credentials (admin only) ─────────────────────────────────
+
+/** GET /api/admin/payment-gateways — masked status of every gateway. */
+export async function listPaymentGateways(_req, res) {
+  res.json({ data: presentAllGateways() });
+}
+
+/**
+ * PUT /api/admin/payment-gateways/:gateway — set/update credentials.
+ * Body: { enabled?: boolean, fields: { <key>: <value> } }
+ * Partial: a blank/omitted secret field keeps the stored value (so the admin
+ * never has to re-enter secrets just to flip `enabled` or tweak one field).
+ */
+export async function updatePaymentGateway(req, res) {
+  const gateway = (req.params.gateway ?? "").toLowerCase();
+  if (!GATEWAY_SPECS[gateway]) return res.status(404).json({ message: "بوابة دفع غير معروفة." });
+
+  const incoming = req.body?.fields ?? {};
+  const validationError = validateGatewayFields(gateway, incoming);
+  if (validationError) return res.status(400).json({ message: validationError });
+
+  const stored = await readStoredFields(gateway);
+  const merged = mergeGatewayFields(gateway, stored.fields, incoming);
+  const enabled = typeof req.body?.enabled === "boolean" ? req.body.enabled : stored.enabled;
+
+  await saveGatewayConfig(gateway, merged, enabled, req.user.id);
+  res.json({ message: "تم حفظ إعدادات البوابة بنجاح.", gateway: presentGateway(gateway) });
+}
+
+/** DELETE /api/admin/payment-gateways/:gateway — clear DB config (revert to env). */
+export async function deletePaymentGateway(req, res) {
+  const gateway = (req.params.gateway ?? "").toLowerCase();
+  if (!GATEWAY_SPECS[gateway]) return res.status(404).json({ message: "بوابة دفع غير معروفة." });
+  await deleteGatewayConfig(gateway);
+  res.json({ message: "تمت إعادة البوابة إلى الإعداد الافتراضي.", gateway: presentGateway(gateway) });
 }

@@ -56,6 +56,9 @@ import {
   listAdminOrganizations,
   adminChangePlan,
   adminToggleSuspend,
+  listPaymentGateways,
+  updatePaymentGateway,
+  deletePaymentGateway,
 } from "../controllers/adminController.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
@@ -138,3 +141,6 @@ apiRouter.get("/admin/stats", requireAuth, requireAdmin, getAdminStats);
 apiRouter.get("/admin/organizations", requireAuth, requireAdmin, listAdminOrganizations);
 apiRouter.patch("/admin/organizations/:id/plan", requireAuth, requireAdmin, adminChangePlan);
 apiRouter.patch("/admin/organizations/:id/suspend", requireAuth, requireAdmin, adminToggleSuspend);
+apiRouter.get("/admin/payment-gateways", requireAuth, requireAdmin, listPaymentGateways);
+apiRouter.put("/admin/payment-gateways/:gateway", requireAuth, requireAdmin, updatePaymentGateway);
+apiRouter.delete("/admin/payment-gateways/:gateway", requireAuth, requireAdmin, deletePaymentGateway);

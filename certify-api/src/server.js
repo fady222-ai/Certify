@@ -8,6 +8,7 @@ import { apiRouter } from "./routes/index.js";
 import { ensureAdmin } from "./services/ensureAdmin.js";
 import { ensureOrgNameIndex } from "./services/ensureOrgNameIndex.js";
 import { startRenewalJob } from "./jobs/renewSubscriptions.js";
+import { loadGatewayConfigs } from "./services/gatewayConfig.js";
 import { reportError } from "./services/errorReporter.js";
 
 const app = express();
@@ -133,5 +134,7 @@ app.listen(config.port, "0.0.0.0", () => {
   ensureAdmin().catch((e) => console.error("[admin] provisioning failed:", e.message));
   // Enforce unique academy name at the DB level (idempotent, fault-tolerant).
   ensureOrgNameIndex().catch((e) => console.error("[orgindex]", e.message));
+  // Load admin-set payment gateway credentials into memory (falls back to env).
+  loadGatewayConfigs().catch((e) => console.error("[gatewayConfig]", e.message));
   startRenewalJob();
 });
