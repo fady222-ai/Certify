@@ -26,53 +26,61 @@ export function GatewayPicker({ onSelect, onClose, stripeAvailable, tapAvailable
         </div>
 
         <div className="space-y-3">
+          {/* Only configured gateways are shown — picking an unavailable one
+              would fail at checkout. */}
           {/* Stripe — global */}
-          <button
-            onClick={() => onSelect("stripe")}
-            disabled={loading}
-            className="w-full flex items-center gap-4 p-4 rounded-xl border border-line hover:border-brand-400 hover:bg-brand-50/30 transition-all group disabled:opacity-50 text-right"
-          >
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0 text-lg">
-              💳
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-ink">Stripe</p>
-              <p className="text-xs text-ink-muted">فيزا · ماستركارد · Apple Pay · دفع عالمي</p>
-            </div>
-            <span className="text-ink-muted group-hover:text-brand-600 transition-colors">←</span>
-          </button>
+          {stripeAvailable && (
+            <button
+              onClick={() => onSelect("stripe")}
+              disabled={loading}
+              className="w-full flex items-center gap-4 p-4 rounded-xl border border-line hover:border-brand-400 hover:bg-brand-50/30 transition-all group disabled:opacity-50 text-right"
+            >
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0 text-lg">
+                💳
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-ink">Stripe</p>
+                <p className="text-xs text-ink-muted">فيزا · ماستركارد · Apple Pay · دفع عالمي</p>
+              </div>
+              <span className="text-ink-muted group-hover:text-brand-600 transition-colors">←</span>
+            </button>
+          )}
 
           {/* Tap — GCC */}
-          <button
-            onClick={() => onSelect("tap")}
-            disabled={loading}
-            className="w-full flex items-center gap-4 p-4 rounded-xl border border-line hover:border-emerald-400 hover:bg-emerald-50/30 transition-all group disabled:opacity-50 text-right"
-          >
-            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 text-lg">
-              🌍
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-ink">Tap Payments</p>
-              <p className="text-xs text-ink-muted">مدى · STC Pay · فيزا · الخليج العربي</p>
-            </div>
-            <span className="text-ink-muted group-hover:text-emerald-600 transition-colors">←</span>
-          </button>
+          {tapAvailable && (
+            <button
+              onClick={() => onSelect("tap")}
+              disabled={loading}
+              className="w-full flex items-center gap-4 p-4 rounded-xl border border-line hover:border-emerald-400 hover:bg-emerald-50/30 transition-all group disabled:opacity-50 text-right"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 text-lg">
+                🌍
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-ink">Tap Payments</p>
+                <p className="text-xs text-ink-muted">مدى · STC Pay · فيزا · الخليج العربي</p>
+              </div>
+              <span className="text-ink-muted group-hover:text-emerald-600 transition-colors">←</span>
+            </button>
+          )}
 
           {/* Paymob — Egypt */}
-          <button
-            onClick={() => onSelect("paymob")}
-            disabled={loading}
-            className="w-full flex items-center gap-4 p-4 rounded-xl border border-line hover:border-amber-400 hover:bg-amber-50/30 transition-all group disabled:opacity-50 text-right"
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 text-lg">
-              🇪🇬
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-ink">Paymob — مصر</p>
-              <p className="text-xs text-ink-muted">فودافون كاش · إنستاباي · فوري · ميزة · بطاقات</p>
-            </div>
-            <span className="text-ink-muted group-hover:text-amber-600 transition-colors">←</span>
-          </button>
+          {paymobAvailable && (
+            <button
+              onClick={() => onSelect("paymob")}
+              disabled={loading}
+              className="w-full flex items-center gap-4 p-4 rounded-xl border border-line hover:border-amber-400 hover:bg-amber-50/30 transition-all group disabled:opacity-50 text-right"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0 text-lg">
+                🇪🇬
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-ink">Paymob — مصر</p>
+                <p className="text-xs text-ink-muted">فودافون كاش · إنستاباي · فوري · ميزة · بطاقات</p>
+              </div>
+              <span className="text-ink-muted group-hover:text-amber-600 transition-colors">←</span>
+            </button>
+          )}
         </div>
 
         {noneAvailable && (

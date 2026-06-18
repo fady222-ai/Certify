@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createCheckout, type Gateway } from "@/lib/billing";
+import { createCheckout, listPlans, type Gateway } from "@/lib/billing";
 import { GatewayPicker } from "@/components/GatewayPicker";
 import { getToken } from "@/lib/auth";
 import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
@@ -23,10 +23,20 @@ export default function PricingPage() {
   const [pending, setPending] = useState<{ slug: string; interval: "monthly" | "annual" } | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [gateways, setGateways] = useState({ stripe: false, tap: false, paymob: false });
+
+  // Discover which payment gateways are actually configured so we never offer
+  // an unavailable one at checkout.
+  useEffect(() => {
+    listPlans().then((d) => setGateways(d.gateways)).catch(() => {});
+  }, []);
 
   function handleSelect(slug: string) {
     if (!getToken()) return router.push(`/register?plan=${slug}&interval=${interval}`);
     if (slug === "free") return doCheckout(slug, interval, "stripe");
+    // Skip the picker when there's no real choice (one or zero gateways → dev mode).
+    const available = (["stripe", "tap", "paymob"] as Gateway[]).filter((g) => gateways[g]);
+    if (available.length <= 1) return doCheckout(slug, interval, available[0] ?? "stripe");
     setPending({ slug, interval });
   }
 
@@ -208,9 +218,9 @@ export default function PricingPage() {
       {/* Gateway Picker Modal */}
       {pending && (
         <GatewayPicker
-          stripeAvailable={true}
-          tapAvailable={true}
-          paymobAvailable={true}
+          stripeAvailable={gateways.stripe}
+          tapAvailable={gateways.tap}
+          paymobAvailable={gateways.paymob}
           loading={!!loading}
           onSelect={(gw) => doCheckout(pending.slug, pending.interval, gw)}
           onClose={() => setPending(null)}

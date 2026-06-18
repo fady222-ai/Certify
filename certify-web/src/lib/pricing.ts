@@ -16,7 +16,7 @@ export type PlanPricing = {
 };
 
 export const PLAN_PRICING: Record<string, PlanPricing> = {
-  free:     { slug: "free",     name: "Free",     monthly: 0,  yearly: 0,   certsLabel: "10 شهادات / شهر" },
+  free:     { slug: "free",     name: "مجاني",    monthly: 0,  yearly: 0,   certsLabel: "10 شهادات / شهر" },
   starter:  { slug: "starter",  name: "Starter",  monthly: 9,  yearly: 90,  certsLabel: "200 شهادة / شهر" },
   pro:      { slug: "pro",      name: "Pro",      monthly: 29, yearly: 290, certsLabel: "2,000 شهادة / شهر" },
   business: { slug: "business", name: "Business", monthly: 79, yearly: 790, certsLabel: "10,000 شهادة / شهر" },

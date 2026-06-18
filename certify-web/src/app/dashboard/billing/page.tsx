@@ -75,6 +75,12 @@ function BillingContent() {
       doCheckout("free", interval, "stripe");
       return;
     }
+    // Skip the picker when there's no real choice (one or zero gateways → dev mode).
+    const available = (["stripe", "tap", "paymob"] as Gateway[]).filter((g) => gateways[g]);
+    if (available.length <= 1) {
+      doCheckout(slug, interval, available[0] ?? "stripe");
+      return;
+    }
     setPending({ slug, interval });
   }
 
