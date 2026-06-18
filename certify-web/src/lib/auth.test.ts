@@ -6,6 +6,11 @@ import {
   login,
   verifyEmail,
   authedFetch,
+  register,
+  resendOtp,
+  forgotPassword,
+  resetPassword,
+  refreshProfile,
 } from "./auth";
 
 const USER_KEY = "certify_user";
@@ -84,6 +89,69 @@ describe("verifyEmail", () => {
     const profile = await verifyEmail("u1", "123456");
     expect(profile).toEqual(sampleProfile);
     expect(getToken()).toBe("jwt-xyz");
+  });
+});
+
+describe("register (step 1 of two-step signup)", () => {
+  test("returns the verification handle without logging in yet", async () => {
+    mockFetch(201, { userId: "u1", requires_verification: true });
+    const result = await register({ name: "أحمد", email: "a@x.com", password: "secret123" });
+    expect(result).toMatchObject({ userId: "u1", requires_verification: true });
+    expect(getToken()).toBeNull(); // no session until the email is verified
+    expect(getStoredUser()).toBeNull();
+  });
+
+  test("throws the server message on failure (e.g. email already taken)", async () => {
+    mockFetch(409, { message: "البريد مستخدم بالفعل" });
+    await expect(
+      register({ name: "أحمد", email: "a@x.com", password: "secret123" }),
+    ).rejects.toThrow("البريد مستخدم بالفعل");
+  });
+});
+
+describe("resendOtp", () => {
+  test("resolves on success", async () => {
+    mockFetch(200, {});
+    await expect(resendOtp("u1")).resolves.toBeUndefined();
+  });
+
+  test("throws the server message on failure (e.g. rate limited)", async () => {
+    mockFetch(429, { message: "حاول لاحقاً" });
+    await expect(resendOtp("u1")).rejects.toThrow("حاول لاحقاً");
+  });
+});
+
+describe("password recovery", () => {
+  test("forgotPassword resolves on success", async () => {
+    mockFetch(200, {});
+    await expect(forgotPassword("a@x.com")).resolves.toBeUndefined();
+  });
+
+  test("resetPassword resolves on success", async () => {
+    mockFetch(200, {});
+    await expect(resetPassword("reset-token", "newsecret1")).resolves.toBeUndefined();
+  });
+
+  test("resetPassword throws the server message on an invalid/expired token", async () => {
+    mockFetch(400, { message: "الرمز غير صالح أو منتهٍ" });
+    await expect(resetPassword("bad-token", "newsecret1")).rejects.toThrow("الرمز غير صالح أو منتهٍ");
+  });
+});
+
+describe("refreshProfile", () => {
+  test("re-persists the freshened profile when authorized", async () => {
+    localStorage.setItem(TOKEN_KEY, "jwt-123");
+    const fresh = { user: { id: "u1", name: "أحمد جديد", email: "a@x.com", locale: "ar" }, organization: null };
+    mockFetch(200, fresh);
+    const result = await refreshProfile();
+    expect(result).toEqual(fresh);
+    expect(getStoredUser()).toEqual(fresh); // local cache updated
+  });
+
+  test("returns null when the profile endpoint errors (non-401)", async () => {
+    localStorage.setItem(TOKEN_KEY, "jwt-123");
+    mockFetch(500, {});
+    expect(await refreshProfile()).toBeNull();
   });
 });
 
