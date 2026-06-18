@@ -34,14 +34,16 @@ import {
   listPlans,
   getBilling,
   createCheckout,
+  cancelSubscription,
+  changePlan,
+} from "../controllers/billingController.js";
+import {
   handleCallback,
   handleTapWebhook,
   handleStripeWebhook,
   handlePaymobCallback,
   handlePaymobWebhook,
-  cancelSubscription,
-  changePlan,
-} from "../controllers/billingController.js";
+} from "../controllers/billingWebhookController.js";
 import {
   getOrganization,
   updateOrganization,

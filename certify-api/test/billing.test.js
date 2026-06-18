@@ -22,7 +22,7 @@ import Stripe from "stripe";
 const { verifyWebhookSignature } = await import("../src/services/tapService.js");
 const { verifyHmac } = await import("../src/services/paymobService.js");
 const { constructWebhookEvent } = await import("../src/services/stripeService.js");
-const { handleTapWebhook, handlePaymobWebhook } = await import("../src/controllers/billingController.js");
+const { handleTapWebhook, handlePaymobWebhook } = await import("../src/controllers/billingWebhookController.js");
 const { processRenewals } = await import("../src/jobs/renewSubscriptions.js");
 const { prisma } = await import("../src/db/prisma.js");
 
