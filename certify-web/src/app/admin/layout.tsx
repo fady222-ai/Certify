@@ -10,8 +10,8 @@ import { IconChart, IconBuilding, IconCreditCard, IconMail } from "@/components/
 const nav = [
   { label: "نظرة عامة", icon: IconChart, href: "/admin" },
   { label: "المنظمات", icon: IconBuilding, href: "/admin/organizations" },
-  { label: "تذاكر الدعم", icon: IconMail, href: "/admin/support" },
   { label: "بوابات الدفع", icon: IconCreditCard, href: "/admin/payment-gateways" },
+  { label: "تذاكر الدعم", icon: IconMail, href: "/admin/support" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
