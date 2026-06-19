@@ -60,6 +60,20 @@ import {
   updatePaymentGateway,
   deletePaymentGateway,
 } from "../controllers/adminController.js";
+import {
+  createTicket,
+  listMyTickets,
+  getMyTicket,
+  replyTicket,
+  closeTicket,
+  createGuestTicket,
+  getGuestTicket,
+  replyGuestTicket,
+  adminListTickets,
+  adminGetTicket,
+  adminReplyTicket,
+  adminSetStatus,
+} from "../controllers/supportController.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
 import { uploadFile } from "../middleware/upload.js";
@@ -88,6 +102,11 @@ apiRouter.post("/auth/resend-otp", resendOtpHandler);
 apiRouter.post("/auth/login", loginHandler);
 apiRouter.post("/auth/forgot-password", forgotPasswordHandler);
 apiRouter.post("/auth/reset-password", resetPasswordHandler);
+
+// Support — public guest flow (token capability, no auth)
+apiRouter.post("/support/public/tickets", createGuestTicket);
+apiRouter.get("/support/public/tickets/:token", getGuestTicket);
+apiRouter.post("/support/public/tickets/:token/messages", replyGuestTicket);
 
 // --- Protected ---
 apiRouter.get("/auth/me", requireAuth, meHandler);
@@ -136,6 +155,13 @@ apiRouter.post("/batches", requireAuth, (req, res, next) => {
 }, createBatch);
 apiRouter.get("/batches/:id", requireAuth, getBatch);
 
+// Support — authenticated user flow
+apiRouter.post("/support/tickets", requireAuth, createTicket);
+apiRouter.get("/support/tickets", requireAuth, listMyTickets);
+apiRouter.get("/support/tickets/:id", requireAuth, getMyTicket);
+apiRouter.post("/support/tickets/:id/messages", requireAuth, replyTicket);
+apiRouter.post("/support/tickets/:id/close", requireAuth, closeTicket);
+
 // --- Admin (platform owner only) ---
 apiRouter.get("/admin/stats", requireAuth, requireAdmin, getAdminStats);
 apiRouter.get("/admin/organizations", requireAuth, requireAdmin, listAdminOrganizations);
@@ -144,3 +170,9 @@ apiRouter.patch("/admin/organizations/:id/suspend", requireAuth, requireAdmin, a
 apiRouter.get("/admin/payment-gateways", requireAuth, requireAdmin, listPaymentGateways);
 apiRouter.put("/admin/payment-gateways/:gateway", requireAuth, requireAdmin, updatePaymentGateway);
 apiRouter.delete("/admin/payment-gateways/:gateway", requireAuth, requireAdmin, deletePaymentGateway);
+
+// Support — admin queue
+apiRouter.get("/support/admin/tickets", requireAuth, requireAdmin, adminListTickets);
+apiRouter.get("/support/admin/tickets/:id", requireAuth, requireAdmin, adminGetTicket);
+apiRouter.post("/support/admin/tickets/:id/messages", requireAuth, requireAdmin, adminReplyTicket);
+apiRouter.patch("/support/admin/tickets/:id/status", requireAuth, requireAdmin, adminSetStatus);

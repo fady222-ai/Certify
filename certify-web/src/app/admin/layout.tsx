@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { getStoredUser, getToken, logout, type AuthUser } from "@/lib/auth";
-import { IconChart, IconBuilding, IconCreditCard } from "@/components/icons";
+import { IconChart, IconBuilding, IconCreditCard, IconMail } from "@/components/icons";
 
 const nav = [
   { label: "نظرة عامة", icon: IconChart, href: "/admin" },
   { label: "المنظمات", icon: IconBuilding, href: "/admin/organizations" },
+  { label: "تذاكر الدعم", icon: IconMail, href: "/admin/support" },
   { label: "بوابات الدفع", icon: IconCreditCard, href: "/admin/payment-gateways" },
 ];
 

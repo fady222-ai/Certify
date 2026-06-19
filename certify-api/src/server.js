@@ -114,6 +114,26 @@ app.use("/api/verify", rateLimit({
   message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
 }));
 
+// Public, unauthenticated support endpoints (guest ticket create + token access).
+// The publicToken is a UUID capability (~122 bits), so this is depth-in-defense:
+// it bounds token-guessing and guest-email spam on top of the general /api budget.
+app.use("/api/support/public", rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
+}));
+// Tighter cap specifically on guest ticket CREATION (POST exact path) to blunt
+// mass email spam, without throttling token reads/replies under the same prefix.
+app.post("/api/support/public/tickets", rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "لقد أرسلت طلبات كثيرة. حاول لاحقاً." },
+}));
+
 app.use("/api", apiRouter);
 
 // 404 + error handlers

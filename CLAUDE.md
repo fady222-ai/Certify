@@ -209,6 +209,43 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 
 ---
 
+## نظام الدعم (تذاكر مستخدم/زائر ↔ أدمن)
+
+نظام تذاكر async مترابط (لا WebSocket) **بتدفّقين يتشاركان نموذج بيانات واحداً**:
+- **(أ) مستخدم مسجّل:** يفتح تذاكر من `/dashboard/support`، محادثة مترابطة، يرى ردود
+  الأدمن، يغلق التذكرة.
+- **(ب) زائر بلا حساب:** نموذج تواصل عام `/support` → تذكرة يراها الأدمن؛ الزائر يتابعها
+  عبر رابط **`publicToken`** (UUID غير قابل للتخمين) يصله بالبريد ويفتح
+  `/support/ticket/[token]` (قراءة + ردّ بلا تسجيل دخول — نمط رابط استعادة كلمة المرور).
+
+- **النماذج:** `SupportTicket` (`userId`/`organizationId` اختياريان للزائر؛ `guestName`/
+  `guestEmail`؛ `publicToken @unique`؛ `status`: open/answered/closed؛ `lastMessageAt`)
+  و`SupportMessage` (`authorRole`: user/admin/guest هو **مصدر حقيقة المُرسِل**؛ `authorId`
+  عمود نصّي عادي لا علاقة). `onDelete: SetNull` يحفظ السجلّ للأدمن إن حُذف المستخدم/المنظمة.
+- **التحكم:** `controllers/supportController.js` (Zod + عزل IDOR: مسارات المستخدم مقيّدة
+  `{id, userId}` → 404؛ المسارات العامة بالـ`publicToken` فقط، لا قبول `id` عام).
+  العارضات snake_case؛ **`public_token` لا يظهر إلا في ردّ إنشاء الزائر وتفاصيل الأدمن**.
+- **التحوّلات:** ردّ الأدمن → `answered`؛ أي ردّ عميل → `open` (الردّ على مغلقة يعيد فتحها).
+- **المسارات** (`routes/index.js`): مستخدم `/support/tickets[...]` (requireAuth) · عام
+  `/support/public/tickets[/:token][/messages]` (بلا auth) · أدمن `/support/admin/tickets`
+  (requireAuth+requireAdmin، بحث/فلتر/ترقيم).
+- **حدود معدّل** (`server.js`): `/api/support/public` 20/دقيقة/IP (token + إنشاء) +
+  إنشاء الزائر POST 5/ساعة/IP (كبح إغراق البريد) — فوق العام 120/دقيقة.
+- **البريد** (`services/supportMailer.js` + `services/email/supportTemplates.js`): تنبيهات
+  للطرفين عبر Resend (best-effort، fallback console). روابط الزائر تُبنى من
+  `config.verifyBaseUrl`. وجهة الأدمن `config.adminEmail`. **عدم تعداد البريد:** إنشاء
+  الزائر يُرجِع `{public_token}` فقط ويُرسل الإيصال بصرف النظر عن وجود الحساب.
+- **الواجهة:** `lib/support.ts` (دوالّ مُصادَقة عبر `authedFetch` + دوالّ عامة عبر `fetch`)؛
+  صفحات `dashboard/support` و`admin/support` و`support` (عام) و`support/ticket/[token]`؛
+  بنود تنقّل «الدعم الفني»/«تذاكر الدعم» (IconMail) + رابط فوتر `/support`.
+- **اختبارات:** `test/tickets.test.js` (عزل Prisma بالذاكرة: IDOR، عدم التعداد، تخمين
+  token→404، التحوّلات، الترقيم) + `src/lib/support.test.ts` (Vitest، mock fetch).
+
+> **تنبيه schema:** أُضيف نموذجا `SupportTicket` و`SupportMessage`. شغّل
+> `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
+
+---
+
 ## Git والنشر
 
 - **الفرع النشط للتطوير:** `claude/youthful-johnson-qrd0un`

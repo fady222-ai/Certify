@@ -7,7 +7,7 @@ import { Logo } from "@/components/Logo";
 import { IssueCertificateModal } from "@/components/IssueCertificateModal";
 import { getToken, getStoredUser, logout, type AuthUser } from "@/lib/auth";
 import {
-  IconBadge, IconUpload, IconPalette, IconChart, IconBolt as IconBoltNav, IconSettings,
+  IconBadge, IconUpload, IconPalette, IconChart, IconBolt as IconBoltNav, IconSettings, IconMail,
 } from "@/components/icons";
 
 const nav = [
@@ -16,6 +16,7 @@ const nav = [
   { label: "القوالب", icon: IconPalette, href: "/dashboard/templates" },
   { label: "الإصدار الجماعي", icon: IconUpload, href: "/dashboard/bulk" },
   { label: "الباقة والفوترة", icon: IconBoltNav, href: "/dashboard/billing" },
+  { label: "الدعم الفني", icon: IconMail, href: "/dashboard/support" },
   { label: "إعدادات المنظمة", icon: IconSettings, href: "/dashboard/settings" },
 ];
 

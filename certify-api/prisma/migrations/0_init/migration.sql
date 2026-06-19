@@ -227,6 +227,35 @@ CREATE TABLE "webhook_events" (
 );
 
 -- CreateTable
+CREATE TABLE "support_tickets" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT,
+    "organization_id" TEXT,
+    "guest_name" TEXT,
+    "guest_email" TEXT,
+    "public_token" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'open',
+    "last_message_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "support_tickets_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "support_messages" (
+    "id" TEXT NOT NULL,
+    "ticket_id" TEXT NOT NULL,
+    "author_role" TEXT NOT NULL,
+    "author_id" TEXT,
+    "body" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "support_messages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "gateway_configs" (
     "id" SERIAL NOT NULL,
     "gateway" TEXT NOT NULL,
@@ -274,6 +303,18 @@ CREATE UNIQUE INDEX "subscriptions_organization_id_key" ON "subscriptions"("orga
 
 -- CreateIndex
 CREATE UNIQUE INDEX "webhook_events_gateway_event_id_key" ON "webhook_events"("gateway", "event_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "support_tickets_public_token_key" ON "support_tickets"("public_token");
+
+-- CreateIndex
+CREATE INDEX "support_tickets_user_id_status_idx" ON "support_tickets"("user_id", "status");
+
+-- CreateIndex
+CREATE INDEX "support_tickets_status_last_message_at_idx" ON "support_tickets"("status", "last_message_at");
+
+-- CreateIndex
+CREATE INDEX "support_messages_ticket_id_created_at_idx" ON "support_messages"("ticket_id", "created_at");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "gateway_configs_gateway_key" ON "gateway_configs"("gateway");
@@ -325,4 +366,13 @@ ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_organization_id_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "plans"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_organization_id_fkey" FOREIGN KEY ("organization_id") REFERENCES "organizations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "support_messages" ADD CONSTRAINT "support_messages_ticket_id_fkey" FOREIGN KEY ("ticket_id") REFERENCES "support_tickets"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

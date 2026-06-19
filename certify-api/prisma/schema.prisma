@@ -30,6 +30,7 @@ model User {
   memberships         OrganizationMember[]
   verificationTokens  VerificationToken[]
   passwordResetTokens PasswordResetToken[]
+  supportTickets      SupportTicket[]
 
   @@map("users")
 }
@@ -101,12 +102,13 @@ model Organization {
 
   owner         User                 @relation("OrgOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   plan          Plan?                @relation(fields: [planId], references: [id])
-  members       OrganizationMember[]
-  templates     Template[]
-  certificates  Certificate[]
-  batches       Batch[]
-  usage         CertificateUsage[]
-  subscriptions Subscription[]
+  members        OrganizationMember[]
+  templates      Template[]
+  certificates   Certificate[]
+  batches        Batch[]
+  usage          CertificateUsage[]
+  subscriptions  Subscription[]
+  supportTickets SupportTicket[]
 
   @@map("organizations")
 }
@@ -275,6 +277,47 @@ model WebhookEvent {
 
   @@unique([gateway, eventId])
   @@map("webhook_events")
+}
+
+// Support tickets — two entry flows sharing one model:
+//   (a) authenticated user (userId set), (b) public guest (userId null,
+//   guestName/guestEmail set, reachable only via the unguessable publicToken).
+// onDelete: SetNull preserves the support history for the admin even if the
+// user/org is later deleted.
+model SupportTicket {
+  id             String   @id @default(uuid())
+  userId         String?  @map("user_id")
+  organizationId String?  @map("organization_id")
+  guestName      String?  @map("guest_name")
+  guestEmail     String?  @map("guest_email")
+  publicToken    String   @unique @default(uuid()) @map("public_token")
+  subject        String
+  status         String   @default("open") // open | answered | closed
+  lastMessageAt  DateTime @default(now()) @map("last_message_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user         User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  messages     SupportMessage[]
+
+  @@index([userId, status])
+  @@index([status, lastMessageAt])
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id         String   @id @default(uuid())
+  ticketId   String   @map("ticket_id")
+  authorRole String   @map("author_role") // user | admin | guest
+  authorId   String?  @map("author_id") // User.id for user/admin; null for guest (bare column, not a relation)
+  body       String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("support_messages")
 }
 
 // Admin-managed payment-gateway credentials, encrypted at rest (AES-256-GCM via
