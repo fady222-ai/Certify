@@ -5,6 +5,7 @@ import {
   presentGateway,
   validateGatewayFields,
   mergeGatewayFields,
+  missingRequiredFields,
   readStoredFields,
   saveGatewayConfig,
   deleteGatewayConfig,
@@ -177,6 +178,17 @@ export async function updatePaymentGateway(req, res) {
   const stored = await readStoredFields(gateway);
   const merged = mergeGatewayFields(gateway, stored.fields, incoming);
   const enabled = typeof req.body?.enabled === "boolean" ? req.body.enabled : stored.enabled;
+
+  // A gateway can't be enabled (it becomes user-selectable) until all its
+  // required keys are present — otherwise checkout would offer a broken gateway.
+  if (enabled) {
+    const missing = missingRequiredFields(gateway, merged);
+    if (missing.length) {
+      return res.status(422).json({
+        message: `لا يمكن تفعيل البوابة قبل تعبئة الحقول المطلوبة: ${missing.join("، ")}.`,
+      });
+    }
+  }
 
   await saveGatewayConfig(gateway, merged, enabled, req.user.id);
   res.json({ message: "تم حفظ إعدادات البوابة بنجاح.", gateway: presentGateway(gateway) });

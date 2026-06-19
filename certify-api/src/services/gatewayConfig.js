@@ -122,6 +122,24 @@ export function isGatewayAvailable(gateway) {
   return GATEWAY_SPECS[gateway].fields.filter((f) => f.required).every((f) => !!r[f.key]);
 }
 
+/**
+ * Required fields still missing for a gateway given a candidate field set,
+ * respecting the env-var fallback. Used to refuse enabling a gateway before its
+ * required keys exist. Returns the human labels of the missing fields.
+ */
+export function missingRequiredFields(gateway, fields) {
+  const spec = GATEWAY_SPECS[gateway];
+  if (!spec) return [];
+  return spec.fields
+    .filter((f) => f.required)
+    .filter((f) => {
+      const v = fields?.[f.key];
+      const eff = v != null && String(v).trim() !== "" ? v : config[f.env];
+      return !eff || String(eff).trim() === "";
+    })
+    .map((f) => f.label);
+}
+
 // ── Admin-facing helpers (never expose raw secrets) ──────────────────────────
 
 /** Mask a secret to a short non-reversible preview, e.g. "••••1234". */

@@ -157,7 +157,13 @@ export default function PaymentGatewaysPage() {
         {gateways?.filter((g) => g.gateway === active).map((g) => {
           const note = notice[g.gateway];
           const isOn = enabledDraft[g.gateway] ?? g.enabled;
-          const missingFields = g.fields.filter((f) => f.required && !f.set);
+          const draft = drafts[g.gateway] ?? {};
+          // A required field counts as satisfied if it's already stored (DB/env)
+          // or the admin just typed a value for it.
+          const requiredMissing = g.fields.filter(
+            (f) => f.required && !f.set && !((draft[f.key] ?? "").trim())
+          );
+          const blockSave = isOn && requiredMissing.length > 0;
           return (
             <section key={g.gateway} className="card p-6">
               <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -205,10 +211,10 @@ export default function PaymentGatewaysPage() {
                   : "البوابة مطفأة — لن تظهر كخيار دفع للمستخدمين."}
               </div>
 
-              {isOn && missingFields.length > 0 && (
+              {blockSave && (
                 <div className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 ring-1 ring-amber-100">
-                  ⚠️ هذه البوابة مفعلة لكن ينقصها حقل مطلوب — لن تعمل حتى تكمل
-                  {` الحقول: ${missingFields.map((f) => f.label).join("، ")}.`}
+                  ⚠️ لا يمكن تفعيل البوابة قبل تعبئة الحقول المطلوبة:
+                  {` ${requiredMissing.map((f) => f.label).join("، ")}.`}
                 </div>
               )}
 
@@ -228,16 +234,19 @@ export default function PaymentGatewaysPage() {
                       type={f.secret ? "password" : "text"}
                       dir="ltr"
                       autoComplete="off"
+                      disabled={!isOn}
                       value={drafts[g.gateway]?.[f.key] ?? ""}
                       onChange={(e) => setField(g.gateway, f.key, e.target.value)}
                       placeholder={
-                        f.secret
-                          ? f.set
-                            ? "اتركه فارغا للإبقاء على القيمة الحالية"
+                        !isOn
+                          ? "فعّل البوابة أولا لإدخال المفاتيح"
+                          : f.secret
+                            ? f.set
+                              ? "اتركه فارغا للإبقاء على القيمة الحالية"
+                              : "أدخل القيمة"
                             : "أدخل القيمة"
-                          : "أدخل القيمة"
                       }
-                      className="input"
+                      className="input disabled:cursor-not-allowed disabled:bg-surface-2"
                     />
                   </label>
                 ))}
@@ -255,14 +264,19 @@ export default function PaymentGatewaysPage() {
                 </div>
               )}
 
-              <div className="mt-5 flex items-center gap-3">
+              <div className="mt-5 flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => onSave(g)}
-                  disabled={savingId === g.gateway}
-                  className="btn-primary disabled:opacity-60"
+                  disabled={savingId === g.gateway || blockSave}
+                  className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {savingId === g.gateway ? "جار الحفظ…" : "حفظ"}
                 </button>
+                {blockSave && (
+                  <span className="text-xs font-medium text-amber-700">
+                    أكمل الحقول المطلوبة لتفعيل البوابة.
+                  </span>
+                )}
                 {g.source === "db" && (
                   <button
                     onClick={() => onReset(g)}

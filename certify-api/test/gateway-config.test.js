@@ -10,6 +10,7 @@ import {
   maskSecret,
   mergeGatewayFields,
   validateGatewayFields,
+  missingRequiredFields,
   presentGateway,
   stripeConfig,
   isGatewayAvailable,
@@ -66,6 +67,19 @@ test("validateGatewayFields: enforces Stripe key prefixes and numeric rate", () 
 test("validateGatewayFields: rejects an over-long field, accepts one within the cap", () => {
   assert.equal(validateGatewayFields("stripe", { secretKey: "sk_" + "a".repeat(1000) }), null);
   assert.match(validateGatewayFields("stripe", { secretKey: "sk_" + "a".repeat(2000) }), /طويلة/);
+});
+
+test("missingRequiredFields: lists required fields absent after merge (guards enabling)", () => {
+  // Stripe's only required field is the Secret Key.
+  assert.deepEqual(missingRequiredFields("stripe", {}), ["Secret Key"]);
+  assert.deepEqual(missingRequiredFields("stripe", { secretKey: "sk_live_x" }), []);
+  // Blank/whitespace does not satisfy a required field.
+  assert.deepEqual(missingRequiredFields("stripe", { secretKey: "   " }), ["Secret Key"]);
+  // Paymob has three required fields; providing one leaves the other two.
+  assert.deepEqual(
+    missingRequiredFields("paymob", { apiKey: "x" }),
+    ["Integration ID", "Iframe ID"],
+  );
 });
 
 // ── resolver + presentation (DB overrides env, secrets never leak) ────────────
