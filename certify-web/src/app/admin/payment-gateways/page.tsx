@@ -5,7 +5,9 @@ import {
   listPaymentGateways,
   savePaymentGateway,
   resetPaymentGateway,
+  gatewayStatus,
   type PaymentGateway,
+  type GatewayStatus,
 } from "@/lib/admin";
 import { Switch } from "@/components/Switch";
 
@@ -17,12 +19,23 @@ const SOURCE_LABEL: Record<PaymentGateway["source"], string> = {
   none: "غير مهيأة",
 };
 
+const STATUS_META: Record<GatewayStatus, { label: string; pill: string; dot: string }> = {
+  live: { label: "مفعلة للعملاء", pill: "bg-green-50 text-green-700", dot: "bg-green-500" },
+  needs_setup: { label: "بحاجة إلى إعداد", pill: "bg-amber-50 text-amber-700", dot: "bg-amber-400" },
+  off: { label: "متوقفة", pill: "bg-gray-100 text-gray-500", dot: "bg-gray-300" },
+};
+
+function draftFromGateway(g: PaymentGateway): Draft {
+  const next: Draft = {};
+  for (const f of g.fields) next[f.key] = !f.secret && f.preview ? f.preview : "";
+  return next;
+}
+
 export default function PaymentGatewaysPage() {
   const [gateways, setGateways] = useState<PaymentGateway[] | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
-  const [enabledDraft, setEnabledDraft] = useState<Record<string, boolean>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
   const [notice, setNotice] = useState<Record<string, { ok: boolean; text: string }>>({});
 
@@ -30,18 +43,8 @@ export default function PaymentGatewaysPage() {
     setGateways(list);
     setActive((prev) => prev ?? list[0]?.gateway ?? null);
     const d: Record<string, Draft> = {};
-    const en: Record<string, boolean> = {};
-    for (const g of list) {
-      d[g.gateway] = {};
-      for (const f of g.fields) {
-        // Pre-fill non-secret fields (ids/rate) with their stored value; leave
-        // secret fields blank so the admin types them only to change them.
-        d[g.gateway][f.key] = !f.secret && f.preview ? f.preview : "";
-      }
-      en[g.gateway] = g.enabled;
-    }
+    for (const g of list) d[g.gateway] = draftFromGateway(g);
     setDrafts(d);
-    setEnabledDraft(en);
   }
 
   useEffect(() => {
@@ -54,24 +57,24 @@ export default function PaymentGatewaysPage() {
     setDrafts((prev) => ({ ...prev, [gateway]: { ...prev[gateway], [key]: value } }));
   }
 
-  async function onSave(g: PaymentGateway) {
+  function collectFields(g: PaymentGateway): Record<string, string> {
+    const fields: Record<string, string> = {};
+    for (const f of g.fields) {
+      const v = (drafts[g.gateway]?.[f.key] ?? "").trim();
+      // Only send non-empty values; a blank secret keeps the stored one.
+      if (v !== "") fields[f.key] = v;
+    }
+    return fields;
+  }
+
+  // Single persist path used by every action (save keys, toggle availability, etc.).
+  async function persist(g: PaymentGateway, payload: { enabled: boolean; fields: Record<string, string> }) {
     setSavingId(g.gateway);
     setNotice((n) => ({ ...n, [g.gateway]: undefined as never }));
     try {
-      const fields: Record<string, string> = {};
-      for (const f of g.fields) {
-        const v = (drafts[g.gateway]?.[f.key] ?? "").trim();
-        // Only send non-empty values; blank secret = keep the stored one.
-        if (v !== "") fields[f.key] = v;
-      }
-      const res = await savePaymentGateway(g.gateway, { enabled: enabledDraft[g.gateway], fields });
-      // Refresh just this gateway in place and clear typed secrets.
+      const res = await savePaymentGateway(g.gateway, payload);
       setGateways((prev) => prev!.map((x) => (x.gateway === g.gateway ? res.gateway : x)));
-      setDrafts((prev) => {
-        const next: Draft = {};
-        for (const f of res.gateway.fields) next[f.key] = !f.secret && f.preview ? f.preview : "";
-        return { ...prev, [g.gateway]: next };
-      });
+      setDrafts((prev) => ({ ...prev, [g.gateway]: draftFromGateway(res.gateway) }));
       setNotice((n) => ({ ...n, [g.gateway]: { ok: true, text: res.message } }));
     } catch (e) {
       setNotice((n) => ({
@@ -83,18 +86,22 @@ export default function PaymentGatewaysPage() {
     }
   }
 
+  // Save the typed keys. `makeLive` enables the gateway in the same step (used by
+  // the setup flow); otherwise the current availability is preserved.
+  const saveKeys = (g: PaymentGateway, makeLive: boolean) =>
+    persist(g, { enabled: makeLive ? true : g.enabled, fields: collectFields(g) });
+
+  // The availability switch — toggling persists immediately (no separate save).
+  const toggleAvailable = (g: PaymentGateway, value: boolean) =>
+    persist(g, { enabled: value, fields: {} });
+
   async function onReset(g: PaymentGateway) {
     if (!confirm(`إعادة بوابة ${g.label} إلى الإعداد الافتراضي (متغيرات البيئة)؟ سيحذف ما هو محفوظ.`)) return;
     setSavingId(g.gateway);
     try {
       const res = await resetPaymentGateway(g.gateway);
       setGateways((prev) => prev!.map((x) => (x.gateway === g.gateway ? res.gateway : x)));
-      setDrafts((prev) => {
-        const next: Draft = {};
-        for (const f of res.gateway.fields) next[f.key] = !f.secret && f.preview ? f.preview : "";
-        return { ...prev, [g.gateway]: next };
-      });
-      setEnabledDraft((prev) => ({ ...prev, [g.gateway]: res.gateway.enabled }));
+      setDrafts((prev) => ({ ...prev, [g.gateway]: draftFromGateway(res.gateway) }));
       setNotice((n) => ({ ...n, [g.gateway]: { ok: true, text: res.message } }));
     } catch (e) {
       setNotice((n) => ({
@@ -106,12 +113,14 @@ export default function PaymentGatewaysPage() {
     }
   }
 
+  const liveGateways = gateways?.filter((g) => gatewayStatus(g) === "live") ?? [];
+
   return (
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="font-display text-2xl font-black text-ink">بوابات الدفع</h1>
       <p className="text-sm text-ink-soft mt-1">
-        أدخل مفاتيح كل بوابة لتفعيل الدفع. المفاتيح السرية تخزن مشفرة ولا تعرض كاملة مرة أخرى — اترك
-        الحقل السري فارغا للإبقاء على القيمة المحفوظة.
+        تصبح البوابة متاحة للعملاء عند اكتمال مفاتيحها وتفعيل «الإتاحة للعملاء». المفاتيح
+        السرية تخزن مشفرة ولا تعرض كاملة — اترك الحقل السري فارغا للإبقاء على القيمة المحفوظة.
       </p>
 
       {error && (
@@ -126,11 +135,32 @@ export default function PaymentGatewaysPage() {
         </div>
       )}
 
+      {/* ملخص: ما يراه العملاء عند الدفع (الرابط الصريح بين الإعداد والنتيجة) */}
+      {gateways && gateways.length > 0 && (
+        <div className="mt-6 rounded-xl border border-line bg-surface-2/60 px-4 py-3">
+          <p className="text-xs font-bold text-ink-soft">ما يراه العملاء عند الدفع</p>
+          {liveGateways.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {liveGateways.map((g) => (
+                <span key={g.gateway} className="rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
+                  {g.label}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1.5 text-sm font-medium text-amber-700">
+              لا تتوفر أي وسيلة دفع للعملاء حاليا — لن يتمكنوا من الترقية.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* محدد البوابة (تبويبات) — يبقي الصفحة قصيرة بعرض بوابة واحدة في كل مرة */}
       {gateways && gateways.length > 0 && (
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           {gateways.map((g) => {
             const isActive = active === g.gateway;
+            const st = gatewayStatus(g);
             return (
               <button
                 key={g.gateway}
@@ -141,11 +171,7 @@ export default function PaymentGatewaysPage() {
                     : "bg-surface-2 text-ink-soft hover:bg-brand-50 hover:text-brand-700"
                 }`}
               >
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    g.available ? "bg-green-400" : isActive ? "bg-white/60" : "bg-gray-300"
-                  }`}
-                />
+                <span className={`h-2 w-2 rounded-full ${isActive ? "bg-white/70" : STATUS_META[st].dot}`} />
                 {g.label}
               </button>
             );
@@ -156,14 +182,14 @@ export default function PaymentGatewaysPage() {
       <div className="mt-6">
         {gateways?.filter((g) => g.gateway === active).map((g) => {
           const note = notice[g.gateway];
-          const isOn = enabledDraft[g.gateway] ?? g.enabled;
+          const status = gatewayStatus(g);
+          const meta = STATUS_META[status];
           const draft = drafts[g.gateway] ?? {};
-          // A required field counts as satisfied if it's already stored (DB/env)
-          // or the admin just typed a value for it.
+          // A required field is satisfied if already stored (DB/env) or just typed.
           const requiredMissing = g.fields.filter(
             (f) => f.required && !f.set && !((draft[f.key] ?? "").trim())
           );
-          const blockSave = isOn && requiredMissing.length > 0;
+          const saving = savingId === g.gateway;
           return (
             <section key={g.gateway} className="card p-6">
               <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -171,76 +197,66 @@ export default function PaymentGatewaysPage() {
                   <div className="flex items-center gap-2">
                     <h2 className="font-display text-lg font-black text-ink">{g.label}</h2>
                     <span className="text-xs text-ink-muted">({g.region})</span>
-                    {g.available ? (
-                      <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-bold text-green-700">
-                        ● متصلة
-                      </span>
-                    ) : (
-                      <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-bold text-gray-500">
-                        غير مهيأة
-                      </span>
-                    )}
+                    <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.pill}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                      {meta.label}
+                    </span>
                   </div>
                   <p className="text-xs text-ink-muted mt-1">المصدر: {SOURCE_LABEL[g.source]}</p>
                 </div>
 
-                <div className="flex items-center gap-2.5 select-none">
-                  <span className={`text-sm font-bold ${isOn ? "text-brand-700" : "text-ink-muted"}`}>
-                    {isOn ? "مفعلة" : "مطفأة"}
-                  </span>
-                  <Switch
-                    checked={isOn}
-                    aria-label={`تفعيل بوابة ${g.label}`}
-                    onChange={(v) =>
-                      setEnabledDraft((prev) => ({ ...prev, [g.gateway]: v }))
-                    }
-                  />
-                </div>
+                {/* مفتاح الإتاحة يظهر فقط بعد اكتمال المفاتيح (live/off) */}
+                {status !== "needs_setup" && (
+                  <div className="flex items-center gap-2.5 select-none">
+                    <span className={`text-sm font-bold ${status === "live" ? "text-green-700" : "text-ink-muted"}`}>
+                      الإتاحة للعملاء
+                    </span>
+                    <Switch
+                      checked={status === "live"}
+                      disabled={saving}
+                      aria-label={`إتاحة بوابة ${g.label} للعملاء`}
+                      onChange={(v) => toggleAvailable(g, v)}
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* تلميح يظهر فقط عند الإطفاء */}
-              {!isOn && (
+              {/* تلميح حسب الحالة */}
+              {status === "needs_setup" && (
+                <div className="mt-4 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 ring-1 ring-amber-100">
+                  أدخل المفاتيح المطلوبة ثم احفظ لإتاحة هذه البوابة للعملاء.
+                </div>
+              )}
+              {status === "off" && (
                 <div className="mt-4 rounded-xl bg-surface-2 px-4 py-2.5 text-sm font-medium text-ink-soft ring-1 ring-line">
-                  البوابة مطفأة — لن تظهر كخيار دفع للمستخدمين.
+                  البوابة متوقفة — لن تظهر للعملاء. فعل «الإتاحة للعملاء» لإظهارها.
                 </div>
               )}
 
-              {blockSave && (
-                <div className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 ring-1 ring-amber-100">
-                  ⚠️ لا يمكن تفعيل البوابة قبل تعبئة الحقول المطلوبة:
-                  {` ${requiredMissing.map((f) => f.label).join("، ")}.`}
-                </div>
-              )}
-
-              <div className={`mt-5 space-y-4 transition-opacity ${isOn ? "" : "opacity-60"}`}>
+              <div className="mt-5 space-y-4">
                 {g.fields.map((f) => (
                   <label key={f.key} className="block">
                     <span className="mb-1.5 flex items-center gap-1 text-sm font-bold text-ink">
                       {f.label}
                       {f.required && <span className="text-red-500">*</span>}
                       {f.secret && f.set && (
-                        <span className="text-xs font-normal text-ink-muted">
-                          (محفوظ: {f.preview})
-                        </span>
+                        <span className="text-xs font-normal text-ink-muted">(محفوظ: {f.preview})</span>
                       )}
                     </span>
                     <input
                       type={f.secret ? "password" : "text"}
                       dir="ltr"
                       autoComplete="off"
-                      disabled={!isOn}
                       value={drafts[g.gateway]?.[f.key] ?? ""}
                       onChange={(e) => setField(g.gateway, f.key, e.target.value)}
                       placeholder={
-                        !isOn
-                          ? "فعّل البوابة أولا لإدخال المفاتيح"
-                          : f.secret
-                            ? f.set
-                              ? "اتركه فارغا للإبقاء على القيمة الحالية"
-                              : "أدخل القيمة"
+                        f.secret
+                          ? f.set
+                            ? "اتركه فارغا للإبقاء على القيمة الحالية"
                             : "أدخل القيمة"
+                          : "أدخل القيمة"
                       }
-                      className="input disabled:cursor-not-allowed disabled:bg-surface-2"
+                      className="input"
                     />
                   </label>
                 ))}
@@ -249,9 +265,7 @@ export default function PaymentGatewaysPage() {
               {note && (
                 <div
                   className={`mt-4 rounded-xl px-4 py-2.5 text-sm font-bold ring-1 ${
-                    note.ok
-                      ? "bg-green-50 text-green-700 ring-green-100"
-                      : "bg-red-50 text-red-600 ring-red-100"
+                    note.ok ? "bg-green-50 text-green-700 ring-green-100" : "bg-red-50 text-red-600 ring-red-100"
                   }`}
                 >
                   {note.text}
@@ -259,22 +273,34 @@ export default function PaymentGatewaysPage() {
               )}
 
               <div className="mt-5 flex flex-wrap items-center gap-3">
-                <button
-                  onClick={() => onSave(g)}
-                  disabled={savingId === g.gateway || blockSave}
-                  className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {savingId === g.gateway ? "جار الحفظ…" : "حفظ"}
-                </button>
-                {blockSave && (
-                  <span className="text-xs font-medium text-amber-700">
-                    أكمل الحقول المطلوبة لتفعيل البوابة.
-                  </span>
+                {status === "needs_setup" ? (
+                  <>
+                    <button
+                      onClick={() => saveKeys(g, true)}
+                      disabled={saving || requiredMissing.length > 0}
+                      className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {saving ? "جار الحفظ…" : "حفظ وإتاحة للعملاء"}
+                    </button>
+                    {requiredMissing.length > 0 && (
+                      <span className="text-xs font-medium text-amber-700">
+                        أكمل الحقول المطلوبة: {requiredMissing.map((f) => f.label).join("، ")}.
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => saveKeys(g, false)}
+                    disabled={saving}
+                    className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {saving ? "جار الحفظ…" : "حفظ التعديلات"}
+                  </button>
                 )}
                 {g.source === "db" && (
                   <button
                     onClick={() => onReset(g)}
-                    disabled={savingId === g.gateway}
+                    disabled={saving}
                     className="rounded-xl px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
                   >
                     إعادة للافتراضي

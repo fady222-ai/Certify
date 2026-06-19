@@ -76,6 +76,18 @@ export type PaymentGateway = {
   fields: GatewayField[];
 };
 
+// A gateway's single human status, derived from the API fields:
+//   needs_setup → a required key is still missing (can't go live)
+//   live        → keys complete AND enabled (customers can pay with it; == available)
+//   off         → keys complete but the admin paused it
+export type GatewayStatus = "live" | "needs_setup" | "off";
+
+export function gatewayStatus(g: PaymentGateway): GatewayStatus {
+  const hasAllKeys = g.fields.filter((f) => f.required).every((f) => f.set);
+  if (!hasAllKeys) return "needs_setup";
+  return g.enabled ? "live" : "off";
+}
+
 export async function listPaymentGateways(): Promise<{ data: PaymentGateway[] }> {
   return json(await authedFetch("admin/payment-gateways"));
 }

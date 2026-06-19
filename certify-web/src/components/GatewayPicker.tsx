@@ -27,6 +27,9 @@ const GATEWAYS: {
 
 export function GatewayPicker({ onSelect, onClose, stripeAvailable, tapAvailable, paymobAvailable, loading }: Props) {
   const availability: Record<Gateway, boolean> = { stripe: stripeAvailable, tap: tapAvailable, paymob: paymobAvailable };
+  // Only payment methods the platform can actually process are shown — never a
+  // disabled/greyed row. The page only opens this picker when 2+ are available.
+  const usable = GATEWAYS.filter((g) => availability[g.key]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" dir="rtl">
@@ -40,36 +43,23 @@ export function GatewayPicker({ onSelect, onClose, stripeAvailable, tapAvailable
         </div>
 
         <div className="space-y-3">
-          {/* All gateways are listed; an unconfigured one is shown disabled with a
-              "غير مفعلة" badge rather than hidden, so the choice is transparent. */}
-          {GATEWAYS.map((g) => {
-            const available = availability[g.key];
-            return (
-              <button
-                key={g.key}
-                onClick={() => available && onSelect(g.key)}
-                disabled={loading || !available}
-                aria-disabled={!available}
-                className={`w-full flex items-center gap-4 p-4 rounded-xl border border-line transition-all group text-right ${
-                  available ? `${g.hover} disabled:opacity-50` : "opacity-60 cursor-not-allowed bg-gray-50"
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-xl ${g.iconBg} flex items-center justify-center flex-shrink-0 text-lg`}>
-                  {g.emoji}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-bold text-ink">{g.name}</p>
-                    {!available && (
-                      <span className="text-[10px] font-bold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">غير مفعلة</span>
-                    )}
-                  </div>
-                  <p className="text-xs text-ink-muted">{g.methods}</p>
-                </div>
-                {available && <span className={`text-ink-muted ${g.arrowHover} transition-colors`}>←</span>}
-              </button>
-            );
-          })}
+          {usable.map((g) => (
+            <button
+              key={g.key}
+              onClick={() => onSelect(g.key)}
+              disabled={loading}
+              className={`w-full flex items-center gap-4 p-4 rounded-xl border border-line transition-all group text-right disabled:opacity-50 ${g.hover}`}
+            >
+              <div className={`w-10 h-10 rounded-xl ${g.iconBg} flex items-center justify-center flex-shrink-0 text-lg`}>
+                {g.emoji}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-ink">{g.name}</p>
+                <p className="text-xs text-ink-muted">{g.methods}</p>
+              </div>
+              <span className={`text-ink-muted ${g.arrowHover} transition-colors`}>←</span>
+            </button>
+          ))}
         </div>
 
         <button onClick={onClose} className="w-full text-sm text-ink-muted hover:text-ink transition-colors py-1">

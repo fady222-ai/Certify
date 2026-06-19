@@ -21,20 +21,26 @@ export type Gateway = "stripe" | "tap" | "paymob";
 
 const GATEWAYS: Gateway[] = ["stripe", "tap", "paymob"];
 
+export type GatewayChoice =
+  | { kind: "none" }
+  | { kind: "direct"; gateway: Gateway }
+  | { kind: "picker" };
+
 /**
- * Decide whether the gateway picker is worth showing. With exactly one
- * configured gateway we use it directly; with two or more the user gets a real
- * choice. With zero configured we STILL open the picker — it lists every gateway
- * as "غير مفعلة" (disabled) so the user sees why payment isn't possible, rather
- * than silently firing a checkout the backend will refuse. Keeping this here
- * means /pricing and /dashboard/billing share one tested rule.
+ * Decide how to take payment based on which gateways are available to customers.
+ *   zero     → "none": no usable gateway; the page disables the pay button with a
+ *              message instead of opening a dead-end picker full of disabled rows.
+ *   exactly 1 → "direct": skip the picker, use that gateway.
+ *   2 or more → "picker": let the customer choose (only available ones shown).
+ * Keeping this here means /pricing and /dashboard/billing share one tested rule.
  */
 export function resolveGatewayChoice(
   gateways: { stripe: boolean; tap: boolean; paymob: boolean },
-): { showPicker: boolean; gateway: Gateway } {
+): GatewayChoice {
   const available = GATEWAYS.filter((g) => gateways[g]);
-  if (available.length === 1) return { showPicker: false, gateway: available[0] };
-  return { showPicker: true, gateway: available[0] ?? "stripe" };
+  if (available.length === 0) return { kind: "none" };
+  if (available.length === 1) return { kind: "direct", gateway: available[0] };
+  return { kind: "picker" };
 }
 
 export type Subscription = {

@@ -30,11 +30,16 @@ export default function PricingPage() {
     listPlans().then((d) => setGateways(d.gateways)).catch(() => {});
   }, []);
 
+  const noGateways = !gateways.stripe && !gateways.tap && !gateways.paymob;
+
   function handleSelect(slug: string) {
     if (!getToken()) return router.push(`/register?plan=${slug}&interval=${interval}`);
     if (slug === "free") return doCheckout(slug, interval, "stripe");
     const choice = resolveGatewayChoice(gateways);
-    if (!choice.showPicker) return doCheckout(slug, interval, choice.gateway);
+    if (choice.kind === "none") {
+      return setError("الدفع غير متاح حاليا — تواصل مع مدير المنصة.");
+    }
+    if (choice.kind === "direct") return doCheckout(slug, interval, choice.gateway);
     setPending({ slug, interval });
   }
 
@@ -168,17 +173,27 @@ export default function PricingPage() {
                   ))}
                 </ul>
 
-                <button
-                  onClick={() => handleSelect(plan.slug)}
-                  disabled={loading === plan.slug}
-                  className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-60 ${
-                    plan.highlight
-                      ? "bg-brand-600 hover:bg-brand-700 text-white shadow-sm"
-                      : "bg-surface-2 hover:bg-surface-2/80 text-ink border border-line"
-                  }`}
-                >
-                  {loading === plan.slug ? "جار التحميل…" : plan.cta}
-                </button>
+                {(() => {
+                  const paidBlocked = plan.slug !== "free" && noGateways;
+                  return (
+                    <>
+                      <button
+                        onClick={() => handleSelect(plan.slug)}
+                        disabled={loading === plan.slug || paidBlocked}
+                        className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                          plan.highlight
+                            ? "bg-brand-600 hover:bg-brand-700 text-white shadow-sm"
+                            : "bg-surface-2 hover:bg-surface-2/80 text-ink border border-line"
+                        }`}
+                      >
+                        {loading === plan.slug ? "جار التحميل…" : paidBlocked ? "الدفع غير متاح حاليا" : plan.cta}
+                      </button>
+                      {paidBlocked && (
+                        <p className="mt-2 text-center text-xs text-ink-muted">تواصل مع مدير المنصة لتفعيل الدفع.</p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             );
           })}

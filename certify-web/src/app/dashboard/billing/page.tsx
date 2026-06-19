@@ -75,7 +75,11 @@ function BillingContent() {
       return;
     }
     const choice = resolveGatewayChoice(gateways);
-    if (!choice.showPicker) {
+    if (choice.kind === "none") {
+      showToast("الدفع غير متاح حاليا — تواصل مع مدير المنصة.", "err");
+      return;
+    }
+    if (choice.kind === "direct") {
       doCheckout(slug, interval, choice.gateway);
       return;
     }
@@ -120,6 +124,7 @@ function BillingContent() {
   const sub = billing?.subscription;
   const usage = billing?.usage;
   const gateways = billing?.gateways ?? { stripe: false, tap: false, paymob: false };
+  const noGateways = !gateways.stripe && !gateways.tap && !gateways.paymob;
   const usedPct = usage?.limit ? Math.min(100, Math.round((usage.used / usage.limit) * 100)) : 0;
   const isPaid = plan && plan.price_monthly > 0;
   const isActive = sub?.status === "active";
@@ -274,6 +279,12 @@ function BillingContent() {
                 </div>
               </div>
 
+              {noGateways && (
+                <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700 ring-1 ring-amber-100">
+                  الدفع غير متاح حاليا — لم يفعل مدير المنصة أي وسيلة دفع بعد.
+                </div>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-3">
                 {UPGRADE_PLANS.map((p) => {
                   const price = cycle === "monthly" ? p.monthly : p.yearly;
@@ -310,14 +321,14 @@ function BillingContent() {
 
                       <button
                         onClick={() => handleUpgradeClick(p.slug, cycle)}
-                        disabled={checkoutLoading}
-                        className={`mt-5 w-full rounded-xl py-2.5 text-sm font-bold transition disabled:opacity-50 ${
+                        disabled={checkoutLoading || noGateways}
+                        className={`mt-5 w-full rounded-xl py-2.5 text-sm font-bold transition disabled:opacity-50 disabled:cursor-not-allowed ${
                           p.popular
                             ? "bg-brand-600 text-white hover:bg-brand-700 shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
                             : "border border-line bg-surface-2 text-ink hover:bg-white hover:border-brand-300"
                         }`}
                       >
-                        {checkoutLoading ? "…" : `الترقية إلى ${p.name}`}
+                        {checkoutLoading ? "…" : noGateways ? "الدفع غير متاح حاليا" : `الترقية إلى ${p.name}`}
                       </button>
                     </div>
                   );
