@@ -16,7 +16,7 @@ const STATUS_STYLE: Record<TicketStatus, string> = {
 const FILTERS: { key: "" | TicketStatus; label: string }[] = [
   { key: "", label: "الكل" },
   { key: "open", label: "مفتوحة" },
-  { key: "answered", label: "تمّت الإجابة" },
+  { key: "answered", label: "تمت الإجابة" },
   { key: "closed", label: "مغلقة" },
 ];
 
@@ -103,7 +103,7 @@ export default function AdminSupportPage() {
       <h1 className="mb-1 flex items-center gap-2 text-2xl font-extrabold text-ink">
         <IconMail className="h-6 w-6 text-brand-600" /> تذاكر الدعم
       </h1>
-      <p className="mb-6 text-sm text-ink-soft">طابور تذاكر المستخدمين والزوّار.</p>
+      <p className="mb-6 text-sm text-ink-soft">طابور تذاكر المستخدمين والزوار.</p>
 
       {error && (
         <div className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">{error}</div>
@@ -144,7 +144,7 @@ export default function AdminSupportPage() {
 
           <form onSubmit={submitReply} className="mt-5 border-t pt-4">
             <textarea
-              className="input min-h-24" placeholder="اكتب ردّك للعميل…" value={reply}
+              className="input min-h-24" placeholder="اكتب ردك للعميل…" value={reply}
               onChange={(e) => setReply(e.target.value)} required maxLength={5000}
             />
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -161,7 +161,7 @@ export default function AdminSupportPage() {
                   </button>
                 ))}
               </div>
-              <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الردّ</button>
+              <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الرد</button>
             </div>
           </form>
         </div>

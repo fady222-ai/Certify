@@ -51,7 +51,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const adminBadge = (
     <div className="m-3 mt-0 rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-5 text-white">
       <p className="text-sm font-extrabold text-amber-400">لوحة الإدارة</p>
-      <p className="mt-1 text-xs text-gray-300">{profile?.user?.email ?? "مدير المنصّة"}</p>
+      <p className="mt-1 text-xs text-gray-300">{profile?.user?.email ?? "مدير المنصة"}</p>
     </div>
   );
 
@@ -85,7 +85,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {adminBadge}
       </aside>
 
-      {/* درج التنقّل (جوال) */}
+      {/* درج التنقل (جوال) */}
       {navOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-black/50" onClick={() => setNavOpen(false)} />

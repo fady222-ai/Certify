@@ -11,12 +11,12 @@ export function SiteHeader() {
           <a href="/#features" className="transition hover:text-brand-700">المميزات</a>
           <a href="/#how" className="transition hover:text-brand-700">كيف تعمل</a>
           <a href="/#pricing" className="transition hover:text-brand-700">الأسعار</a>
-          <Link href="/verify" className="transition hover:text-brand-700">تحقّق من شهادة</Link>
+          <Link href="/verify" className="transition hover:text-brand-700">تحقق من شهادة</Link>
         </nav>
 
         <div className="flex items-center gap-2.5">
           <Link href="/login" className="btn-ghost hidden sm:inline-flex">تسجيل الدخول</Link>
-          <Link href="/register" className="btn-primary">ابدأ مجاناً</Link>
+          <Link href="/register" className="btn-primary">ابدأ مجانا</Link>
         </div>
       </div>
     </header>

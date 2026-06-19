@@ -11,9 +11,9 @@ import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
 // Prices/names come from the canonical pricing module; only marketing copy
 // (feature bullets, CTA, highlight) is defined here.
 const PLANS = [
-  { ...PLAN_PRICING.free, features: ["قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجاناً", highlight: false },
-  { ...PLAN_PRICING.pro, features: ["كل ميزات Free", "إصدار جماعي", "تكامل لينكدإن", "تتبّع مشاهدات الشهادات", "تقارير متقدمة"], cta: "ابدأ الآن", highlight: true },
-  { ...PLAN_PRICING.business, features: ["كل ميزات Pro", "تتبّع مشاهدات الشهادات", "شهادات بشعار وألوان أكاديميتك", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
+  { ...PLAN_PRICING.free, features: ["قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجانا", highlight: false },
+  { ...PLAN_PRICING.pro, features: ["كل ميزات Free", "إصدار جماعي", "تكامل لينكدإن", "تتبع مشاهدات الشهادات", "تقارير متقدمة"], cta: "ابدأ الآن", highlight: true },
+  { ...PLAN_PRICING.business, features: ["كل ميزات Pro", "تتبع مشاهدات الشهادات", "شهادات بشعار وألوان أكاديميتك", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
 ];
 
 export default function PricingPage() {
@@ -67,7 +67,7 @@ export default function PricingPage() {
             <Link href="/login" className="text-sm text-ink-soft hover:text-brand-600 transition-colors">
               تسجيل الدخول
             </Link>
-            <Link href="/register" className="btn-primary text-sm px-4 py-2">ابدأ مجاناً</Link>
+            <Link href="/register" className="btn-primary text-sm px-4 py-2">ابدأ مجانا</Link>
           </div>
         </div>
       </header>
@@ -100,7 +100,7 @@ export default function PricingPage() {
               <span className={`text-xs px-1.5 py-0.5 rounded-md font-bold ${
                 interval === "annual" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
               }`}>
-                وفّر {annualSaving}%
+                وفر {annualSaving}%
               </span>
             </button>
           </div>
@@ -130,7 +130,7 @@ export default function PricingPage() {
                 {plan.highlight && (
                   <div className="text-center mb-4">
                     <span className="inline-block bg-brand-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      الأكثر شيوعاً
+                      الأكثر شيوعا
                     </span>
                   </div>
                 )}
@@ -177,7 +177,7 @@ export default function PricingPage() {
                       : "bg-surface-2 hover:bg-surface-2/80 text-ink border border-line"
                   }`}
                 >
-                  {loading === plan.slug ? "جارٍ التحميل…" : plan.cta}
+                  {loading === plan.slug ? "جار التحميل…" : plan.cta}
                 </button>
               </div>
             );
@@ -194,16 +194,16 @@ export default function PricingPage() {
               </span>
             ))}
           </div>
-          <p className="text-xs text-ink-muted">جميع المدفوعات آمنة ومشفّرة — Stripe أو Tap Payments</p>
+          <p className="text-xs text-ink-muted">جميع المدفوعات آمنة ومشفرة — Stripe أو Tap Payments</p>
         </div>
 
         {/* FAQ */}
         <div className="max-w-2xl mx-auto space-y-4">
           <h2 className="text-xl font-bold text-ink text-center">أسئلة شائعة</h2>
           {[
-            { q: "هل يتجدد الاشتراك تلقائياً؟", a: "نعم، يتجدد الاشتراك تلقائياً كل شهر أو سنة. يمكنك الإلغاء في أي وقت وستبقى على باقتك حتى نهاية الدورة الحالية." },
+            { q: "هل يتجدد الاشتراك تلقائيا؟", a: "نعم، يتجدد الاشتراك تلقائيا كل شهر أو سنة. يمكنك الإلغاء في أي وقت وستبقى على باقتك حتى نهاية الدورة الحالية." },
             { q: "ما الفرق بين Stripe وTap؟", a: "Stripe: دفع عالمي بالبطاقات الائتمانية. Tap: مخصص للسوق الخليجي ويدعم مدى، STC Pay، وApple Pay. كلاهما يقبل الدفع بالدولار." },
-            { q: "هل يمكنني الترقية أو التخفيض؟", a: "نعم في أي وقت. التخفيض يُطبَّق فوراً والترقية تُفعَّل فور إتمام الدفع." },
+            { q: "هل يمكنني الترقية أو التخفيض؟", a: "نعم في أي وقت. التخفيض يطبق فورا والترقية تفعل فور إتمام الدفع." },
           ].map(({ q, a }) => (
             <div key={q} className="bg-white border border-line rounded-2xl p-5 shadow-sm">
               <p className="font-bold text-ink mb-2">{q}</p>

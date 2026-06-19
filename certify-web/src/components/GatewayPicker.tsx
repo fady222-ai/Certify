@@ -36,12 +36,12 @@ export function GatewayPicker({ onSelect, onClose, stripeAvailable, tapAvailable
       <div className="relative bg-white rounded-2xl shadow-xl border border-line w-full max-w-sm p-6 space-y-5">
         <div>
           <h3 className="text-lg font-bold text-ink">اختر طريقة الدفع</h3>
-          <p className="text-sm text-ink-muted mt-1">جميع الخيارات آمنة ومشفّرة</p>
+          <p className="text-sm text-ink-muted mt-1">جميع الخيارات آمنة ومشفرة</p>
         </div>
 
         <div className="space-y-3">
           {/* All gateways are listed; an unconfigured one is shown disabled with a
-              "غير مفعّلة" badge rather than hidden, so the choice is transparent. */}
+              "غير مفعلة" badge rather than hidden, so the choice is transparent. */}
           {GATEWAYS.map((g) => {
             const available = availability[g.key];
             return (
@@ -61,7 +61,7 @@ export function GatewayPicker({ onSelect, onClose, stripeAvailable, tapAvailable
                   <div className="flex items-center gap-2">
                     <p className="font-bold text-ink">{g.name}</p>
                     {!available && (
-                      <span className="text-[10px] font-bold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">غير مفعّلة</span>
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">غير مفعلة</span>
                     )}
                   </div>
                   <p className="text-xs text-ink-muted">{g.methods}</p>

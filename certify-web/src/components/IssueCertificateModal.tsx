@@ -47,7 +47,7 @@ export function IssueCertificateModal({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!defaultTemplateId) {
-      setError("اختر قالباً أولاً قبل إصدار الشهادات.");
+      setError("اختر قالبا أولا قبل إصدار الشهادات.");
       return;
     }
     setError(null);
@@ -59,7 +59,7 @@ export function IssueCertificateModal({
         body: JSON.stringify({ ...form, templateId: defaultTemplateId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? "تعذّر الإصدار.");
+      if (!res.ok) throw new Error(data.message ?? "تعذر الإصدار.");
       setDone(data.verification_code);
       onIssued();
     } catch (err) {
@@ -99,15 +99,15 @@ export function IssueCertificateModal({
             </div>
           </div>
         ) : !ready ? (
-          <div className="py-10 text-center text-sm text-ink-muted">جارٍ التحميل…</div>
+          <div className="py-10 text-center text-sm text-ink-muted">جار التحميل…</div>
         ) : ready && !defaultTemplateId ? (
           <div className="text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-600 text-3xl">
               🎨
             </div>
-            <h2 className="mt-5 font-display text-xl font-black text-ink">اختر قالباً أولاً</h2>
+            <h2 className="mt-5 font-display text-xl font-black text-ink">اختر قالبا أولا</h2>
             <p className="mt-2 text-sm text-ink-soft">
-              لم تعيّن قالباً افتراضياً بعد. عيّن قالباً من صفحة القوالب لتبدأ بإصدار الشهادات.
+              لم تعين قالبا افتراضيا بعد. عين قالبا من صفحة القوالب لتبدأ بإصدار الشهادات.
             </p>
             <div className="mt-6 flex gap-3">
               <button onClick={reset} className="btn-ghost flex-1" type="button">إلغاء</button>
@@ -159,7 +159,7 @@ export function IssueCertificateModal({
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={reset} className="btn-ghost flex-1">إلغاء</button>
                 <button type="submit" disabled={loading} className="btn-primary flex-1 disabled:opacity-60">
-                  {loading ? "جارٍ الإصدار…" : "إصدار"}
+                  {loading ? "جار الإصدار…" : "إصدار"}
                 </button>
               </div>
             </form>

@@ -30,14 +30,14 @@ export type TicketDetail = { ticket: SupportTicket; messages: SupportMessage[] }
 
 export const STATUS_LABELS: Record<TicketStatus, string> = {
   open: "مفتوحة",
-  answered: "تمّت الإجابة",
+  answered: "تمت الإجابة",
   closed: "مغلقة",
 };
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error((body as { message?: string }).message ?? "تعذّر تنفيذ الطلب.");
+    throw new Error((body as { message?: string }).message ?? "تعذر تنفيذ الطلب.");
   }
   return res.json() as Promise<T>;
 }
@@ -125,7 +125,7 @@ export async function adminSetStatus(id: string, status: TicketStatus): Promise<
 async function publicJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error((body as { message?: string }).message ?? "تعذّر تنفيذ الطلب.");
+    throw new Error((body as { message?: string }).message ?? "تعذر تنفيذ الطلب.");
   }
   return res.json() as Promise<T>;
 }

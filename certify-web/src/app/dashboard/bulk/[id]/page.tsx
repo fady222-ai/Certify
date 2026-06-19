@@ -59,7 +59,7 @@ export default function BatchDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-ink-muted">جارٍ التحميل…</p>
+        <p className="text-sm text-ink-muted">جار التحميل…</p>
       </div>
     );
   }
@@ -115,7 +115,7 @@ export default function BatchDetailPage() {
             <h2 className="font-display text-lg font-extrabold text-ink">الشهادات الصادرة</h2>
           </div>
           {batch.certificates.length === 0 ? (
-            <p className="px-6 py-10 text-center text-sm text-ink-muted">لم تُصدر شهادات بعد…</p>
+            <p className="px-6 py-10 text-center text-sm text-ink-muted">لم تصدر شهادات بعد…</p>
           ) : (
             <div className="divide-y">
               {batch.certificates.map((c) => (
@@ -159,7 +159,7 @@ function StatusBadge({ status }: { status: string }) {
   if (status === "processing") {
     return (
       <span className="rounded-full bg-gold-50 px-3 py-1 text-sm font-bold text-gold-700 animate-pulse">
-        جارٍ المعالجة…
+        جار المعالجة…
       </span>
     );
   }

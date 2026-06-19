@@ -38,7 +38,7 @@ export default function TemplatesPage() {
       const org = await setDefaultTemplate(id);
       setDefaultId(org.default_template_id ?? id);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "تعذّر تعيين القالب.");
+      alert(e instanceof Error ? e.message : "تعذر تعيين القالب.");
     } finally {
       setAssigning(null);
     }
@@ -69,7 +69,7 @@ export default function TemplatesPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="font-display text-2xl font-black text-ink">قوالب الشهادات</h1>
-            <p className="mt-1 text-sm text-ink-soft">عاين قالباً جاهزاً وخصّصه بألوانك وشعارك، أو صمّم قالبك الخاص.</p>
+            <p className="mt-1 text-sm text-ink-soft">عاين قالبا جاهزا وخصصه بألوانك وشعارك، أو صمم قالبك الخاص.</p>
           </div>
           <Link href="/dashboard/templates/new" className="btn-primary">
             <IconPalette className="h-4 w-4" /> قالب جديد
@@ -78,7 +78,7 @@ export default function TemplatesPage() {
 
         {!loading && !logoUrl && (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 ring-1 ring-amber-200">
-            <span>💡 لم ترفع شعار منظمتك بعد — ارفعه ليظهر تلقائياً على شهاداتك.</span>
+            <span>💡 لم ترفع شعار منظمتك بعد — ارفعه ليظهر تلقائيا على شهاداتك.</span>
             <Link href="/dashboard/settings" className="whitespace-nowrap font-extrabold text-amber-900 hover:underline">
               رفع الشعار ←
             </Link>
@@ -86,7 +86,7 @@ export default function TemplatesPage() {
         )}
 
         {loading ? (
-          <p className="mt-10 text-center text-sm text-ink-muted">جارٍ التحميل…</p>
+          <p className="mt-10 text-center text-sm text-ink-muted">جار التحميل…</p>
         ) : templates.length === 0 ? (
           <div className="card mt-8 p-12 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
@@ -95,7 +95,7 @@ export default function TemplatesPage() {
             <h2 className="mt-5 font-display text-xl font-black text-ink">لا توجد قوالب بعد</h2>
             <p className="mt-2 text-sm text-ink-soft">ابدأ بتصميم أول قالب لشهاداتك.</p>
             <Link href="/dashboard/templates/new" className="btn-primary mt-6 inline-flex">
-              <IconPalette className="h-4 w-4" /> صمّم قالباً
+              <IconPalette className="h-4 w-4" /> صمم قالبا
             </Link>
           </div>
         ) : (
@@ -134,7 +134,7 @@ export default function TemplatesPage() {
                     ) : (
                       <button onClick={() => assignDefault(t.id)} disabled={assigning === t.id}
                         className="btn-primary flex-1 justify-center py-2 text-xs disabled:opacity-60">
-                        {assigning === t.id ? "جارٍ…" : "تعيين"}
+                        {assigning === t.id ? "جار…" : "تعيين"}
                       </button>
                     )}
                     {t.is_public ? (

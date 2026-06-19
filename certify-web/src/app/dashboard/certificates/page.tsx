@@ -73,9 +73,9 @@ export default function CertificatesPage() {
     try {
       const res = await authedFetch(`certificates/${id}/resend-email`, { method: "POST" });
       const data = await res.json();
-      setToast(res.ok ? data.message : data.message ?? "تعذّر الإرسال.");
+      setToast(res.ok ? data.message : data.message ?? "تعذر الإرسال.");
     } catch {
-      setToast("تعذّر الإرسال.");
+      setToast("تعذر الإرسال.");
     } finally {
       setResending(null);
       setTimeout(() => setToast(null), 3000);
@@ -102,7 +102,7 @@ export default function CertificatesPage() {
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">إدارة الشهادات</h1>
-          <p className="mt-1 text-sm text-ink-soft">ابحث عن الشهادات الصادرة وتحقق منها أو ألغِها.</p>
+          <p className="mt-1 text-sm text-ink-soft">ابحث عن الشهادات الصادرة وتحقق منها أو ألغها.</p>
         </div>
 
         {toast && (
@@ -137,14 +137,14 @@ export default function CertificatesPage() {
         {/* List */}
         <div className="card overflow-hidden">
           {loading ? (
-            <p className="px-6 py-12 text-center text-sm text-ink-muted">جارٍ التحميل…</p>
+            <p className="px-6 py-12 text-center text-sm text-ink-muted">جار التحميل…</p>
           ) : certs.length === 0 ? (
             <div className="px-6 py-12 text-center">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-600">
                 <IconBadge className="h-7 w-7" />
               </div>
               <p className="mt-4 text-sm text-ink-soft">
-                {search || status ? "لا توجد نتائج مطابقة." : "لم تُصدر أي شهادة بعد."}
+                {search || status ? "لا توجد نتائج مطابقة." : "لم تصدر أي شهادة بعد."}
               </p>
             </div>
           ) : (

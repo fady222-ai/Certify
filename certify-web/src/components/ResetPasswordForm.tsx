@@ -15,7 +15,7 @@ export function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!token) setError("رابط الاستعادة غير صالح. اطلب رابطاً جديداً من صفحة نسيت كلمة المرور.");
+    if (!token) setError("رابط الاستعادة غير صالح. اطلب رابطا جديدا من صفحة نسيت كلمة المرور.");
   }, [token]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -86,7 +86,7 @@ export function ResetPasswordForm() {
         disabled={loading || !token}
         className="btn-primary w-full disabled:opacity-60"
       >
-        {loading ? "جارٍ الحفظ…" : "حفظ كلمة المرور الجديدة"}
+        {loading ? "جار الحفظ…" : "حفظ كلمة المرور الجديدة"}
         {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
       </button>
     </form>

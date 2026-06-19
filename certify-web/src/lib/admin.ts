@@ -25,7 +25,7 @@ export type AdminStats = {
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.message ?? "تعذّر تنفيذ الطلب.");
+    throw new Error(body.message ?? "تعذر تنفيذ الطلب.");
   }
   return res.json() as Promise<T>;
 }

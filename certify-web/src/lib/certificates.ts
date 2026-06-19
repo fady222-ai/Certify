@@ -38,25 +38,25 @@ export async function revokeCertificate(id: string, reason: string) {
     body: JSON.stringify({ reason }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر الإلغاء.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر الإلغاء.");
   return data;
 }
 
 export async function resendCertificateEmail(id: string) {
   const res = await authedFetch(`certificates/${id}/resend-email`, { method: "POST" });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر الإرسال.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر الإرسال.");
   return data as { message: string; transport: string };
 }
 
 const EVENT_LABELS: Record<string, string> = {
   issued: "تم الإصدار",
-  opened: "فُتحت صفحة التحقق",
+  opened: "فتحت صفحة التحقق",
   downloaded: "تم تحميل الشهادة",
   shared: "تمت مشاركة الرابط",
-  added_to_linkedin: "أُضيفت إلى لينكدإن",
-  emailed: "أُرسل البريد",
-  revoked: "أُلغيت الشهادة",
+  added_to_linkedin: "أضيفت إلى لينكدإن",
+  emailed: "أرسل البريد",
+  revoked: "ألغيت الشهادة",
 };
 
 export function eventLabel(type: string): string {

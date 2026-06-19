@@ -85,7 +85,7 @@ export function LoginForm() {
     return (
       <form className="space-y-4" onSubmit={onOtpSubmit}>
         <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-700 ring-1 ring-blue-100">
-          بريدك الإلكتروني لم يُفعَّل بعد. تم إرسال رمز تحقق جديد إلى بريدك المسجّل.
+          بريدك الإلكتروني لم يفعل بعد. تم إرسال رمز تحقق جديد إلى بريدك المسجل.
         </div>
 
         {error && (
@@ -117,7 +117,7 @@ export function LoginForm() {
         </label>
 
         <button type="submit" disabled={loading || otp.length < 6} className="btn-primary w-full disabled:opacity-60">
-          {loading ? "جارٍ التحقق…" : "تفعيل الحساب"}
+          {loading ? "جار التحقق…" : "تفعيل الحساب"}
           {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
         </button>
 
@@ -176,7 +176,7 @@ export function LoginForm() {
       </label>
 
       <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-        {loading ? "جارٍ الدخول…" : "تسجيل الدخول"}
+        {loading ? "جار الدخول…" : "تسجيل الدخول"}
         {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
       </button>
     </form>

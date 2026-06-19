@@ -53,7 +53,7 @@ export default function AdminOverviewPage() {
 
       {/* بطاقات الإحصاء */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="المنظمات المسجّلة" value={stats?.total_organizations ?? 0} icon={IconBuilding} tone="brand" loading={loading} />
+        <StatCard label="المنظمات المسجلة" value={stats?.total_organizations ?? 0} icon={IconBuilding} tone="brand" loading={loading} />
         <StatCard label="المستخدمون" value={stats?.total_users ?? 0} icon={IconUsers} tone="gold" loading={loading} />
         <StatCard label="إجمالي الشهادات" value={stats?.total_certificates ?? 0} sub="منذ الإطلاق" icon={IconBadge} tone="verify" loading={loading} />
         <StatCard label="شهادات هذا الشهر" value={stats?.certificates_this_month ?? 0} icon={IconChart} tone="brand" loading={loading} />
@@ -62,14 +62,14 @@ export default function AdminOverviewPage() {
       {/* آخر المنظمات */}
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="font-display text-lg font-extrabold text-ink">آخر المنظمات المنضمّة</h2>
+          <h2 className="font-display text-lg font-extrabold text-ink">آخر المنظمات المنضمة</h2>
           <Link href="/admin/organizations" className="text-sm font-bold text-brand-700 hover:underline">
             عرض الكل <IconArrow className="inline h-3.5 w-3.5" />
           </Link>
         </div>
 
         {loading ? (
-          <div className="px-6 py-12 text-center text-sm text-ink-muted">جارٍ التحميل…</div>
+          <div className="px-6 py-12 text-center text-sm text-ink-muted">جار التحميل…</div>
         ) : !stats || stats.recent_organizations.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">

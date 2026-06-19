@@ -167,7 +167,7 @@ export async function authedFetch(path: string, init: RequestInit = {}) {
   });
   if (res.status === 401) {
     logout();
-    throw new Error("انتهت الجلسة. يرجى تسجيل الدخول مجدداً.");
+    throw new Error("انتهت الجلسة. يرجى تسجيل الدخول مجددا.");
   }
   return res;
 }

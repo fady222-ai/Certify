@@ -77,7 +77,7 @@ export default function SupportPage() {
     try {
       await createTicket(subject.trim(), body.trim());
       setSubject(""); setBody(""); setCreating(false);
-      flash("تم إرسال تذكرتك. سيردّ فريق الدعم قريباً.");
+      flash("تم إرسال تذكرتك. سيرد فريق الدعم قريبا.");
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -168,12 +168,12 @@ export default function SupportPage() {
           {selected.ticket.status !== "closed" ? (
             <form onSubmit={submitReply} className="mt-5 border-t pt-4">
               <textarea
-                className="input min-h-24" placeholder="اكتب ردّك…" value={reply}
+                className="input min-h-24" placeholder="اكتب ردك…" value={reply}
                 onChange={(e) => setReply(e.target.value)} required maxLength={5000}
               />
               <div className="mt-3 flex items-center justify-between gap-3">
                 <button type="button" onClick={onClose} disabled={busy} className="btn-ghost">إغلاق التذكرة</button>
-                <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الردّ</button>
+                <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الرد</button>
               </div>
             </form>
           ) : (
@@ -218,7 +218,7 @@ export default function SupportPage() {
             <div className="card p-10 text-center text-ink-soft">
               <IconMail className="mx-auto mb-3 h-10 w-10 text-ink-muted" />
               <p className="font-bold">لا توجد تذاكر بعد</p>
-              <p className="mt-1 text-sm">افتح تذكرة جديدة وسيردّ عليك فريق الدعم.</p>
+              <p className="mt-1 text-sm">افتح تذكرة جديدة وسيرد عليك فريق الدعم.</p>
             </div>
           ) : (
             <div className="space-y-2">

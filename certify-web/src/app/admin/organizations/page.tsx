@@ -83,7 +83,7 @@ export default function AdminOrganizationsPage() {
 
       <div>
         <h1 className="font-display text-2xl font-black text-ink">إدارة المنظمات</h1>
-        <p className="mt-1 text-sm text-ink-soft">كل المنظمات المسجّلة على المنصة.</p>
+        <p className="mt-1 text-sm text-ink-soft">كل المنظمات المسجلة على المنصة.</p>
       </div>
 
       {/* Search */}
@@ -110,14 +110,14 @@ export default function AdminOrganizationsPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="px-6 py-16 text-center text-sm text-ink-muted">جارٍ التحميل…</div>
+          <div className="px-6 py-16 text-center text-sm text-ink-muted">جار التحميل…</div>
         ) : orgs.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
               <IconSearch className="h-8 w-8" />
             </div>
             <h3 className="mt-5 font-display text-xl font-black text-ink">لا توجد نتائج</h3>
-            <p className="mt-2 text-sm text-ink-soft">جرّب تعديل كلمات البحث.</p>
+            <p className="mt-2 text-sm text-ink-soft">جرب تعديل كلمات البحث.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

@@ -60,9 +60,9 @@ export default function DashboardPage() {
     stats?.limit != null ? Math.max(0, stats.limit - stats.issued_this_month) : null;
 
   const statCards = [
-    { label: "شهادات مُصدرة", value: stats?.issued_total ?? 0, sub: "الإجمالي", icon: IconBadge, tone: "brand" },
+    { label: "شهادات مصدرة", value: stats?.issued_total ?? 0, sub: "الإجمالي", icon: IconBadge, tone: "brand" },
     { label: "مرات الفتح", value: stats?.opened_total ?? 0, sub: "إجمالي", icon: IconQr, tone: "gold" },
-    { label: "متبقٍّ في الباقة", value: remaining ?? "∞", sub: stats?.limit ? `من ${stats.limit} شهرياً` : "غير محدود", icon: IconBolt, tone: "verify" },
+    { label: "متبق في الباقة", value: remaining ?? "∞", sub: stats?.limit ? `من ${stats.limit} شهريا` : "غير محدود", icon: IconBolt, tone: "verify" },
   ];
   const toneMap: Record<string, string> = {
     brand: "from-brand-50 to-brand-100 text-brand-600",
@@ -77,7 +77,7 @@ export default function DashboardPage() {
       <main className="space-y-6 p-6">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">نظرة عامة</h1>
-          <p className="mt-1 text-sm text-ink-soft">ملخّص نشاط منظمتك على المنصة.</p>
+          <p className="mt-1 text-sm text-ink-soft">ملخص نشاط منظمتك على المنصة.</p>
         </div>
 
         {/* بطاقات الإحصاء */}
@@ -104,7 +104,7 @@ export default function DashboardPage() {
         <div className="grid gap-5 lg:grid-cols-3">
           <QuickAction icon={IconBadge} title="إصدار فردي" desc="أصدر شهادة واحدة لمتدرب." onClick={() => setModalOpen(true)} />
           <QuickAction icon={IconUpload} title="إصدار جماعي" desc="ارفع ملف Excel بمئات الأسماء." onClick={() => router.push("/dashboard/bulk")} />
-          <QuickAction icon={IconPalette} title="تصميم قالب" desc="صمّم قالباً بألوان منظمتك." onClick={() => router.push("/dashboard/templates")} />
+          <QuickAction icon={IconPalette} title="تصميم قالب" desc="صمم قالبا بألوان منظمتك." onClick={() => router.push("/dashboard/templates")} />
         </div>
 
         {/* أحدث الشهادات */}
@@ -115,10 +115,10 @@ export default function DashboardPage() {
           </div>
 
           {loading ? (
-            <div className="px-6 py-12 text-center text-sm text-ink-muted">جارٍ التحميل…</div>
+            <div className="px-6 py-12 text-center text-sm text-ink-muted">جار التحميل…</div>
           ) : certs.length === 0 ? (
             <div className="px-6 py-12 text-center">
-              <p className="text-sm text-ink-soft">لم تُصدر أي شهادة بعد.</p>
+              <p className="text-sm text-ink-soft">لم تصدر أي شهادة بعد.</p>
               <button onClick={() => setModalOpen(true)} className="btn-primary mt-4">
                 <IconBadge className="h-4 w-4" /> أصدر أول شهادة
               </button>

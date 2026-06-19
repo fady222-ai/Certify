@@ -37,7 +37,7 @@ export function SupportContactForm() {
         </div>
         <h2 className="text-xl font-extrabold text-ink">تم استلام رسالتك</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-          أرسلنا رابط متابعة طلبك إلى بريدك الإلكتروني. يمكنك أيضاً متابعة المحادثة مباشرةً من هنا.
+          أرسلنا رابط متابعة طلبك إلى بريدك الإلكتروني. يمكنك أيضا متابعة المحادثة مباشرة من هنا.
         </p>
         <Link href={`/support/ticket/${done.token}`} className="btn-primary mt-5 inline-flex">
           متابعة طلبي
@@ -70,7 +70,7 @@ export function SupportContactForm() {
         onChange={(e) => setBody(e.target.value)} required minLength={5} maxLength={5000}
       />
       <button type="submit" disabled={busy} className="btn-primary w-full">
-        {busy ? "جارٍ الإرسال…" : "إرسال"}
+        {busy ? "جار الإرسال…" : "إرسال"}
       </button>
       <p className="text-center text-xs text-ink-muted">
         سيصلك رابط لمتابعة طلبك على بريدك — لا حاجة لإنشاء حساب.

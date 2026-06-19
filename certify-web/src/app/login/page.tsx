@@ -10,13 +10,13 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <AuthShell
-      title="مرحباً بعودتك 👋"
-      subtitle="سجّل الدخول لإدارة شهاداتك ومتابعة تحليلاتك."
+      title="مرحبا بعودتك 👋"
+      subtitle="سجل الدخول لإدارة شهاداتك ومتابعة تحليلاتك."
       footer={
         <>
           ليس لديك حساب؟{" "}
           <Link href="/register" className="font-extrabold text-brand-700 hover:underline">
-            أنشئ حساباً مجاناً
+            أنشئ حسابا مجانا
           </Link>
         </>
       }

@@ -31,7 +31,7 @@ export function ForgotPasswordForm() {
           <p className="text-2xl">✅</p>
           <p className="mt-2 font-bold text-green-800">تم الإرسال!</p>
           <p className="mt-1 text-sm text-green-700">
-            إن كان البريد مسجلاً، ستصلك رسالة استعادة خلال دقائق. تحقق من صندوق الوارد والبريد
+            إن كان البريد مسجلا، ستصلك رسالة استعادة خلال دقائق. تحقق من صندوق الوارد والبريد
             غير المرغوب فيه.
           </p>
         </div>
@@ -65,7 +65,7 @@ export function ForgotPasswordForm() {
       </label>
 
       <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-        {loading ? "جارٍ الإرسال…" : "إرسال رابط الاستعادة"}
+        {loading ? "جار الإرسال…" : "إرسال رابط الاستعادة"}
         {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
       </button>
     </form>

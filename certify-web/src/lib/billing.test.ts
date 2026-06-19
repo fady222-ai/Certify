@@ -5,7 +5,7 @@ import { resolveGatewayChoice } from "./billing";
 // when to show the gateway picker vs. go straight to checkout. Picking an
 // unconfigured gateway would fail at the backend, so this rule matters.
 describe("resolveGatewayChoice", () => {
-  it("no gateways configured → still open the picker (lists all as غير مفعّلة)", () => {
+  it("no gateways configured → still open the picker (lists all as غير مفعلة)", () => {
     expect(resolveGatewayChoice({ stripe: false, tap: false, paymob: false })).toEqual({
       showPicker: true,
       gateway: "stripe",

@@ -77,7 +77,7 @@ export default function BulkPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!file) { setError("يرجى اختيار ملف."); return; }
-    if (!defaultTemplateId) { setError("اختر قالباً أولاً قبل إصدار الشهادات."); return; }
+    if (!defaultTemplateId) { setError("اختر قالبا أولا قبل إصدار الشهادات."); return; }
     setError(null);
     setUploading(true);
     try {
@@ -89,7 +89,7 @@ export default function BulkPage() {
 
       const res = await authedFetch("batches", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message ?? "تعذّر الرفع.");
+      if (!res.ok) throw new Error(data.message ?? "تعذر الرفع.");
       setSubmitted({ batchId: data.batchId, total: data.total });
       loadBatches();
     } catch (err) {
@@ -112,14 +112,14 @@ export default function BulkPage() {
       <main className="mx-auto max-w-3xl space-y-8 p-6">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">الإصدار الجماعي</h1>
-          <p className="mt-1 text-sm text-ink-soft">ارفع ملف Excel أو CSV يحتوي على أسماء المتدربين وسيتم إصدار الشهادات تلقائياً.</p>
+          <p className="mt-1 text-sm text-ink-soft">ارفع ملف Excel أو CSV يحتوي على أسماء المتدربين وسيتم إصدار الشهادات تلقائيا.</p>
         </div>
 
         {/* Upgrade gate — bulk issuance is a paid feature. While the entitlement
             is still loading (canBulk === null) show a placeholder, not the form,
             to avoid flashing the uploader before the gate resolves. */}
         {canBulk === null ? (
-          <div className="card p-12 text-center text-sm text-ink-muted">جارٍ التحميل…</div>
+          <div className="card p-12 text-center text-sm text-ink-muted">جار التحميل…</div>
         ) : canBulk === false ? (
           <div className="card p-8 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
@@ -127,7 +127,7 @@ export default function BulkPage() {
             </div>
             <h2 className="mt-5 font-display text-xl font-black text-ink">الإصدار الجماعي ميزة مدفوعة</h2>
             <p className="mt-2 text-sm text-ink-soft">
-              باقتك الحالية لا تتيح الإصدار الجماعي. رقِّ إلى Pro أو Business لإصدار مئات الشهادات من ملف واحد.
+              باقتك الحالية لا تتيح الإصدار الجماعي. رق إلى Pro أو Business لإصدار مئات الشهادات من ملف واحد.
             </p>
             <div className="mt-6 flex justify-center">
               <Link href="/dashboard/billing" className="btn-primary">
@@ -140,7 +140,7 @@ export default function BulkPage() {
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-verify-50 text-verify-600">
               <IconCheck className="h-8 w-8" />
             </div>
-            <h2 className="mt-5 font-display text-xl font-black text-ink">جارٍ المعالجة!</h2>
+            <h2 className="mt-5 font-display text-xl font-black text-ink">جار المعالجة!</h2>
             <p className="mt-2 text-sm text-ink-soft">
               تم استلام الدفعة بنجاح. سيتم إصدار <span className="font-bold text-ink">{submitted.total}</span> شهادة في الخلفية.
             </p>
@@ -209,7 +209,7 @@ export default function BulkPage() {
             <label className="block">
               <span className="mb-1.5 block text-sm font-bold text-ink">اسم الدورة الافتراضي (اختياري)</span>
               <input value={courseName} onChange={(e) => setCourseName(e.target.value)}
-                placeholder="يُستخدم إذا لم يكن في الملف" className="input" />
+                placeholder="يستخدم إذا لم يكن في الملف" className="input" />
             </label>
 
             {defaultTemplateId ? (
@@ -223,7 +223,7 @@ export default function BulkPage() {
               </div>
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 ring-1 ring-amber-200">
-                <span>🎨 لم تعيّن قالباً افتراضياً بعد — عيّنه أولاً لإصدار الشهادات.</span>
+                <span>🎨 لم تعين قالبا افتراضيا بعد — عينه أولا لإصدار الشهادات.</span>
                 <Link href="/dashboard/templates" className="whitespace-nowrap font-extrabold text-amber-900 hover:underline">
                   اختيار قالب ←
                 </Link>
@@ -238,7 +238,7 @@ export default function BulkPage() {
 
             <button type="submit" disabled={uploading || !file || !defaultTemplateId} className="btn-primary w-full disabled:opacity-60">
               <IconUpload className="h-4 w-4" />
-              {uploading ? "جارٍ الرفع…" : "رفع وإصدار الشهادات"}
+              {uploading ? "جار الرفع…" : "رفع وإصدار الشهادات"}
             </button>
           </form>
         )}
@@ -249,7 +249,7 @@ export default function BulkPage() {
             <h2 className="font-display text-lg font-extrabold text-ink">الدفعات السابقة</h2>
           </div>
           {loadingBatches ? (
-            <p className="px-6 py-8 text-center text-sm text-ink-muted">جارٍ التحميل…</p>
+            <p className="px-6 py-8 text-center text-sm text-ink-muted">جار التحميل…</p>
           ) : batches.length === 0 ? (
             <p className="px-6 py-8 text-center text-sm text-ink-soft">لا توجد دفعات بعد.</p>
           ) : (
@@ -271,7 +271,7 @@ export default function BulkPage() {
                     )}
                     {b.status === "processing" && (
                       <span className="rounded-full bg-gold-50 px-3 py-1 text-xs font-bold text-gold-700">
-                        جارٍ المعالجة
+                        جار المعالجة
                       </span>
                     )}
                     {b.status === "failed" && (

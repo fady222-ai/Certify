@@ -16,7 +16,7 @@ export type Organization = {
 
 export async function getOrganization(): Promise<Organization> {
   const res = await authedFetch("organization");
-  if (!res.ok) throw new Error("تعذّر تحميل بيانات المنظمة.");
+  if (!res.ok) throw new Error("تعذر تحميل بيانات المنظمة.");
   return res.json();
 }
 
@@ -30,7 +30,7 @@ export async function updateOrganization(input: {
     body: JSON.stringify(input),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر الحفظ.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر الحفظ.");
   return data;
 }
 
@@ -43,7 +43,7 @@ export async function setDefaultTemplate(
     body: JSON.stringify({ templateId }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر تعيين القالب.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر تعيين القالب.");
   return data;
 }
 
@@ -55,13 +55,13 @@ export async function uploadBranding(
   fd.append("file", file);
   const res = await authedFetch(`organization/branding/${kind}`, { method: "POST", body: fd });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر رفع الصورة.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر رفع الصورة.");
   return data;
 }
 
 export async function deleteBranding(kind: "logo" | "signature"): Promise<Organization> {
   const res = await authedFetch(`organization/branding/${kind}`, { method: "DELETE" });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر الحذف.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر الحذف.");
   return data;
 }

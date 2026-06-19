@@ -46,7 +46,7 @@ export function SiteFooter() {
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t pt-6 text-xs text-ink-muted sm:flex-row">
           <span>© {new Date().getFullYear()} سرتفاي · جميع الحقوق محفوظة</span>
           <span className="flex items-center gap-1.5">
-            صُنع بحبّ للسوق العربي
+            صنع بحب للسوق العربي
             <span className="text-gold-500">★</span>
           </span>
         </div>

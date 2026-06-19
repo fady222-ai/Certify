@@ -89,7 +89,7 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
             }
           }
         } catch {
-          setError("تعذّر تحميل القالب.");
+          setError("تعذر تحميل القالب.");
         }
       }
 
@@ -193,7 +193,7 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "تعذّر الحفظ.");
+      setError(e instanceof Error ? e.message : "تعذر الحفظ.");
     } finally {
       setSaving(false);
     }
@@ -220,7 +220,7 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
           {saved && <span className="flex items-center gap-1 text-sm font-bold text-verify-600"><IconCheck className="h-4 w-4" /> تم الحفظ</span>}
           {error && <span className="text-sm font-bold text-red-600">{error}</span>}
           <button onClick={save} disabled={saving} className="btn-primary disabled:opacity-60">
-            {saving ? "جارٍ الحفظ…" : "حفظ القالب"}
+            {saving ? "جار الحفظ…" : "حفظ القالب"}
           </button>
         </div>
       </header>
@@ -231,7 +231,7 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
           <Panel title="إضافة عناصر">
             <ToolBtn icon={IconBadge} label="نص" onClick={addText} />
             <div className="rounded-xl border border-line bg-white p-2">
-              <p className="mb-1.5 px-1 text-xs font-bold text-ink-muted">متغيّر ديناميكي</p>
+              <p className="mb-1.5 px-1 text-xs font-bold text-ink-muted">متغير ديناميكي</p>
               <div className="grid gap-1">
                 {VARIABLE_OPTIONS.map((v) => (
                   <button key={v.key} onClick={() => addVariable(v.key)}
@@ -263,9 +263,9 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
               <canvas ref={canvasElRef} className="rounded-lg" />
             </div>
           </div>
-          {!ready && <p className="mt-3 text-center text-sm text-ink-muted">جارٍ تحضير المحرر…</p>}
+          {!ready && <p className="mt-3 text-center text-sm text-ink-muted">جار تحضير المحرر…</p>}
           <p className="mt-3 text-center text-xs text-ink-muted">
-            انقر عنصراً لتحديده، اسحب لتحريكه، واستخدم اللوحة الجانبية لتعديله.
+            انقر عنصرا لتحديده، اسحب لتحريكه، واستخدم اللوحة الجانبية لتعديله.
           </p>
         </div>
 
@@ -273,12 +273,12 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
         <aside className="w-60 shrink-0">
           <Panel title="الخصائص">
             {!selected ? (
-              <p className="px-1 text-xs text-ink-muted">حدّد عنصراً لعرض خصائصه.</p>
+              <p className="px-1 text-xs text-ink-muted">حدد عنصرا لعرض خصائصه.</p>
             ) : (
               <div className="space-y-3">
                 {selected.variableKey && (
                   <div>
-                    <p className="mb-1 text-xs font-bold text-ink-muted">المتغيّر</p>
+                    <p className="mb-1 text-xs font-bold text-ink-muted">المتغير</p>
                     <select
                       value={selected.variableKey}
                       onChange={(e) =>

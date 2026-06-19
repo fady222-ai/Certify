@@ -71,7 +71,7 @@ describe("login", () => {
   });
 
   test("returns the verification hint (without persisting) on a 403 unverified response", async () => {
-    mockFetch(403, { userId: "u1", requires_verification: true, message: "فعّل بريدك" });
+    mockFetch(403, { userId: "u1", requires_verification: true, message: "فعل بريدك" });
     const result = await login({ identifier: "a@x.com", password: "secret" });
     expect(result).toMatchObject({ requires_verification: true, userId: "u1" });
     expect(getToken()).toBeNull(); // not logged in yet
@@ -116,8 +116,8 @@ describe("resendOtp", () => {
   });
 
   test("throws the server message on failure (e.g. rate limited)", async () => {
-    mockFetch(429, { message: "حاول لاحقاً" });
-    await expect(resendOtp("u1")).rejects.toThrow("حاول لاحقاً");
+    mockFetch(429, { message: "حاول لاحقا" });
+    await expect(resendOtp("u1")).rejects.toThrow("حاول لاحقا");
   });
 });
 
@@ -133,8 +133,8 @@ describe("password recovery", () => {
   });
 
   test("resetPassword throws the server message on an invalid/expired token", async () => {
-    mockFetch(400, { message: "الرمز غير صالح أو منتهٍ" });
-    await expect(resetPassword("bad-token", "newsecret1")).rejects.toThrow("الرمز غير صالح أو منتهٍ");
+    mockFetch(400, { message: "الرمز غير صالح أو منته" });
+    await expect(resetPassword("bad-token", "newsecret1")).rejects.toThrow("الرمز غير صالح أو منته");
   });
 });
 

@@ -7,13 +7,14 @@ import {
   resetPaymentGateway,
   type PaymentGateway,
 } from "@/lib/admin";
+import { Switch } from "@/components/Switch";
 
 type Draft = Record<string, string>;
 
 const SOURCE_LABEL: Record<PaymentGateway["source"], string> = {
   db: "محفوظة في قاعدة البيانات",
-  env: "من متغيّرات البيئة",
-  none: "غير مهيّأة",
+  env: "من متغيرات البيئة",
+  none: "غير مهيأة",
 };
 
 export default function PaymentGatewaysPage() {
@@ -46,7 +47,7 @@ export default function PaymentGatewaysPage() {
   useEffect(() => {
     listPaymentGateways()
       .then((r) => hydrate(r.data))
-      .catch((e) => setError(e instanceof Error ? e.message : "تعذّر التحميل."));
+      .catch((e) => setError(e instanceof Error ? e.message : "تعذر التحميل."));
   }, []);
 
   function setField(gateway: string, key: string, value: string) {
@@ -75,7 +76,7 @@ export default function PaymentGatewaysPage() {
     } catch (e) {
       setNotice((n) => ({
         ...n,
-        [g.gateway]: { ok: false, text: e instanceof Error ? e.message : "تعذّر الحفظ." },
+        [g.gateway]: { ok: false, text: e instanceof Error ? e.message : "تعذر الحفظ." },
       }));
     } finally {
       setSavingId(null);
@@ -83,7 +84,7 @@ export default function PaymentGatewaysPage() {
   }
 
   async function onReset(g: PaymentGateway) {
-    if (!confirm(`إعادة بوابة ${g.label} إلى الإعداد الافتراضي (متغيّرات البيئة)؟ سيُحذف ما هو محفوظ.`)) return;
+    if (!confirm(`إعادة بوابة ${g.label} إلى الإعداد الافتراضي (متغيرات البيئة)؟ سيحذف ما هو محفوظ.`)) return;
     setSavingId(g.gateway);
     try {
       const res = await resetPaymentGateway(g.gateway);
@@ -98,7 +99,7 @@ export default function PaymentGatewaysPage() {
     } catch (e) {
       setNotice((n) => ({
         ...n,
-        [g.gateway]: { ok: false, text: e instanceof Error ? e.message : "تعذّر التنفيذ." },
+        [g.gateway]: { ok: false, text: e instanceof Error ? e.message : "تعذر التنفيذ." },
       }));
     } finally {
       setSavingId(null);
@@ -109,8 +110,8 @@ export default function PaymentGatewaysPage() {
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="font-display text-2xl font-black text-ink">بوابات الدفع</h1>
       <p className="text-sm text-ink-soft mt-1">
-        أدخل مفاتيح كل بوابة لتفعيل الدفع. المفاتيح السرّية تُخزَّن مشفّرة ولا تُعرَض كاملة مرة أخرى — اترك
-        الحقل السرّي فارغاً للإبقاء على القيمة المحفوظة.
+        أدخل مفاتيح كل بوابة لتفعيل الدفع. المفاتيح السرية تخزن مشفرة ولا تعرض كاملة مرة أخرى — اترك
+        الحقل السري فارغا للإبقاء على القيمة المحفوظة.
       </p>
 
       {error && (
@@ -125,7 +126,7 @@ export default function PaymentGatewaysPage() {
         </div>
       )}
 
-      {/* محدِّد البوابة (تبويبات) — يبقي الصفحة قصيرة بعرض بوابة واحدة في كل مرة */}
+      {/* محدد البوابة (تبويبات) — يبقي الصفحة قصيرة بعرض بوابة واحدة في كل مرة */}
       {gateways && gateways.length > 0 && (
         <div className="mt-6 flex flex-wrap gap-2">
           {gateways.map((g) => {
@@ -155,6 +156,8 @@ export default function PaymentGatewaysPage() {
       <div className="mt-6">
         {gateways?.filter((g) => g.gateway === active).map((g) => {
           const note = notice[g.gateway];
+          const isOn = enabledDraft[g.gateway] ?? g.enabled;
+          const missingFields = g.fields.filter((f) => f.required && !f.set);
           return (
             <section key={g.gateway} className="card p-6">
               <div className="flex items-start justify-between gap-3 flex-wrap">
@@ -168,36 +171,48 @@ export default function PaymentGatewaysPage() {
                       </span>
                     ) : (
                       <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-bold text-gray-500">
-                        غير مهيّأة
+                        غير مهيأة
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-ink-muted mt-1">المصدر: {SOURCE_LABEL[g.source]}</p>
                 </div>
 
-                <label className="flex items-center gap-2 text-sm font-medium text-ink-soft cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={enabledDraft[g.gateway] ?? g.enabled}
-                    onChange={(e) =>
-                      setEnabledDraft((prev) => ({ ...prev, [g.gateway]: e.target.checked }))
+                <div className="flex items-center gap-2.5 select-none">
+                  <span className={`text-sm font-bold ${isOn ? "text-brand-700" : "text-ink-muted"}`}>
+                    {isOn ? "مفعلة" : "مطفأة"}
+                  </span>
+                  <Switch
+                    checked={isOn}
+                    aria-label={`تفعيل بوابة ${g.label}`}
+                    onChange={(v) =>
+                      setEnabledDraft((prev) => ({ ...prev, [g.gateway]: v }))
                     }
-                    className="h-4 w-4 accent-brand-600"
                   />
-                  مُفعّلة
-                </label>
+                </div>
               </div>
 
-              {g.enabled && !g.available && (
-                <div className="mt-4 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 ring-1 ring-amber-100">
-                  ⚠️ هذه البوّابة مُفعّلة لكن ينقصها حقل مطلوب — لن تعمل حتى تُكمل
-                  {g.fields.filter((f) => f.required && !f.set).length > 0
-                    ? ` الحقول: ${g.fields.filter((f) => f.required && !f.set).map((f) => f.label).join("، ")}.`
-                    : " الحقول المطلوبة."}
+              {/* تلميح يعكس وضع الزر فورا (قبل الحفظ) */}
+              <div
+                className={`mt-4 rounded-xl px-4 py-2.5 text-sm font-medium ring-1 ${
+                  isOn
+                    ? "bg-brand-50 text-brand-700 ring-brand-100"
+                    : "bg-surface-2 text-ink-soft ring-line"
+                }`}
+              >
+                {isOn
+                  ? "البوابة مفعلة — أدخل المفاتيح المطلوبة أدناه لتصبح قابلة للاختيار من المستخدم."
+                  : "البوابة مطفأة — لن تظهر كخيار دفع للمستخدمين."}
+              </div>
+
+              {isOn && missingFields.length > 0 && (
+                <div className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 ring-1 ring-amber-100">
+                  ⚠️ هذه البوابة مفعلة لكن ينقصها حقل مطلوب — لن تعمل حتى تكمل
+                  {` الحقول: ${missingFields.map((f) => f.label).join("، ")}.`}
                 </div>
               )}
 
-              <div className="mt-5 space-y-4">
+              <div className={`mt-5 space-y-4 transition-opacity ${isOn ? "" : "opacity-60"}`}>
                 {g.fields.map((f) => (
                   <label key={f.key} className="block">
                     <span className="mb-1.5 flex items-center gap-1 text-sm font-bold text-ink">
@@ -218,7 +233,7 @@ export default function PaymentGatewaysPage() {
                       placeholder={
                         f.secret
                           ? f.set
-                            ? "اتركه فارغاً للإبقاء على القيمة الحالية"
+                            ? "اتركه فارغا للإبقاء على القيمة الحالية"
                             : "أدخل القيمة"
                           : "أدخل القيمة"
                       }
@@ -246,7 +261,7 @@ export default function PaymentGatewaysPage() {
                   disabled={savingId === g.gateway}
                   className="btn-primary disabled:opacity-60"
                 >
-                  {savingId === g.gateway ? "جارٍ الحفظ…" : "حفظ"}
+                  {savingId === g.gateway ? "جار الحفظ…" : "حفظ"}
                 </button>
                 {g.source === "db" && (
                   <button

@@ -47,7 +47,7 @@ export default function CertificateDetailPage() {
       const r = await resendCertificateEmail(id);
       flash(r.message);
     } catch (e) {
-      flash(e instanceof Error ? e.message : "تعذّر الإرسال.");
+      flash(e instanceof Error ? e.message : "تعذر الإرسال.");
     } finally {
       setBusy(false);
     }
@@ -62,14 +62,14 @@ export default function CertificateDetailPage() {
       await load();
       flash("تم إلغاء الشهادة.");
     } catch (e) {
-      flash(e instanceof Error ? e.message : "تعذّر الإلغاء.");
+      flash(e instanceof Error ? e.message : "تعذر الإلغاء.");
     } finally {
       setBusy(false);
     }
   }
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-sm text-ink-muted">جارٍ التحميل…</div>;
+    return <div className="flex min-h-screen items-center justify-center text-sm text-ink-muted">جار التحميل…</div>;
   }
   if (!cert) return null;
 

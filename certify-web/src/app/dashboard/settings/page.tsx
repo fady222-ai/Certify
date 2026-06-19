@@ -54,7 +54,7 @@ export default function SettingsPage() {
       await refreshProfile();
       setNotice("تم حفظ التغييرات.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذّر الحفظ.");
+      setError(err instanceof Error ? err.message : "تعذر الحفظ.");
     } finally {
       setSaving(false);
     }
@@ -70,7 +70,7 @@ export default function SettingsPage() {
       await refreshProfile();
       setNotice(kind === "logo" ? "تم تحديث الشعار." : "تم تحديث التوقيع.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذّر الرفع.");
+      setError(err instanceof Error ? err.message : "تعذر الرفع.");
     }
   }
 
@@ -80,7 +80,7 @@ export default function SettingsPage() {
       setOrg(updated);
       await refreshProfile();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذّر الحذف.");
+      setError(err instanceof Error ? err.message : "تعذر الحذف.");
     }
   }
 
@@ -88,7 +88,7 @@ export default function SettingsPage() {
       <main className="mx-auto max-w-3xl space-y-6 p-6">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">إعدادات المنظمة</h1>
-          <p className="mt-1 text-sm text-ink-soft">حدّد هوية منظمتك — تظهر على كل شهادة تُصدرها.</p>
+          <p className="mt-1 text-sm text-ink-soft">حدد هوية منظمتك — تظهر على كل شهادة تصدرها.</p>
         </div>
 
         {notice && (
@@ -103,7 +103,7 @@ export default function SettingsPage() {
         )}
 
         {loading ? (
-          <p className="py-12 text-center text-sm text-ink-muted">جارٍ التحميل…</p>
+          <p className="py-12 text-center text-sm text-ink-muted">جار التحميل…</p>
         ) : (
           <>
             {/* Details */}
@@ -133,7 +133,7 @@ export default function SettingsPage() {
               </div>
 
               <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
-                {saving ? "جارٍ الحفظ…" : "حفظ التغييرات"}
+                {saving ? "جار الحفظ…" : "حفظ التغييرات"}
               </button>
             </form>
 
@@ -141,7 +141,7 @@ export default function SettingsPage() {
             <div className="grid gap-5 sm:grid-cols-2">
               <AssetCard
                 title="الشعار"
-                hint="PNG شفاف يُفضّل · حتى 2MB"
+                hint="PNG شفاف يفضل · حتى 2MB"
                 url={org?.logo_url ?? null}
                 inputRef={logoRef}
                 onPick={(f) => onUpload("logo", f)}
@@ -150,7 +150,7 @@ export default function SettingsPage() {
               />
               <AssetCard
                 title="التوقيع"
-                hint="صورة توقيع المُصدر · حتى 2MB"
+                hint="صورة توقيع المصدر · حتى 2MB"
                 url={org?.signature_url ?? null}
                 inputRef={sigRef}
                 onPick={(f) => onUpload("signature", f)}

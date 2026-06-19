@@ -5,7 +5,7 @@ import { SupportContactForm } from "@/components/SupportContactForm";
 
 export const metadata: Metadata = {
   title: "تواصل معنا | Certify",
-  description: "هل لديك سؤال أو مشكلة؟ راسل فريق دعم Certify وسنردّ في أقرب وقت.",
+  description: "هل لديك سؤال أو مشكلة؟ راسل فريق دعم Certify وسنرد في أقرب وقت.",
 };
 
 export default function SupportContactPage() {

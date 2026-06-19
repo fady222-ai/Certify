@@ -25,7 +25,7 @@ const GATEWAYS: Gateway[] = ["stripe", "tap", "paymob"];
  * Decide whether the gateway picker is worth showing. With exactly one
  * configured gateway we use it directly; with two or more the user gets a real
  * choice. With zero configured we STILL open the picker — it lists every gateway
- * as "غير مفعّلة" (disabled) so the user sees why payment isn't possible, rather
+ * as "غير مفعلة" (disabled) so the user sees why payment isn't possible, rather
  * than silently firing a checkout the backend will refuse. Keeping this here
  * means /pricing and /dashboard/billing share one tested rule.
  */
@@ -65,7 +65,7 @@ export async function listPlans(): Promise<{ plans: Plan[]; gateways: { stripe: 
 /** Authed — current plan + usage + subscription. */
 export async function getBilling(): Promise<Billing> {
   const res = await authedFetch("billing");
-  if (!res.ok) throw new Error("تعذّر تحميل بيانات الباقة.");
+  if (!res.ok) throw new Error("تعذر تحميل بيانات الباقة.");
   return res.json();
 }
 
@@ -84,7 +84,7 @@ export async function createCheckout(
     body: JSON.stringify({ plan_slug: planSlug, interval, gateway }),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر بدء عملية الدفع.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر بدء عملية الدفع.");
   return data;
 }
 
@@ -92,6 +92,6 @@ export async function createCheckout(
 export async function cancelSubscription(): Promise<{ message: string }> {
   const res = await authedFetch("billing/cancel", { method: "POST" });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر إلغاء الاشتراك.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر إلغاء الاشتراك.");
   return data;
 }

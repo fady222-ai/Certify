@@ -35,15 +35,15 @@ export default function VerifyEntryPage() {
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
               <IconShield className="h-8 w-8" />
             </div>
-            <h1 className="mt-5 font-display text-3xl font-black text-ink">التحقّق من شهادة</h1>
+            <h1 className="mt-5 font-display text-3xl font-black text-ink">التحقق من شهادة</h1>
             <p className="mt-3 text-sm text-ink-soft">
-              أدخل رمز التحقّق المطبوع على الشهادة (أو الصق رابط الشهادة كاملاً) للتأكد من صحتها.
+              أدخل رمز التحقق المطبوع على الشهادة (أو الصق رابط الشهادة كاملا) للتأكد من صحتها.
             </p>
           </div>
 
           <form onSubmit={onSubmit} className="card p-6">
             <label className="block">
-              <span className="mb-1.5 block text-sm font-bold text-ink">رمز التحقّق</span>
+              <span className="mb-1.5 block text-sm font-bold text-ink">رمز التحقق</span>
               <input
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
@@ -55,14 +55,14 @@ export default function VerifyEntryPage() {
             </label>
             <button type="submit" disabled={!value.trim()} className="btn-primary mt-4 w-full disabled:opacity-60">
               <IconShield className="h-4 w-4" />
-              تحقّق الآن
+              تحقق الآن
             </button>
           </form>
 
           <p className="mt-6 text-center text-xs text-ink-muted">
             لمعاينة شكل النتيجة، {" "}
             <Link href="/verify/CERT-SMOK-0001" className="font-bold text-brand-700 hover:underline">
-              جرّب رمزاً تجريبياً
+              جرب رمزا تجريبيا
             </Link>
           </p>
 

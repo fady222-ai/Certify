@@ -79,7 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <p className="text-sm font-extrabold">{org?.plan?.name ?? "باقة مجانية"}</p>
         <p className="mt-1 text-xs text-brand-100">
           {org?.plan?.certificates_per_month != null
-            ? `${org.plan.certificates_per_month} شهادة شهرياً`
+            ? `${org.plan.certificates_per_month} شهادة شهريا`
             : "إصدار غير محدود"}
         </p>
         <Link href="/dashboard/billing" className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white/15 px-3 py-2 text-xs font-bold hover:bg-white/25">
@@ -107,7 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {planCard}
       </aside>
 
-      {/* درج التنقّل (جوال) */}
+      {/* درج التنقل (جوال) */}
       {navOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
           <div className="absolute inset-0 bg-black/50" onClick={() => setNavOpen(false)} />

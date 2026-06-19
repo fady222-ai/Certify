@@ -56,7 +56,7 @@ export async function listTemplates(): Promise<Template[]> {
 
 export async function getTemplate(id: string): Promise<Template> {
   const res = await authedFetch(`templates/${id}`);
-  if (!res.ok) throw new Error("تعذّر تحميل القالب.");
+  if (!res.ok) throw new Error("تعذر تحميل القالب.");
   return res.json();
 }
 
@@ -70,7 +70,7 @@ export async function createTemplate(input: {
     body: JSON.stringify(input),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر حفظ القالب.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر حفظ القالب.");
   return data;
 }
 
@@ -84,13 +84,13 @@ export async function updateTemplate(
     body: JSON.stringify(input),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذّر تحديث القالب.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر تحديث القالب.");
   return data;
 }
 
 export async function deleteTemplate(id: string): Promise<void> {
   const res = await authedFetch(`templates/${id}`, { method: "DELETE" });
-  if (!res.ok) throw new Error("تعذّر حذف القالب.");
+  if (!res.ok) throw new Error("تعذر حذف القالب.");
 }
 
 export const VARIABLE_OPTIONS: { key: string; label: string }[] = [

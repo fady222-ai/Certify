@@ -3,7 +3,7 @@ import { Logo } from "./Logo";
 import { IconCheck, IconBadge } from "./icons";
 
 const perks = [
-  "أصدر ١٠ شهادات مجاناً شهرياً",
+  "أصدر ١٠ شهادات مجانا شهريا",
   "محرر قوالب عربي بالكامل",
   "صفحة تحقق عامة لكل شهادة",
   "تكامل مباشر مع لينكدإن",
@@ -51,7 +51,7 @@ export function AuthShell({
           </div>
 
           <p className="text-sm text-brand-200">
-            © {new Date().getFullYear()} سرتفاي · صُنع للسوق العربي
+            © {new Date().getFullYear()} سرتفاي · صنع للسوق العربي
           </p>
         </div>
       </div>

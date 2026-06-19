@@ -8,18 +8,18 @@ import {
 } from "@/components/icons";
 
 const features = [
-  { icon: IconUpload, title: "إصدار جماعي من Excel", desc: "ارفع ملفاً واحداً وأصدر مئات الشهادات في دقائق — بدل ساعات من العمل اليدوي." },
-  { icon: IconPalette, title: "محرر قوالب عربي RTL", desc: "صمّم شهاداتك بسحب وإفلات، بخطوط عربية أنيقة وألوان علامتك التجارية." },
-  { icon: IconShield, title: "تحقّق مضاد للتزوير", desc: "كل شهادة تحمل رمز تحقق فريد وبصمة رقمية مشفّرة تكشف أي تلاعب فوراً." },
+  { icon: IconUpload, title: "إصدار جماعي من Excel", desc: "ارفع ملفا واحدا وأصدر مئات الشهادات في دقائق — بدل ساعات من العمل اليدوي." },
+  { icon: IconPalette, title: "محرر قوالب عربي RTL", desc: "صمم شهاداتك بسحب وإفلات، بخطوط عربية أنيقة وألوان علامتك التجارية." },
+  { icon: IconShield, title: "تحقق مضاد للتزوير", desc: "كل شهادة تحمل رمز تحقق فريد وبصمة رقمية مشفرة تكشف أي تلاعب فورا." },
   { icon: IconLinkedin, title: "إضافة إلى لينكدإن", desc: "زر واحد يضيف الشهادة لملف المتدرب على لينكدإن — تسويق مجاني لك." },
-  { icon: IconQr, title: "صفحة تحقّق عامة", desc: "رابط أنيق ورمز QR لكل شهادة، يفتحه أي صاحب عمل للتأكد من صحتها." },
-  { icon: IconChart, title: "تحليلات مباشرة", desc: "تابع من فتح الشهادة، ومن حمّلها، ومن شاركها على لينكدإن — لحظة بلحظة." },
+  { icon: IconQr, title: "صفحة تحقق عامة", desc: "رابط أنيق ورمز QR لكل شهادة، يفتحه أي صاحب عمل للتأكد من صحتها." },
+  { icon: IconChart, title: "تحليلات مباشرة", desc: "تابع من فتح الشهادة، ومن حملها، ومن شاركها على لينكدإن — لحظة بلحظة." },
 ];
 
 const steps = [
-  { n: "١", title: "صمّم قالبك", desc: "اختر من القوالب الجاهزة أو صمّم قالبك بألوان وشعار منظمتك." },
-  { n: "٢", title: "ارفع المتدربين", desc: "أدخل اسماً واحداً أو ارفع ملف Excel بمئات الأسماء دفعة واحدة." },
-  { n: "٣", title: "أصدر وأرسل", desc: "بنقرة واحدة تُولّد الشهادات وتُرسل تلقائياً لكل متدرب عبر الإيميل." },
+  { n: "١", title: "صمم قالبك", desc: "اختر من القوالب الجاهزة أو صمم قالبك بألوان وشعار منظمتك." },
+  { n: "٢", title: "ارفع المتدربين", desc: "أدخل اسما واحدا أو ارفع ملف Excel بمئات الأسماء دفعة واحدة." },
+  { n: "٣", title: "أصدر وأرسل", desc: "بنقرة واحدة تولد الشهادات وترسل تلقائيا لكل متدرب عبر الإيميل." },
 ];
 
 const stats = [
@@ -32,9 +32,9 @@ const stats = [
 // Prices/names come from the canonical pricing module (single source of truth,
 // kept in sync with the backend seed); only marketing copy lives here.
 const plans = [
-  { ...PLAN_PRICING.free, tag: "للتجربة", features: ["محرر القوالب", "صفحة تحقق عامة", "تكامل لينكدإن"], cta: "ابدأ مجاناً", highlight: false },
-  { ...PLAN_PRICING.pro, tag: "الأكثر اختياراً", features: ["كل ميزات المجاني", "إصدار جماعي من Excel", "توقيع رقمي مخصص", "تحليلات متقدمة", "تتبّع مشاهدات وتحميلات الشهادة"], cta: "ابدأ الآن", highlight: true },
-  { ...PLAN_PRICING.business, tag: "للأكاديميات", features: ["كل ميزات Pro", "شهادات بشعار وألوان أكاديميتك", "تتبّع مشاهدات وتحميلات الشهادات", "أولوية في الدعم الفني"], cta: "تواصل معنا", highlight: false },
+  { ...PLAN_PRICING.free, tag: "للتجربة", features: ["محرر القوالب", "صفحة تحقق عامة", "تكامل لينكدإن"], cta: "ابدأ مجانا", highlight: false },
+  { ...PLAN_PRICING.pro, tag: "الأكثر اختيارا", features: ["كل ميزات المجاني", "إصدار جماعي من Excel", "توقيع رقمي مخصص", "تحليلات متقدمة", "تتبع مشاهدات وتحميلات الشهادة"], cta: "ابدأ الآن", highlight: true },
+  { ...PLAN_PRICING.business, tag: "للأكاديميات", features: ["كل ميزات Pro", "شهادات بشعار وألوان أكاديميتك", "تتبع مشاهدات وتحميلات الشهادات", "أولوية في الدعم الفني"], cta: "تواصل معنا", highlight: false },
 ];
 
 export default function Home() {
@@ -50,7 +50,7 @@ export default function Home() {
             <div className="text-center lg:text-right">
               <span className="chip animate-rise">
                 <IconSparkle className="h-4 w-4" />
-                أول منصة شهادات عربية مصمّمة من الصفر
+                أول منصة شهادات عربية مصممة من الصفر
               </span>
 
               <h1 className="animate-rise delay-1 mt-6 font-display text-4xl font-black leading-[1.15] text-ink sm:text-5xl lg:text-6xl">
@@ -61,17 +61,17 @@ export default function Home() {
 
               <p className="animate-rise delay-2 mx-auto mt-6 max-w-xl text-lg leading-relaxed text-ink-soft lg:mx-0">
                 شهادات احترافية بالعربية، قابلة للتحقق، وقابلة للنشر على لينكدإن.
-                وفّر ساعات من العمل اليدوي وامنح متدربيك شهادة تليق بإنجازهم.
+                وفر ساعات من العمل اليدوي وامنح متدربيك شهادة تليق بإنجازهم.
               </p>
 
               <div className="animate-rise delay-3 mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                 <Link href="/register" className="btn-primary text-base">
-                  ابدأ مجاناً الآن
+                  ابدأ مجانا الآن
                   <IconArrow className="h-4 w-4 rotate-180" />
                 </Link>
                 <Link href="/verify" className="btn-ghost text-base">
                   <IconShield className="h-4 w-4" />
-                  تحقّق من شهادة
+                  تحقق من شهادة
                 </Link>
               </div>
 
@@ -93,12 +93,12 @@ export default function Home() {
                   <div className="my-5 h-1 w-16 rounded bg-gradient-to-l from-brand-600 to-brand-300" />
                   <p className="text-xs text-ink-muted">شهادة إتمام دورة</p>
                   <h3 className="mt-2 font-display text-2xl font-extrabold text-ink">عبدالرحمن الأحمدي</h3>
-                  <p className="mt-3 text-sm text-ink-soft">أتمّ بنجاح دورة</p>
+                  <p className="mt-3 text-sm text-ink-soft">أتم بنجاح دورة</p>
                   <p className="font-bold text-brand-700">أساسيات إدارة المشاريع</p>
                   <div className="mt-6 flex items-end justify-between">
                     <div>
                       <div className="h-px w-24 bg-ink-muted/40" />
-                      <p className="mt-1 text-[10px] text-ink-muted">توقيع المُصدر</p>
+                      <p className="mt-1 text-[10px] text-ink-muted">توقيع المصدر</p>
                     </div>
                     <div className="grid h-14 w-14 place-items-center rounded-lg border border-brand-100 bg-brand-50">
                       <IconQr className="h-8 w-8 text-brand-600" />
@@ -113,7 +113,7 @@ export default function Home() {
                   <IconCheck className="h-5 w-5 text-verify-600" />
                 </span>
                 <div className="leading-tight">
-                  <p className="text-xs font-extrabold text-verify-700">شهادة موثّقة</p>
+                  <p className="text-xs font-extrabold text-verify-700">شهادة موثقة</p>
                   <p className="text-[10px] text-ink-muted">تم التحقق بنجاح</p>
                 </div>
               </div>
@@ -194,9 +194,9 @@ export default function Home() {
           <div className="mx-auto max-w-2xl text-center">
             <span className="chip"><IconBadge className="h-4 w-4" /> أسعار بسيطة</span>
             <h2 className="mt-5 font-display text-3xl font-black text-ink sm:text-4xl">
-              باقة تناسب كل مدرّب وأكاديمية
+              باقة تناسب كل مدرب وأكاديمية
             </h2>
-            <p className="mt-4 text-lg text-ink-soft">ابدأ مجاناً، وارقِّ متى احتجت. بدون التزامات.</p>
+            <p className="mt-4 text-lg text-ink-soft">ابدأ مجانا، وارق متى احتجت. بدون التزامات.</p>
           </div>
 
           <div className="mt-14 grid items-stretch gap-6 lg:grid-cols-3">
@@ -257,11 +257,11 @@ export default function Home() {
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <Link href="/register" className="btn bg-white px-6 text-base font-extrabold text-brand-700 hover:bg-brand-50">
-                  ابدأ مجاناً
+                  ابدأ مجانا
                   <IconArrow className="h-4 w-4 rotate-180" />
                 </Link>
                 <Link href="/login" className="btn border border-white/30 px-6 text-base font-bold text-white hover:bg-white/10">
-                  لديّ حساب
+                  لدي حساب
                 </Link>
               </div>
             </div>

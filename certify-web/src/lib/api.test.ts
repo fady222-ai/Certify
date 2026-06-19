@@ -22,7 +22,7 @@ describe("verifyCertificate", () => {
     global.fetch = vi.fn(async () => { throw new Error("network down"); }) as unknown as typeof fetch;
     const result = await verifyCertificate("CERT-0000");
     expect(result.found).toBe(false);
-    expect(result.message).toMatch(/تعذّر الاتصال/);
+    expect(result.message).toMatch(/تعذر الاتصال/);
   });
 
   test("url-encodes the verification code", async () => {

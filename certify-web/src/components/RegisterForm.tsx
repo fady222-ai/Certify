@@ -117,7 +117,7 @@ export function RegisterForm() {
         </label>
 
         <button type="submit" disabled={loading || otp.length < 6} className="btn-primary w-full disabled:opacity-60">
-          {loading ? "جارٍ التحقق…" : "تفعيل الحساب"}
+          {loading ? "جار التحقق…" : "تفعيل الحساب"}
           {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
         </button>
 
@@ -158,7 +158,7 @@ export function RegisterForm() {
           <input type="text" required minLength={2} value={form.organizationName} onChange={update("organizationName")} placeholder="أكاديمية..." className="input pr-11" />
         </span>
         <p className="mt-1 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 ring-1 ring-amber-100">
-          ⚠️ مهم: اسم الأكاديمية يظهر على كل شهاداتك، ويجب أن يكون فريداً، ولا يمكن تغييره لاحقاً — اختره بعناية.
+          ⚠️ مهم: اسم الأكاديمية يظهر على كل شهاداتك، ويجب أن يكون فريدا، ولا يمكن تغييره لاحقا — اختره بعناية.
         </p>
       </label>
 
@@ -180,12 +180,12 @@ export function RegisterForm() {
       </label>
 
       <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-        {loading ? "جارٍ الإنشاء…" : "إنشاء الحساب"}
+        {loading ? "جار الإنشاء…" : "إنشاء الحساب"}
         {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
       </button>
 
       <p className="text-center text-xs leading-relaxed text-ink-muted">
-        بإنشائك حساباً فأنت توافق على شروط الاستخدام وسياسة الخصوصية.
+        بإنشائك حسابا فأنت توافق على شروط الاستخدام وسياسة الخصوصية.
       </p>
     </form>
   );

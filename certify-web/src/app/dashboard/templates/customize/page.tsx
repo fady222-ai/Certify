@@ -57,7 +57,7 @@ function Customizer() {
 
   useEffect(() => {
     if (!getToken()) { router.push("/login"); return; }
-    if (!sourceId) { setError("لا يوجد قالب محدّد."); setLoading(false); return; }
+    if (!sourceId) { setError("لا يوجد قالب محدد."); setLoading(false); return; }
     Promise.all([getTemplate(sourceId), getOrganization().catch(() => null)])
       .then(([t, org]) => {
         const th = getTheme(t.design_data);
@@ -67,10 +67,10 @@ function Customizer() {
         setAccent(th.accent);
         setAccent2(th.accent2);
         setPos(boxToPos(th, t.design_data.width || 1123));
-        setName(baseId ? `${t.name} — مخصّص` : t.name);
+        setName(baseId ? `${t.name} — مخصص` : t.name);
         setLogoUrl(org?.logo_url ?? null);
       })
-      .catch(() => setError("تعذّر تحميل القالب."))
+      .catch(() => setError("تعذر تحميل القالب."))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceId]);
@@ -98,13 +98,13 @@ function Customizer() {
       else await createTemplate({ name: name.trim(), designData: themedDesign });
       router.push("/dashboard/templates");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "تعذّر الحفظ.");
+      setError(e instanceof Error ? e.message : "تعذر الحفظ.");
       setSaving(false);
     }
   }
 
   if (loading) {
-    return <main className="p-6"><p className="text-center text-sm text-ink-muted">جارٍ التحميل…</p></main>;
+    return <main className="p-6"><p className="text-center text-sm text-ink-muted">جار التحميل…</p></main>;
   }
   if (error && !base) {
     return (
@@ -126,7 +126,7 @@ function Customizer() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-black text-ink">تخصيص القالب</h1>
-          <p className="mt-1 text-sm text-ink-soft">عدّل الألوان وموضع الشعار — يبقى التصميم كما هو، ثم احفظه باسم جديد.</p>
+          <p className="mt-1 text-sm text-ink-soft">عدل الألوان وموضع الشعار — يبقى التصميم كما هو، ثم احفظه باسم جديد.</p>
         </div>
         <Link href="/dashboard/templates" className="btn-ghost">إلغاء</Link>
       </div>
@@ -179,9 +179,9 @@ function Customizer() {
 
           <div className="rounded-xl bg-surface-2/60 px-4 py-3 text-xs text-ink-soft ring-1 ring-line">
             {logoUrl ? (
-              <>الشعار يُؤخذ تلقائياً من <Link href="/dashboard/settings" className="font-bold text-brand-700 hover:underline">إعدادات المنظمة</Link>.</>
+              <>الشعار يؤخذ تلقائيا من <Link href="/dashboard/settings" className="font-bold text-brand-700 hover:underline">إعدادات المنظمة</Link>.</>
             ) : (
-              <>لا يوجد شعار لمنظمتك بعد. <Link href="/dashboard/settings" className="font-bold text-brand-700 hover:underline">ارفع شعارك من الإعدادات</Link> ليظهر تلقائياً على القوالب.</>
+              <>لا يوجد شعار لمنظمتك بعد. <Link href="/dashboard/settings" className="font-bold text-brand-700 hover:underline">ارفع شعارك من الإعدادات</Link> ليظهر تلقائيا على القوالب.</>
             )}
           </div>
 
@@ -189,7 +189,7 @@ function Customizer() {
 
           <button onClick={onSave} disabled={saving} className="btn-primary w-full disabled:opacity-60">
             <IconPalette className="h-4 w-4" />
-            {saving ? "جارٍ الحفظ…" : "حفظ القالب"}
+            {saving ? "جار الحفظ…" : "حفظ القالب"}
             {!saving && <IconArrow className="h-4 w-4" />}
           </button>
         </div>
@@ -200,7 +200,7 @@ function Customizer() {
 
 export default function CustomizeTemplatePage() {
   return (
-    <Suspense fallback={<main className="p-6"><p className="text-center text-sm text-ink-muted">جارٍ التحميل…</p></main>}>
+    <Suspense fallback={<main className="p-6"><p className="text-center text-sm text-ink-muted">جار التحميل…</p></main>}>
       <Customizer />
     </Suspense>
   );

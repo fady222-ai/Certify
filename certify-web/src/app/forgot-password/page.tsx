@@ -14,7 +14,7 @@ export default function ForgotPasswordPage() {
       subtitle="أدخل بريدك الإلكتروني وسنرسل لك رابط الاستعادة."
       footer={
         <>
-          تذكّرت كلمة المرور؟{" "}
+          تذكرت كلمة المرور؟{" "}
           <Link href="/login" className="font-extrabold text-brand-700 hover:underline">
             تسجيل الدخول
           </Link>

@@ -10,7 +10,7 @@ import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   active:    { label: "نشط",        cls: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100" },
-  inactive:  { label: "غير مفعّل", cls: "bg-gray-100 text-gray-500" },
+  inactive:  { label: "غير مفعل", cls: "bg-gray-100 text-gray-500" },
   past_due:  { label: "متأخر",      cls: "bg-amber-50 text-amber-700 ring-1 ring-amber-100" },
   cancelled: { label: "ملغي",       cls: "bg-red-50 text-red-600 ring-1 ring-red-100" },
 };
@@ -28,7 +28,7 @@ const UPGRADE_PLANS = [
   { ...PLAN_PRICING.pro, popular: true,
     features: ["الإصدار الجماعي", "توقيع رقمي مخصص", "تكامل لينكدإن"] },
   { ...PLAN_PRICING.business, popular: false,
-    features: ["شهادات بشعار وألوان أكاديميتك", "تتبّع مشاهدات وتحميلات الشهادات", "دعم أولوية"] },
+    features: ["شهادات بشعار وألوان أكاديميتك", "تتبع مشاهدات وتحميلات الشهادات", "دعم أولوية"] },
 ];
 
 type PendingUpgrade = { slug: string; interval: "monthly" | "annual" };
@@ -55,7 +55,7 @@ function BillingContent() {
     } else if (params.get("error")) {
       const msg: Record<string, string> = {
         payment_failed: "فشلت عملية الدفع. يرجى المحاولة مرة أخرى.",
-        verify_failed:  "تعذّر التحقق من الدفع. تواصل مع الدعم.",
+        verify_failed:  "تعذر التحقق من الدفع. تواصل مع الدعم.",
         missing_id:     "رابط الدفع غير صالح.",
         not_found:      "لم يتم العثور على بيانات الاشتراك.",
       };
@@ -154,7 +154,7 @@ function BillingContent() {
         <>
           {sub?.status === "past_due" && (
             <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 ring-1 ring-amber-200">
-              ⚠️ دفعتك متأخرة — لم يكتمل تجديد اشتراكك. جدّد خلال أيام قليلة لتفادي التخفيض التلقائي للباقة المجانية.
+              ⚠️ دفعتك متأخرة — لم يكتمل تجديد اشتراكك. جدد خلال أيام قليلة لتفادي التخفيض التلقائي للباقة المجانية.
             </div>
           )}
 
@@ -222,7 +222,7 @@ function BillingContent() {
                 <span className="font-medium text-ink">{periodEnd}</span>
                 {cancelAtEnd && (
                   <span className="mr-2 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-md px-1.5 py-0.5">
-                    لن يتجدد تلقائياً
+                    لن يتجدد تلقائيا
                   </span>
                 )}
               </p>
@@ -235,7 +235,7 @@ function BillingContent() {
                 disabled={cancelling}
                 className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50 transition-colors"
               >
-                {cancelling ? "جارٍ الإلغاء…" : "إلغاء الاشتراك"}
+                {cancelling ? "جار الإلغاء…" : "إلغاء الاشتراك"}
               </button>
             )}
           </div>
@@ -245,7 +245,7 @@ function BillingContent() {
             <div className="space-y-5">
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-bold text-ink">رقِّ باقتك</h2>
+                  <h2 className="text-lg font-bold text-ink">رق باقتك</h2>
                   <p className="text-sm text-ink-muted mt-0.5">أصدر المزيد من الشهادات وافتح مزايا متقدمة.</p>
                 </div>
                 {/* Billing cycle toggle */}
@@ -268,7 +268,7 @@ function BillingContent() {
                     <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
                       cycle === "annual" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
                     }`}>
-                      وفّر {ANNUAL_SAVING_PCT}%
+                      وفر {ANNUAL_SAVING_PCT}%
                     </span>
                   </button>
                 </div>
@@ -287,7 +287,7 @@ function BillingContent() {
                     >
                       {p.popular && (
                         <span className="absolute -top-2.5 right-5 rounded-full bg-brand-600 px-2.5 py-0.5 text-[11px] font-extrabold text-white shadow">
-                          الأكثر شيوعاً
+                          الأكثر شيوعا
                         </span>
                       )}
                       <p className="font-display text-lg font-black text-ink">{p.name}</p>

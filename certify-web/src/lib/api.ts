@@ -37,10 +37,10 @@ export async function verifyCertificate(
       return { found: false, message: body.message };
     }
     if (!res.ok) {
-      return { found: false, message: "تعذّر الاتصال بخدمة التحقق." };
+      return { found: false, message: "تعذر الاتصال بخدمة التحقق." };
     }
     return (await res.json()) as VerificationResult;
   } catch {
-    return { found: false, message: "تعذّر الاتصال بخدمة التحقق." };
+    return { found: false, message: "تعذر الاتصال بخدمة التحقق." };
   }
 }

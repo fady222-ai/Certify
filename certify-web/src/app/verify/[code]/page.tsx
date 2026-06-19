@@ -37,12 +37,12 @@ export default async function VerifyPage({ params }: Params) {
                 <span className="grid h-6 w-6 place-items-center rounded-full bg-verify-500 text-white">
                   <IconCheck className="h-4 w-4" />
                 </span>
-                شهادة موثّقة وصحيحة
+                شهادة موثقة وصحيحة
               </span>
             ) : (
               <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-5 py-2 text-sm font-extrabold text-red-600 ring-1 ring-red-100">
                 <IconShield className="h-5 w-5" />
-                {result.found ? "تعذّر التحقق من صحة الشهادة" : "الشهادة غير موجودة"}
+                {result.found ? "تعذر التحقق من صحة الشهادة" : "الشهادة غير موجودة"}
               </span>
             )}
           </div>
@@ -92,7 +92,7 @@ function CertificateCard({
 
   return (
     <div className="card mx-auto max-w-2xl overflow-hidden">
-      {/* رأس ملوّن */}
+      {/* رأس ملون */}
       <div
         className="px-8 py-7 text-white"
         style={{ background: `linear-gradient(135deg, ${accent}, ${accent}cc)` }}
@@ -111,7 +111,7 @@ function CertificateCard({
           </div>
           {verified && (
             <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold">
-              <IconCheck className="h-4 w-4" /> موثّقة
+              <IconCheck className="h-4 w-4" /> موثقة
             </span>
           )}
         </div>
@@ -137,8 +137,8 @@ function CertificateCard({
             </p>
             <p className="text-xs text-ink-soft">
               {result.integrity
-                ? "بيانات الشهادة مطابقة للبصمة الرقمية المسجّلة وقت الإصدار."
-                : "قد تكون بيانات هذه الشهادة عُدّلت بعد إصدارها."}
+                ? "بيانات الشهادة مطابقة للبصمة الرقمية المسجلة وقت الإصدار."
+                : "قد تكون بيانات هذه الشهادة عدلت بعد إصدارها."}
             </p>
           </div>
         </div>
