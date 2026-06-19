@@ -198,18 +198,12 @@ export default function PaymentGatewaysPage() {
                 </div>
               </div>
 
-              {/* تلميح يعكس وضع الزر فورا (قبل الحفظ) */}
-              <div
-                className={`mt-4 rounded-xl px-4 py-2.5 text-sm font-medium ring-1 ${
-                  isOn
-                    ? "bg-brand-50 text-brand-700 ring-brand-100"
-                    : "bg-surface-2 text-ink-soft ring-line"
-                }`}
-              >
-                {isOn
-                  ? "البوابة مفعلة — أدخل المفاتيح المطلوبة أدناه لتصبح قابلة للاختيار من المستخدم."
-                  : "البوابة مطفأة — لن تظهر كخيار دفع للمستخدمين."}
-              </div>
+              {/* تلميح يظهر فقط عند الإطفاء */}
+              {!isOn && (
+                <div className="mt-4 rounded-xl bg-surface-2 px-4 py-2.5 text-sm font-medium text-ink-soft ring-1 ring-line">
+                  البوابة مطفأة — لن تظهر كخيار دفع للمستخدمين.
+                </div>
+              )}
 
               {blockSave && (
                 <div className="mt-3 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 ring-1 ring-amber-100">
