@@ -5,7 +5,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t bg-surface-2/60">
       <div className="mx-auto max-w-7xl px-5 py-12">
-        <div className="grid gap-10 md:grid-cols-4">
+        <div className="grid gap-10 md:grid-cols-5">
           <div className="md:col-span-2">
             <Logo />
             <p className="mt-4 max-w-sm text-sm leading-relaxed text-ink-soft">
@@ -29,6 +29,15 @@ export function SiteFooter() {
             <ul className="space-y-2 text-sm text-ink-soft">
               <li><Link href="/login" className="hover:text-brand-700">تسجيل الدخول</Link></li>
               <li><Link href="/register" className="hover:text-brand-700">إنشاء حساب</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-3 text-sm font-extrabold text-ink">قانوني</h4>
+            <ul className="space-y-2 text-sm text-ink-soft">
+              <li><Link href="/terms" className="hover:text-brand-700">شروط الاستخدام</Link></li>
+              <li><Link href="/privacy" className="hover:text-brand-700">سياسة الخصوصية</Link></li>
+              <li><Link href="/refund" className="hover:text-brand-700">سياسة الاسترداد</Link></li>
             </ul>
           </div>
         </div>

@@ -16,10 +16,30 @@ const tajawal = Tajawal({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://certify.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "منصة الشهادات الرقمية | Certify",
   description:
     "أصدر مئات الشهادات الرقمية الاحترافية بنقرة واحدة — قابلة للتحقق، وقابلة للنشر على لينكدإن.",
+  keywords: ["شهادات رقمية", "إصدار شهادات", "التحقق من الشهادات", "Certify", "شهادات إتمام الدورات"],
+  applicationName: "Certify",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "ar_AR",
+    siteName: "Certify",
+    title: "منصة الشهادات الرقمية | Certify",
+    description:
+      "أصدر مئات الشهادات الرقمية الاحترافية بنقرة واحدة — قابلة للتحقق، وقابلة للنشر على لينكدإن.",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "منصة الشهادات الرقمية | Certify",
+    description: "أصدر شهادات رقمية احترافية قابلة للتحقق بنقرة واحدة.",
+  },
 };
 
 export default function RootLayout({
