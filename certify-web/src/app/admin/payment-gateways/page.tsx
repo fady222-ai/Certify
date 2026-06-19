@@ -18,6 +18,7 @@ const SOURCE_LABEL: Record<PaymentGateway["source"], string> = {
 
 export default function PaymentGatewaysPage() {
   const [gateways, setGateways] = useState<PaymentGateway[] | null>(null);
+  const [active, setActive] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [enabledDraft, setEnabledDraft] = useState<Record<string, boolean>>({});
@@ -26,6 +27,7 @@ export default function PaymentGatewaysPage() {
 
   function hydrate(list: PaymentGateway[]) {
     setGateways(list);
+    setActive((prev) => prev ?? list[0]?.gateway ?? null);
     const d: Record<string, Draft> = {};
     const en: Record<string, boolean> = {};
     for (const g of list) {
@@ -123,8 +125,35 @@ export default function PaymentGatewaysPage() {
         </div>
       )}
 
-      <div className="mt-6 space-y-6">
-        {gateways?.map((g) => {
+      {/* محدِّد البوابة (تبويبات) — يبقي الصفحة قصيرة بعرض بوابة واحدة في كل مرة */}
+      {gateways && gateways.length > 0 && (
+        <div className="mt-6 flex flex-wrap gap-2">
+          {gateways.map((g) => {
+            const isActive = active === g.gateway;
+            return (
+              <button
+                key={g.gateway}
+                onClick={() => setActive(g.gateway)}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                  isActive
+                    ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
+                    : "bg-surface-2 text-ink-soft hover:bg-brand-50 hover:text-brand-700"
+                }`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    g.available ? "bg-green-400" : isActive ? "bg-white/60" : "bg-gray-300"
+                  }`}
+                />
+                {g.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="mt-6">
+        {gateways?.filter((g) => g.gateway === active).map((g) => {
           const note = notice[g.gateway];
           return (
             <section key={g.gateway} className="card p-6">
