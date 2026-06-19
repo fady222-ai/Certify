@@ -83,12 +83,12 @@ export function notifyNewTicket(ticket) {
       ticketAckUserEmail({ userName: ticket.user.name, subject: ticket.subject, dashboardUrl: dashboardUrl() }),
       "ack → user",
     );
-  } else if (ticket.guestEmail && allowRecipient(ticket.guestEmail)) {
+  } else if (ticket.guestEmail && ticket.rawToken && allowRecipient(ticket.guestEmail)) {
     // Guest ack goes to an attacker-choosable address, so it carries no
     // attacker-controlled free text (no name/subject) and is rate-capped per
     // recipient — it can't be used as a phishing/mail-bomb relay.
     send(
-      ticketAckGuestEmail({ portalUrl: portalUrl(ticket.publicToken) }),
+      ticketAckGuestEmail({ portalUrl: portalUrl(ticket.rawToken) }),
       "ack → guest",
     );
   }
@@ -101,9 +101,9 @@ export function notifyAdminReply(ticket) {
       adminReplyUserEmail({ userName: ticket.user.name, subject: ticket.subject, dashboardUrl: dashboardUrl() }),
       "admin reply → user",
     );
-  } else if (ticket.guestEmail) {
+  } else if (ticket.guestEmail && ticket.rawToken) {
     send(
-      adminReplyGuestEmail({ guestName: ticket.guestName, subject: ticket.subject, portalUrl: portalUrl(ticket.publicToken) }),
+      adminReplyGuestEmail({ guestName: ticket.guestName, subject: ticket.subject, portalUrl: portalUrl(ticket.rawToken) }),
       "admin reply → guest",
     );
   }

@@ -233,28 +233,43 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
   و`SupportMessage` (`authorRole`: user/admin/guest هو **مصدر حقيقة المُرسِل**؛ `authorId`
   عمود نصّي عادي لا علاقة). `onDelete: SetNull` يحفظ السجلّ للأدمن إن حُذف المستخدم/المنظمة.
 - **التحكم:** `controllers/supportController.js` (Zod + عزل IDOR: مسارات المستخدم مقيّدة
-  `{id, userId}` → 404؛ المسارات العامة بالـ`publicToken` فقط، لا قبول `id` عام).
-  العارضات snake_case؛ **`public_token` لا يظهر إلا في ردّ إنشاء الزائر وتفاصيل الأدمن**.
+  `{id, userId}` → 404؛ المسارات العامة بالـtoken فقط، لا قبول `id` عام، وتُقيَّد بتذاكر
+  الزوّار: `if (!ticket || ticket.userId) 404`).
+  العارضات snake_case؛ **الـtoken الخام لا يظهر إلا مرة واحدة في ردّ إنشاء الزائر** (لا في
+  أي عرض تذكرة حتى للأدمن).
+- **أمان الـtoken (at-rest):** الـtoken قدرة حاملة، فيُعامَل كبيان اعتماد: يُولَّد UUID
+  عشوائي ويُسلَّم مرة واحدة (ردّ الإنشاء + رابط البريد)، ويُخزَّن فقط **بصمته SHA-256**
+  (`publicTokenHash @unique` للبحث) و**نصّه المشفّر AES-GCM** (`publicTokenEnc` عبر
+  `secretCrypto`، لإعادة بناء الرابط في بريد ردّ الأدمن). تسرّب قاعدة البيانات/النسخة
+  وحده لا يمنح وصولاً (البصمة لا تُعكَس، والنصّ المشفّر يحتاج `APP_KEY`). تذاكر المستخدمين
+  بلا token (null) فهي غير قابلة للوصول عبر المسارات العامة بنيوياً.
 - **التحوّلات:** ردّ الأدمن → `answered`؛ ردّ العميل على تذكرة `open`/`answered` → `open`.
   **الإغلاق نهائي:** الردّ على تذكرة `closed` يُرفَض بـ409 (مستخدم وزائر) — يجب فتح تذكرة
   جديدة. الأدمن وحده يستطيع الردّ/تغيير حالة المغلقة.
 - **المسارات** (`routes/index.js`): مستخدم `/support/tickets[...]` (requireAuth) · عام
   `/support/public/tickets[/:token][/messages]` (بلا auth) · أدمن `/support/admin/tickets`
   (requireAuth+requireAdmin، بحث/فلتر/ترقيم).
-- **حدود معدّل** (`server.js`): `/api/support/public` 20/دقيقة/IP (token + إنشاء) +
-  إنشاء الزائر POST 5/ساعة/IP (كبح إغراق البريد) — فوق العام 120/دقيقة.
+- **حدود معدّل** (`server.js`): `/api/support/public` 20/دقيقة/IP + إنشاء الزائر POST
+  5/ساعة/IP + إنشاء المستخدم POST 20/ساعة/IP — فوق العام 120/دقيقة.
+- **قيود إساءة بنيوية** (تصمد أمام تدوير الـIP): حدّ التذاكر المفتوحة لكل صاحب طلب
+  (`MAX_OPEN_TICKETS=5`، مستخدم بالـid وزائر بالبريد) + سقف رسائل لكل تذكرة
+  (`MAX_MESSAGES_PER_TICKET=200`، و`loadMessages` بـ`take` محدود).
 - **البريد** (`services/supportMailer.js` + `services/email/supportTemplates.js`): تنبيهات
-  للطرفين عبر Resend (best-effort، fallback console). روابط الزائر تُبنى من
-  `config.verifyBaseUrl`. وجهة الأدمن `config.adminEmail`. **عدم تعداد البريد:** إنشاء
-  الزائر يُرجِع `{public_token}` فقط ويُرسل الإيصال بصرف النظر عن وجود الحساب.
+  عبر Resend (best-effort، fallback console). **كبح إغراق الأدمن:** إشعار الأدمن يُرسَل
+  فقط عند انتقال التذكرة `answered→open` (تجميع بالحالة) لا على كل ردّ + سقف بالذاكرة
+  (20 إشعار/10د). **منع التصيّد:** إيصال الزائر بلا أي نصّ يتحكّم به المرسِل (لا اسم/موضوع)
+  + تهدئة لكل مستلِم (3/ساعة). **عدم تعداد البريد:** إنشاء الزائر يُرجِع `{public_token}`
+  فقط ويُرسل الإيصال بصرف النظر عن وجود الحساب. (القيود بالذاكرة لكل process — قيد توسّع
+  أفقي كما في كاش gatewayConfig.)
 - **الواجهة:** `lib/support.ts` (دوالّ مُصادَقة عبر `authedFetch` + دوالّ عامة عبر `fetch`)؛
   صفحات `dashboard/support` و`admin/support` و`support` (عام) و`support/ticket/[token]`؛
   بنود تنقّل «الدعم الفني»/«تذاكر الدعم» (IconMail) + رابط فوتر `/support`.
 - **اختبارات:** `test/tickets.test.js` (عزل Prisma بالذاكرة: IDOR، عدم التعداد، تخمين
   token→404، التحوّلات، الترقيم) + `src/lib/support.test.ts` (Vitest، mock fetch).
 
-> **تنبيه schema:** أُضيف نموذجا `SupportTicket` و`SupportMessage`. شغّل
-> `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
+> **تنبيه schema:** أُضيف نموذجا `SupportTicket` و`SupportMessage`، ثم استُبدل
+> `publicToken` بـ`publicTokenHash @unique` + `publicTokenEnc` (تخزين الـtoken
+> مُجزّأً ومشفّراً). شغّل `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
 
 ---
 

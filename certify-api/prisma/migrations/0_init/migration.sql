@@ -233,7 +233,8 @@ CREATE TABLE "support_tickets" (
     "organization_id" TEXT,
     "guest_name" TEXT,
     "guest_email" TEXT,
-    "public_token" TEXT NOT NULL,
+    "public_token_hash" TEXT,
+    "public_token_enc" TEXT,
     "subject" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'open',
     "last_message_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -305,7 +306,7 @@ CREATE UNIQUE INDEX "subscriptions_organization_id_key" ON "subscriptions"("orga
 CREATE UNIQUE INDEX "webhook_events_gateway_event_id_key" ON "webhook_events"("gateway", "event_id");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "support_tickets_public_token_key" ON "support_tickets"("public_token");
+CREATE UNIQUE INDEX "support_tickets_public_token_hash_key" ON "support_tickets"("public_token_hash");
 
 -- CreateIndex
 CREATE INDEX "support_tickets_user_id_status_idx" ON "support_tickets"("user_id", "status");

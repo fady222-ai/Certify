@@ -1,6 +1,12 @@
+import crypto from "node:crypto";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
+import { encryptSecret, decryptSecret } from "../services/secretCrypto.js";
 import { notifyNewTicket, notifyAdminReply, notifyCustomerReply } from "../services/supportMailer.js";
+
+// The guest capability token: a random UUID handed out once. We store only its
+// hash (lookup) + AES ciphertext (link rebuild), never the raw value.
+const hashToken = (raw) => crypto.createHash("sha256").update(String(raw)).digest("hex");
 
 // --- Validation ---------------------------------------------------------------
 
@@ -44,8 +50,11 @@ const OPEN_STATES = ["open", "answered"];
 
 // --- Presenters (snake_case) --------------------------------------------------
 
-function presentTicket(t, { includeToken = false } = {}) {
-  const out = {
+function presentTicket(t) {
+  // The raw token is never reconstructable here (only hash/ciphertext stored), so
+  // it is never part of any ticket payload — it lives only in the create response
+  // and the emailed link.
+  return {
     id: t.id,
     subject: t.subject,
     status: t.status,
@@ -57,8 +66,6 @@ function presentTicket(t, { includeToken = false } = {}) {
       email: t.user?.email ?? t.guestEmail ?? null,
     },
   };
-  if (includeToken) out.public_token = t.publicToken;
-  return out;
 }
 
 function presentMessage(m) {
@@ -220,22 +227,26 @@ export async function createGuestTicket(req, res, next) {
       });
     }
 
+    const rawToken = crypto.randomUUID();
     const ticket = await prisma.supportTicket.create({
       data: {
         guestName: parsed.data.name,
         guestEmail: parsed.data.email,
         subject: parsed.data.subject,
         status: "open",
+        publicTokenHash: hashToken(rawToken),
+        publicTokenEnc: encryptSecret(rawToken),
         messages: { create: { authorRole: "guest", body: parsed.data.body } },
       },
     });
 
-    notifyNewTicket(ticket);
+    // The raw token is known only here — pass it to the mailer for the link.
+    notifyNewTicket({ ...ticket, rawToken });
     // Return ONLY the token (the capability). No email/user data is echoed back,
     // and the ack is sent regardless of whether the email matches an account —
     // so this endpoint can't be used for email enumeration.
     return res.status(201).json({
-      public_token: ticket.publicToken,
+      public_token: rawToken,
       message: "تم استلام رسالتك. تحقّق من بريدك لمتابعة الطلب.",
     });
   } catch (e) {
@@ -247,10 +258,11 @@ export async function createGuestTicket(req, res, next) {
 export async function getGuestTicket(req, res, next) {
   try {
     const ticket = await prisma.supportTicket.findUnique({
-      where: { publicToken: req.params.token },
+      where: { publicTokenHash: hashToken(req.params.token) },
     });
     // The token is a guest-only capability: a token that resolves to a
-    // registered user's ticket is rejected (defense in depth).
+    // registered user's ticket is rejected (defense in depth; user tickets have
+    // no token hash so this is also unreachable structurally).
     if (!ticket || ticket.userId) return res.status(404).json({ message: "الطلب غير موجود." });
     return res.json({ ticket: presentTicket(ticket), messages: await loadMessages(ticket.id) });
   } catch (e) {
@@ -265,7 +277,7 @@ export async function replyGuestTicket(req, res, next) {
     if (!parsed.success) return validation(res, parsed);
 
     const ticket = await prisma.supportTicket.findUnique({
-      where: { publicToken: req.params.token },
+      where: { publicTokenHash: hashToken(req.params.token) },
     });
     if (!ticket || ticket.userId) return res.status(404).json({ message: "الطلب غير موجود." });
     // Closed is terminal — the guest must submit a new request instead.
@@ -341,7 +353,7 @@ export async function adminGetTicket(req, res, next) {
     });
     if (!ticket) return res.status(404).json({ message: "التذكرة غير موجودة." });
     return res.json({
-      ticket: presentTicket(ticket, { includeToken: true }),
+      ticket: presentTicket(ticket),
       messages: await loadMessages(ticket.id),
     });
   } catch (e) {
@@ -369,7 +381,12 @@ export async function adminReplyTicket(req, res, next) {
       data: { status: "answered", lastMessageAt: new Date() },
     });
 
-    notifyAdminReply(ticket);
+    // Rebuild the guest's link from the stored ciphertext (raw token isn't kept).
+    let rawToken = null;
+    if (ticket.publicTokenEnc) {
+      try { rawToken = decryptSecret(ticket.publicTokenEnc); } catch { rawToken = null; }
+    }
+    notifyAdminReply({ ...ticket, rawToken });
     return res.status(201).json(presentMessage(message));
   } catch (e) {
     next(e);

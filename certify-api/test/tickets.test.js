@@ -50,7 +50,8 @@ function installFakePrisma() {
         organizationId: data.organizationId ?? null,
         guestName: data.guestName ?? null,
         guestEmail: data.guestEmail ?? null,
-        publicToken: data.publicToken ?? randomUUID(),
+        publicTokenHash: data.publicTokenHash ?? null,
+        publicTokenEnc: data.publicTokenEnc ?? null,
         subject: data.subject,
         status: data.status ?? "open",
         lastMessageAt: new Date(),
@@ -72,7 +73,7 @@ function installFakePrisma() {
     findUnique: async ({ where }) => {
       const t = tickets.find((x) =>
         (where.id !== undefined && x.id === where.id) ||
-        (where.publicToken !== undefined && x.publicToken === where.publicToken));
+        (where.publicTokenHash !== undefined && x.publicTokenHash === where.publicTokenHash));
       return t ? { ...t } : null;
     },
     findMany: async ({ where = {} }) => {
@@ -219,8 +220,9 @@ test("createGuestTicket: response is identical shape regardless of email (no enu
 });
 
 test("getGuestTicket: valid token → thread; random token → 404", async () => {
-  await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, makeRes(), rethrow);
-  const token = tickets[0].publicToken;
+  const cr = makeRes();
+  await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, cr, rethrow);
+  const token = cr.body.public_token; // raw token returned once on creation
 
   const ok = makeRes();
   await getGuestTicket({ params: { token } }, ok, rethrow);
@@ -234,8 +236,9 @@ test("getGuestTicket: valid token → thread; random token → 404", async () =>
 });
 
 test("replyGuestTicket: appends guest message on an open ticket", async () => {
-  await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, makeRes(), rethrow);
-  const token = tickets[0].publicToken;
+  const cr = makeRes();
+  await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, cr, rethrow);
+  const token = cr.body.public_token;
 
   const res = makeRes();
   await replyGuestTicket({ params: { token }, body: { body: "متابعة" } }, res, rethrow);
@@ -245,8 +248,9 @@ test("replyGuestTicket: appends guest message on an open ticket", async () => {
 });
 
 test("replyGuestTicket: reply to a closed ticket is rejected (409)", async () => {
-  await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, makeRes(), rethrow);
-  const token = tickets[0].publicToken;
+  const cr = makeRes();
+  await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, cr, rethrow);
+  const token = cr.body.public_token;
   await adminSetStatus({ user: admin, params: { id: tickets[0].id }, body: { status: "closed" } }, makeRes(), rethrow);
 
   const res = makeRes();
@@ -333,11 +337,22 @@ test("replyTicket: rejects once the thread hits the message cap (409)", async ()
   assert.equal(res.statusCode, 409);
 });
 
-test("getGuestTicket: a token resolving to a user's ticket is rejected (404)", async () => {
+test("user tickets carry no capability token (unreachable via public route)", async () => {
   await createTicket({ user: userA, organization: null, body: { subject: "خاص", body: "محتوى سري للغاية" } }, makeRes(), rethrow);
-  const token = tickets[0].publicToken; // user tickets still carry a token in this fake
+  assert.equal(tickets[0].publicTokenHash, null); // no token → public lookup can't reach it
+  assert.equal(tickets[0].publicTokenEnc, null);
+});
 
-  const res = makeRes();
-  await getGuestTicket({ params: { token } }, res, rethrow);
-  assert.equal(res.statusCode, 404);
+test("createGuestTicket: stores only hash+ciphertext, never the raw token", async () => {
+  const cr = makeRes();
+  await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, cr, rethrow);
+  const raw = cr.body.public_token;
+  const stored = tickets[0];
+  assert.ok(raw && raw.length > 0);
+  assert.notEqual(stored.publicTokenHash, raw); // hash, not the raw value
+  assert.ok(stored.publicTokenEnc && !stored.publicTokenEnc.includes(raw)); // ciphertext, not raw
+  // The raw token still resolves the ticket (hash lookup works).
+  const ok = makeRes();
+  await getGuestTicket({ params: { token: raw } }, ok, rethrow);
+  assert.equal(ok.body.ticket.subject, "موضوع");
 });

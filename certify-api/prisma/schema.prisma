@@ -281,17 +281,23 @@ model WebhookEvent {
 
 // Support tickets — two entry flows sharing one model:
 //   (a) authenticated user (userId set), (b) public guest (userId null,
-//   guestName/guestEmail set, reachable only via the unguessable publicToken).
+//   guestName/guestEmail set, reachable only via an unguessable capability token).
+// The raw token is shown once (create response + email link); at rest we keep
+// only its SHA-256 hash (for O(1) lookup) and an AES-GCM ciphertext (so reply
+// emails can rebuild the link). A DB/backup leak alone yields neither — the
+// hash is irreversible and the ciphertext needs APP_KEY. Tokens exist for guest
+// tickets only (null on user tickets), so the public routes can't reach them.
 // onDelete: SetNull preserves the support history for the admin even if the
 // user/org is later deleted.
 model SupportTicket {
-  id             String   @id @default(uuid())
-  userId         String?  @map("user_id")
-  organizationId String?  @map("organization_id")
-  guestName      String?  @map("guest_name")
-  guestEmail     String?  @map("guest_email")
-  publicToken    String   @unique @default(uuid()) @map("public_token")
-  subject        String
+  id              String   @id @default(uuid())
+  userId          String?  @map("user_id")
+  organizationId  String?  @map("organization_id")
+  guestName       String?  @map("guest_name")
+  guestEmail      String?  @map("guest_email")
+  publicTokenHash String?  @unique @map("public_token_hash")
+  publicTokenEnc  String?  @map("public_token_enc")
+  subject         String
   status         String   @default("open") // open | answered | closed
   lastMessageAt  DateTime @default(now()) @map("last_message_at")
   createdAt      DateTime @default(now()) @map("created_at")
