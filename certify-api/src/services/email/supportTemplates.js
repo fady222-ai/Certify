@@ -92,11 +92,14 @@ export function ticketAckUserEmail({ userName, subject, dashboardUrl }) {
   };
 }
 
-/** Acknowledgement to a guest, embedding the capability link to their thread. */
-export function ticketAckGuestEmail({ guestName, subject, portalUrl }) {
+/**
+ * Acknowledgement to a guest, embedding the capability link to their thread.
+ * Sent to an address the sender chose, so it deliberately contains NO
+ * caller-supplied free text (no name/subject) — only a fixed notice + the link.
+ */
+export function ticketAckGuestEmail({ portalUrl }) {
   const content = `
-    ${head("✅", "استلمنا رسالتك", `مرحباً ${guestName} 👋`)}
-    ${subjectLine(subject)}
+    ${head("✅", "استلمنا رسالتك", "")}
     <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
       شكراً لتواصلك مع Certify. احفظ الرابط التالي لمتابعة طلبك والاطّلاع على ردّ
       فريق الدعم والردّ عليه — لا حاجة لإنشاء حساب.
@@ -106,9 +109,9 @@ export function ticketAckGuestEmail({ guestName, subject, portalUrl }) {
       أو انسخ الرابط: ${e(portalUrl)}
     </p>`;
   return {
-    subject: `استلمنا رسالتك — ${subject}`,
+    subject: "استلمنا رسالتك — Certify",
     html: shell(content),
-    text: `مرحباً ${guestName}،\nاستلمنا رسالتك: ${subject}\nمتابعة طلبك: ${portalUrl}`,
+    text: `استلمنا رسالتك في Certify.\nمتابعة طلبك: ${portalUrl}`,
   };
 }
 

@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
   },
   // Self-contained server output for container/Railway deployments.
   output: "standalone",
+  async headers() {
+    return [
+      {
+        // The guest ticket link carries an unguessable capability token in the
+        // URL; suppress the Referer so it can't leak to third-party origins.
+        source: "/support/ticket/:token*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

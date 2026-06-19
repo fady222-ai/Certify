@@ -29,7 +29,11 @@ let messages;
 function matchWhere(t, where) {
   for (const [k, v] of Object.entries(where)) {
     if (k === "user") continue; // relation filters not exercised by these tests
-    if (t[k] !== v) return false;
+    if (v && typeof v === "object" && Array.isArray(v.in)) {
+      if (!v.in.includes(t[k])) return false;
+    } else if (t[k] !== v) {
+      return false;
+    }
   }
   return true;
 }
@@ -90,6 +94,7 @@ function installFakePrisma() {
     },
     findMany: async ({ where }) =>
       messages.filter((m) => m.ticketId === where.ticketId).map((m) => ({ ...m })),
+    count: async ({ where }) => messages.filter((m) => m.ticketId === where.ticketId).length,
   };
 }
 
@@ -287,4 +292,52 @@ test("adminListTickets: status filter + pagination metadata", async () => {
   assert.equal(res.body.page, 1);
   assert.equal(res.body.pageSize, 50);
   assert.equal(res.body.data[0].subject, "closed one");
+});
+
+// ── Abuse hardening ───────────────────────────────────────────────────────────
+
+test("createTicket: blocks a 6th open ticket per user (429)", async () => {
+  for (let i = 0; i < 5; i++) {
+    const r = makeRes();
+    await createTicket({ user: userA, organization: null, body: { subject: `موضوع ${i}`, body: "نص الرسالة" } }, r, rethrow);
+    assert.equal(r.statusCode, 201);
+  }
+  const res = makeRes();
+  await createTicket({ user: userA, organization: null, body: { subject: "زائد", body: "نص الرسالة" } }, res, rethrow);
+  assert.equal(res.statusCode, 429);
+});
+
+test("createGuestTicket: blocks too many open requests per email (429)", async () => {
+  for (let i = 0; i < 5; i++) {
+    const r = makeRes();
+    await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: `موضوع ${i}`, body: "نص الرسالة" } }, r, rethrow);
+    assert.equal(r.statusCode, 201);
+  }
+  const res = makeRes();
+  await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "زائد", body: "نص الرسالة" } }, res, rethrow);
+  assert.equal(res.statusCode, 429);
+  // A different email is unaffected.
+  const other = makeRes();
+  await createGuestTicket({ body: { name: "آخر", email: "other@x.com", subject: "موضوع", body: "نص الرسالة" } }, other, rethrow);
+  assert.equal(other.statusCode, 201);
+});
+
+test("replyTicket: rejects once the thread hits the message cap (409)", async () => {
+  await createTicket({ user: userA, organization: null, body: { subject: "موضوع", body: "نص الرسالة" } }, makeRes(), rethrow);
+  const id = tickets[0].id;
+  // Pad the thread to the cap (already has 1 message from creation).
+  for (let i = 0; i < 199; i++) messages.push({ id: randomUUID(), ticketId: id, authorRole: "user", body: "x", createdAt: new Date() });
+
+  const res = makeRes();
+  await replyTicket({ user: userA, params: { id }, body: { body: "ردّ زائد" } }, res, rethrow);
+  assert.equal(res.statusCode, 409);
+});
+
+test("getGuestTicket: a token resolving to a user's ticket is rejected (404)", async () => {
+  await createTicket({ user: userA, organization: null, body: { subject: "خاص", body: "محتوى سري للغاية" } }, makeRes(), rethrow);
+  const token = tickets[0].publicToken; // user tickets still carry a token in this fake
+
+  const res = makeRes();
+  await getGuestTicket({ params: { token } }, res, rethrow);
+  assert.equal(res.statusCode, 404);
 });

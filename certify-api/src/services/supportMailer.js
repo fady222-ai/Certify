@@ -23,6 +23,42 @@ function send(msg, context) {
   sendEmail(msg).catch(logMailFailure(`support: ${context}`));
 }
 
+// In-memory safety valves (best-effort, per process — like the gatewayConfig
+// cache, they don't span multiple API instances). They bound abuse that survives
+// IP-based rate limits (e.g. IP rotation): a hard ceiling on admin notifications
+// and a per-recipient ceiling on guest acks (blunts targeted mail-bombing).
+const ADMIN_MAX = 20;
+const ADMIN_WINDOW_MS = 10 * 60 * 1000;
+const RECIPIENT_MAX = 3;
+const RECIPIENT_WINDOW_MS = 60 * 60 * 1000;
+const adminHits = [];
+const recipientHits = new Map();
+
+function allowAdminNotice() {
+  const now = Date.now();
+  while (adminHits.length && now - adminHits[0] > ADMIN_WINDOW_MS) adminHits.shift();
+  if (adminHits.length >= ADMIN_MAX) return false;
+  adminHits.push(now);
+  return true;
+}
+
+function allowRecipient(email) {
+  if (!email) return false;
+  const now = Date.now();
+  const hits = (recipientHits.get(email) ?? []).filter((t) => now - t < RECIPIENT_WINDOW_MS);
+  if (hits.length >= RECIPIENT_MAX) {
+    recipientHits.set(email, hits);
+    return false;
+  }
+  hits.push(now);
+  recipientHits.set(email, hits);
+  // Opportunistic cleanup so the map can't grow without bound.
+  if (recipientHits.size > 5000) {
+    for (const [k, v] of recipientHits) if (!v.some((t) => now - t < RECIPIENT_WINDOW_MS)) recipientHits.delete(k);
+  }
+  return true;
+}
+
 /** Customer name/email for admin-facing notifications. */
 function requesterLabel(ticket) {
   return {
@@ -35,7 +71,7 @@ function requesterLabel(ticket) {
 export function notifyNewTicket(ticket) {
   const { name, email } = requesterLabel(ticket);
 
-  if (config.adminEmail) {
+  if (config.adminEmail && allowAdminNotice()) {
     send(
       newTicketAdminEmail({ subject: ticket.subject, requesterName: name, requesterEmail: email, adminUrl: adminUrl() }),
       "new ticket → admin",
@@ -47,9 +83,12 @@ export function notifyNewTicket(ticket) {
       ticketAckUserEmail({ userName: ticket.user.name, subject: ticket.subject, dashboardUrl: dashboardUrl() }),
       "ack → user",
     );
-  } else if (ticket.guestEmail) {
+  } else if (ticket.guestEmail && allowRecipient(ticket.guestEmail)) {
+    // Guest ack goes to an attacker-choosable address, so it carries no
+    // attacker-controlled free text (no name/subject) and is rate-capped per
+    // recipient — it can't be used as a phishing/mail-bomb relay.
     send(
-      ticketAckGuestEmail({ guestName: ticket.guestName, subject: ticket.subject, portalUrl: portalUrl(ticket.publicToken) }),
+      ticketAckGuestEmail({ portalUrl: portalUrl(ticket.publicToken) }),
       "ack → guest",
     );
   }
@@ -72,7 +111,7 @@ export function notifyAdminReply(ticket) {
 
 /** A customer replied → notify the admin inbox. */
 export function notifyCustomerReply(ticket) {
-  if (!config.adminEmail) return;
+  if (!config.adminEmail || !allowAdminNotice()) return;
   const { name } = requesterLabel(ticket);
   send(
     customerReplyAdminEmail({ subject: ticket.subject, requesterName: name, adminUrl: adminUrl() }),

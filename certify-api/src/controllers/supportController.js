@@ -24,7 +24,7 @@ const adminStatusSchema = z.object({ status: z.enum(STATUSES) });
 const adminListQuery = z.object({
   status: z.enum(STATUSES).optional(),
   search: z.string().trim().max(160).optional(),
-  page: z.coerce.number().int().min(1).default(1),
+  page: z.coerce.number().int().min(1).max(100000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
 });
 
@@ -34,6 +34,13 @@ function validation(res, parsed) {
     errors: parsed.error.flatten().fieldErrors,
   });
 }
+
+// Structural abuse caps (independent of IP rate limits, so IP rotation can't
+// bypass them): a requester can't hold many open tickets at once, and a single
+// thread can't be grown without bound.
+const MAX_OPEN_TICKETS = 5;
+const MAX_MESSAGES_PER_TICKET = 200;
+const OPEN_STATES = ["open", "answered"];
 
 // --- Presenters (snake_case) --------------------------------------------------
 
@@ -67,6 +74,7 @@ async function loadMessages(ticketId) {
   const messages = await prisma.supportMessage.findMany({
     where: { ticketId },
     orderBy: { createdAt: "asc" },
+    take: MAX_MESSAGES_PER_TICKET, // bounded: a thread can't exceed this anyway
   });
   return messages.map(presentMessage);
 }
@@ -80,6 +88,15 @@ export async function createTicket(req, res, next) {
   try {
     const parsed = createTicketSchema.safeParse(req.body);
     if (!parsed.success) return validation(res, parsed);
+
+    const openCount = await prisma.supportTicket.count({
+      where: { userId: req.user.id, status: { in: OPEN_STATES } },
+    });
+    if (openCount >= MAX_OPEN_TICKETS) {
+      return res.status(429).json({
+        message: "لديك عدد كبير من التذاكر المفتوحة. انتظر الرد أو أغلق بعضها قبل فتح تذكرة جديدة.",
+      });
+    }
 
     const ticket = await prisma.supportTicket.create({
       data: {
@@ -143,7 +160,14 @@ export async function replyTicket(req, res, next) {
     if (ticket.status === "closed") {
       return res.status(409).json({ message: "هذه التذكرة مغلقة. افتح تذكرة جديدة لمتابعة الأمر." });
     }
+    if ((await prisma.supportMessage.count({ where: { ticketId: ticket.id } })) >= MAX_MESSAGES_PER_TICKET) {
+      return res.status(409).json({ message: "بلغت التذكرة الحد الأقصى للرسائل. افتح تذكرة جديدة." });
+    }
 
+    // Notify the admin only on the answered→open transition, not on every reply:
+    // a burst of replies to an already-open ticket sends zero extra emails, so
+    // the admin inbox can't be flooded regardless of IP rotation.
+    const wasOpen = ticket.status === "open";
     const message = await prisma.supportMessage.create({
       data: { ticketId: ticket.id, authorRole: "user", authorId: req.user.id, body: parsed.data.body },
     });
@@ -152,7 +176,7 @@ export async function replyTicket(req, res, next) {
       data: { status: "open", lastMessageAt: new Date() },
     });
 
-    notifyCustomerReply({ ...ticket, user: { name: req.user.name, email: req.user.email } });
+    if (!wasOpen) notifyCustomerReply({ ...ticket, user: { name: req.user.name, email: req.user.email } });
     return res.status(201).json(presentMessage(message));
   } catch (e) {
     next(e);
@@ -187,6 +211,15 @@ export async function createGuestTicket(req, res, next) {
     const parsed = guestCreateSchema.safeParse(req.body);
     if (!parsed.success) return validation(res, parsed);
 
+    const openCount = await prisma.supportTicket.count({
+      where: { guestEmail: parsed.data.email, status: { in: OPEN_STATES } },
+    });
+    if (openCount >= MAX_OPEN_TICKETS) {
+      return res.status(429).json({
+        message: "لديك عدد كبير من الطلبات المفتوحة. انتظر الرد قبل إرسال طلب جديد.",
+      });
+    }
+
     const ticket = await prisma.supportTicket.create({
       data: {
         guestName: parsed.data.name,
@@ -216,7 +249,9 @@ export async function getGuestTicket(req, res, next) {
     const ticket = await prisma.supportTicket.findUnique({
       where: { publicToken: req.params.token },
     });
-    if (!ticket) return res.status(404).json({ message: "الطلب غير موجود." });
+    // The token is a guest-only capability: a token that resolves to a
+    // registered user's ticket is rejected (defense in depth).
+    if (!ticket || ticket.userId) return res.status(404).json({ message: "الطلب غير موجود." });
     return res.json({ ticket: presentTicket(ticket), messages: await loadMessages(ticket.id) });
   } catch (e) {
     next(e);
@@ -232,12 +267,16 @@ export async function replyGuestTicket(req, res, next) {
     const ticket = await prisma.supportTicket.findUnique({
       where: { publicToken: req.params.token },
     });
-    if (!ticket) return res.status(404).json({ message: "الطلب غير موجود." });
+    if (!ticket || ticket.userId) return res.status(404).json({ message: "الطلب غير موجود." });
     // Closed is terminal — the guest must submit a new request instead.
     if (ticket.status === "closed") {
       return res.status(409).json({ message: "هذا الطلب مغلق. أرسل طلباً جديداً لمتابعة الأمر." });
     }
+    if ((await prisma.supportMessage.count({ where: { ticketId: ticket.id } })) >= MAX_MESSAGES_PER_TICKET) {
+      return res.status(409).json({ message: "بلغ الطلب الحد الأقصى للرسائل. أرسل طلباً جديداً." });
+    }
 
+    const wasOpen = ticket.status === "open";
     const message = await prisma.supportMessage.create({
       data: { ticketId: ticket.id, authorRole: "guest", body: parsed.data.body },
     });
@@ -246,7 +285,7 @@ export async function replyGuestTicket(req, res, next) {
       data: { status: "open", lastMessageAt: new Date() },
     });
 
-    notifyCustomerReply(ticket);
+    if (!wasOpen) notifyCustomerReply(ticket);
     return res.status(201).json(presentMessage(message));
   } catch (e) {
     next(e);

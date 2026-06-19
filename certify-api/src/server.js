@@ -133,6 +133,16 @@ app.post("/api/support/public/tickets", rateLimit({
   legacyHeaders: false,
   message: { message: "لقد أرسلت طلبات كثيرة. حاول لاحقاً." },
 }));
+// Authenticated ticket CREATION (POST exact path). The per-requester open-ticket
+// cap bounds outstanding tickets; this caps churn (create+close cycling) per IP
+// so new-ticket admin emails / DB rows can't be spammed.
+app.post("/api/support/tickets", rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
+}));
 
 app.use("/api", apiRouter);
 
