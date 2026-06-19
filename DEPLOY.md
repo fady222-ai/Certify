@@ -313,7 +313,24 @@ WEBSITE URL  = https://certify-web-...up.railway.app
 
 **ملاحظة عن المخطط (schema):** الإقلاع يطبّق `prisma db push` تلقائياً (كافٍ الآن).
 مع نموّ البيانات في الإنتاج، فكّر في الانتقال إلى migrations (`prisma migrate deploy`)
-لتفادي فقد بيانات عند أي تغيير schema غير متوافق.
+لتفادي فقد بيانات عند أي تغيير schema غير متوافق — انظر القسم التالي.
+
+### الانتقال إلى migrations (اختياري، للإنتاج طويل الأمد)
+
+الـbaseline جاهز في المستودع: `certify-api/prisma/migrations/0_init`. للانتقال:
+
+1. **قاعدة بيانات قائمة (أُنشئت عبر `db push`)** — «صمّ» الهجرة الأولى كمطبَّقة مرّة
+   واحدة حتى لا يحاول Prisma إعادة إنشاء جداول موجودة:
+   ```bash
+   npx prisma migrate resolve --applied 0_init
+   ```
+2. **قاعدة بيانات جديدة فارغة** — تخطَّ الخطوة 1؛ `migrate deploy` سيُنشئ كل شيء.
+3. غيّر أمر إقلاع الخادم (`certify-api/Dockerfile`, الـ`CMD`) من
+   `npx prisma db push --skip-generate` إلى `npx prisma migrate deploy`.
+4. بعد أي تعديل schema لاحقاً: `npx prisma migrate dev --name <وصف>` محلياً، ثم ادفع
+   ملفّ الهجرة الجديد — يطبّقه الإنتاج تلقائياً عند النشر.
+
+> ما لم تنفّذ هذا، يبقى `db push` هو الافتراضي وهو آمن للاستخدام الحالي بنسخة واحدة.
 
 ---
 
