@@ -225,7 +225,9 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 - **التحكم:** `controllers/supportController.js` (Zod + عزل IDOR: مسارات المستخدم مقيّدة
   `{id, userId}` → 404؛ المسارات العامة بالـ`publicToken` فقط، لا قبول `id` عام).
   العارضات snake_case؛ **`public_token` لا يظهر إلا في ردّ إنشاء الزائر وتفاصيل الأدمن**.
-- **التحوّلات:** ردّ الأدمن → `answered`؛ أي ردّ عميل → `open` (الردّ على مغلقة يعيد فتحها).
+- **التحوّلات:** ردّ الأدمن → `answered`؛ ردّ العميل على تذكرة `open`/`answered` → `open`.
+  **الإغلاق نهائي:** الردّ على تذكرة `closed` يُرفَض بـ409 (مستخدم وزائر) — يجب فتح تذكرة
+  جديدة. الأدمن وحده يستطيع الردّ/تغيير حالة المغلقة.
 - **المسارات** (`routes/index.js`): مستخدم `/support/tickets[...]` (requireAuth) · عام
   `/support/public/tickets[/:token][/messages]` (بلا auth) · أدمن `/support/admin/tickets`
   (requireAuth+requireAdmin، بحث/فلتر/ترقيم).

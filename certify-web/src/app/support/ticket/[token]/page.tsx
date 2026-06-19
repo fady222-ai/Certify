@@ -90,15 +90,22 @@ export default function GuestTicketPage() {
               <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">{error}</div>
             )}
 
-            <form onSubmit={submit} className="mt-5 border-t pt-4">
-              <textarea
-                className="input min-h-24" placeholder="اكتب ردّك…" value={reply}
-                onChange={(e) => setReply(e.target.value)} required maxLength={5000}
-              />
-              <div className="mt-3 flex justify-end">
-                <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الردّ</button>
+            {detail.ticket.status === "closed" ? (
+              <div className="mt-5 flex flex-col items-start gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-bold text-ink-muted">هذا الطلب مغلق. لمتابعة الأمر أرسل طلباً جديداً.</p>
+                <Link href="/support" className="btn-primary">إرسال طلب جديد</Link>
               </div>
-            </form>
+            ) : (
+              <form onSubmit={submit} className="mt-5 border-t pt-4">
+                <textarea
+                  className="input min-h-24" placeholder="اكتب ردّك…" value={reply}
+                  onChange={(e) => setReply(e.target.value)} required maxLength={5000}
+                />
+                <div className="mt-3 flex justify-end">
+                  <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الردّ</button>
+                </div>
+              </form>
+            )}
           </div>
         )}
       </main>

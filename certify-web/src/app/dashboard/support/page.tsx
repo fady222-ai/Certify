@@ -177,9 +177,17 @@ export default function SupportPage() {
               </div>
             </form>
           ) : (
-            <p className="mt-5 flex items-center gap-1.5 border-t pt-4 text-sm font-bold text-ink-muted">
-              <IconCheck className="h-4 w-4" /> هذه التذكرة مغلقة. أرسل ردّاً لإعادة فتحها.
-            </p>
+            <div className="mt-5 flex flex-col items-start gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="flex items-center gap-1.5 text-sm font-bold text-ink-muted">
+                <IconCheck className="h-4 w-4" /> هذه التذكرة مغلقة. لمتابعة الأمر افتح تذكرة جديدة.
+              </p>
+              <button
+                className="btn-primary"
+                onClick={() => { setSelected(null); setCreating(true); }}
+              >
+                تذكرة جديدة
+              </button>
+            </div>
           )}
         </div>
       ) : (

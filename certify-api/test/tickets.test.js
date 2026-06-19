@@ -168,7 +168,7 @@ test("closeTicket: owner closes; non-owner gets 404", async () => {
   assert.equal(ok.body.status, "closed");
 });
 
-test("replyTicket: replying to a closed ticket reopens it", async () => {
+test("replyTicket: replying to a closed ticket is rejected (409, stays closed)", async () => {
   await createTicket({ user: userA, organization: null, body: { subject: "tكت", body: "bbbbb" } }, makeRes(), rethrow);
   const id = tickets[0].id;
   await closeTicket({ user: userA, params: { id } }, makeRes(), rethrow);
@@ -176,6 +176,18 @@ test("replyTicket: replying to a closed ticket reopens it", async () => {
 
   const res = makeRes();
   await replyTicket({ user: userA, params: { id }, body: { body: "أي تحديث؟" } }, res, rethrow);
+  assert.equal(res.statusCode, 409);
+  assert.equal(tickets[0].status, "closed");
+});
+
+test("replyTicket: replying to an answered ticket reopens it to open", async () => {
+  await createTicket({ user: userA, organization: null, body: { subject: "tكت", body: "bbbbb" } }, makeRes(), rethrow);
+  const id = tickets[0].id;
+  await adminReplyTicket({ user: admin, params: { id }, body: { body: "ردّ" } }, makeRes(), rethrow);
+  assert.equal(tickets[0].status, "answered");
+
+  const res = makeRes();
+  await replyTicket({ user: userA, params: { id }, body: { body: "شكراً، سؤال آخر" } }, res, rethrow);
   assert.equal(res.statusCode, 201);
   assert.equal(tickets[0].status, "open");
 });
@@ -216,16 +228,26 @@ test("getGuestTicket: valid token → thread; random token → 404", async () =>
   assert.equal(miss.statusCode, 404);
 });
 
-test("replyGuestTicket: appends guest message and reopens", async () => {
+test("replyGuestTicket: appends guest message on an open ticket", async () => {
   await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, makeRes(), rethrow);
   const token = tickets[0].publicToken;
-  await adminSetStatus({ user: admin, params: { id: tickets[0].id }, body: { status: "closed" } }, makeRes(), rethrow);
 
   const res = makeRes();
   await replyGuestTicket({ params: { token }, body: { body: "متابعة" } }, res, rethrow);
   assert.equal(res.statusCode, 201);
   assert.equal(res.body.author_role, "guest");
   assert.equal(tickets[0].status, "open");
+});
+
+test("replyGuestTicket: reply to a closed ticket is rejected (409)", async () => {
+  await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, makeRes(), rethrow);
+  const token = tickets[0].publicToken;
+  await adminSetStatus({ user: admin, params: { id: tickets[0].id }, body: { status: "closed" } }, makeRes(), rethrow);
+
+  const res = makeRes();
+  await replyGuestTicket({ params: { token }, body: { body: "متابعة" } }, res, rethrow);
+  assert.equal(res.statusCode, 409);
+  assert.equal(tickets[0].status, "closed");
 });
 
 // ── Admin ────────────────────────────────────────────────────────────────────

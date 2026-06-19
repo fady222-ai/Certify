@@ -138,6 +138,11 @@ export async function replyTicket(req, res, next) {
       where: { id: req.params.id, userId: req.user.id },
     });
     if (!ticket) return res.status(404).json({ message: "التذكرة غير موجودة." });
+    // A closed ticket is terminal — it can't be reopened by replying. The
+    // customer must open a fresh ticket instead.
+    if (ticket.status === "closed") {
+      return res.status(409).json({ message: "هذه التذكرة مغلقة. افتح تذكرة جديدة لمتابعة الأمر." });
+    }
 
     const message = await prisma.supportMessage.create({
       data: { ticketId: ticket.id, authorRole: "user", authorId: req.user.id, body: parsed.data.body },
@@ -228,6 +233,10 @@ export async function replyGuestTicket(req, res, next) {
       where: { publicToken: req.params.token },
     });
     if (!ticket) return res.status(404).json({ message: "الطلب غير موجود." });
+    // Closed is terminal — the guest must submit a new request instead.
+    if (ticket.status === "closed") {
+      return res.status(409).json({ message: "هذا الطلب مغلق. أرسل طلباً جديداً لمتابعة الأمر." });
+    }
 
     const message = await prisma.supportMessage.create({
       data: { ticketId: ticket.id, authorRole: "guest", body: parsed.data.body },
