@@ -260,7 +260,7 @@ export default function BulkPage() {
                   <div>
                     <p className="font-bold text-ink">{b.name}</p>
                     <p className="text-xs text-ink-muted">
-                      {new Date(b.createdAt).toLocaleDateString("ar-SA")} · {b.totalCount} شهادة
+                      {new Date(b.createdAt).toLocaleDateString("ar", { numberingSystem: "latn" })} · {b.totalCount} شهادة
                     </p>
                   </div>
                   <div className="flex items-center gap-3">

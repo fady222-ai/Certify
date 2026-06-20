@@ -190,7 +190,7 @@ export default function CertificateDetailPage() {
                   </span>
                   <span className="flex-1 text-sm font-bold text-ink">{eventLabel(e.type)}</span>
                   <span className="text-xs text-ink-muted">
-                    {new Date(e.at).toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}
+                    {new Date(e.at).toLocaleString("ar", { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" })}
                   </span>
                 </li>
               ))}

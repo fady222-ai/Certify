@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import {
   listAdminOrganizations,
   adminChangePlan,
   adminToggleSuspend,
   type AdminOrg,
 } from "@/lib/admin";
+import { formatDate } from "@/lib/format";
 import { IconSearch } from "@/components/icons";
 
 const PLAN_SLUGS = ["free", "pro", "business"];
@@ -144,7 +146,9 @@ export default function AdminOrganizationsPage() {
                   >
                     {/* Name */}
                     <td className="px-5 py-3">
-                      <p className="text-ink font-medium">{org.name}</p>
+                      <Link href={`/admin/organizations/${org.id}`} className="font-medium text-brand-700 hover:underline">
+                        {org.name}
+                      </Link>
                       <p className="text-ink-muted text-xs">{org.slug}</p>
                     </td>
 
@@ -200,22 +204,30 @@ export default function AdminOrganizationsPage() {
 
                     {/* Date */}
                     <td className="px-5 py-3 text-ink-muted text-xs">
-                      {new Date(org.created_at).toLocaleDateString("ar-SA")}
+                      {formatDate(org.created_at)}
                     </td>
 
                     {/* Actions */}
                     <td className="px-5 py-3">
-                      <button
-                        onClick={() => handleSuspend(org.id)}
-                        disabled={busy === org.id}
-                        className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
-                          org.suspended
-                            ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 ring-1 ring-emerald-200"
-                            : "bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-200"
-                        }`}
-                      >
-                        {busy === org.id ? "..." : org.suspended ? "تفعيل" : "إيقاف"}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin/organizations/${org.id}`}
+                          className="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-medium text-ink-soft ring-1 ring-line transition-colors hover:bg-brand-50 hover:text-brand-700"
+                        >
+                          تفاصيل
+                        </Link>
+                        <button
+                          onClick={() => handleSuspend(org.id)}
+                          disabled={busy === org.id}
+                          className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                            org.suspended
+                              ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 ring-1 ring-emerald-200"
+                              : "bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-200"
+                          }`}
+                        >
+                          {busy === org.id ? "..." : org.suspended ? "تفعيل" : "إيقاف"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

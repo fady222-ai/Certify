@@ -130,7 +130,7 @@ function BillingContent() {
   const isActive = sub?.status === "active";
   const cancelAtEnd = sub?.cancel_at_period_end;
   const periodEnd = sub?.current_period_end
-    ? new Date(sub.current_period_end).toLocaleDateString("ar-SA")
+    ? new Date(sub.current_period_end).toLocaleDateString("ar", { numberingSystem: "latn" })
     : null;
 
   return (

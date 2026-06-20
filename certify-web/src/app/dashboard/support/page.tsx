@@ -24,7 +24,7 @@ function StatusBadge({ status }: { status: TicketStatus }) {
 }
 
 function fmt(d: string) {
-  return new Date(d).toLocaleString("ar", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(d).toLocaleString("ar", { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" });
 }
 
 export default function SupportPage() {

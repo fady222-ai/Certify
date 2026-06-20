@@ -58,6 +58,7 @@ import {
 import {
   getAdminStats,
   listAdminOrganizations,
+  getAdminOrganization,
   adminChangePlan,
   adminToggleSuspend,
   listPaymentGateways,
@@ -173,6 +174,7 @@ apiRouter.post("/support/tickets/:id/close", requireAuth, closeTicket);
 // --- Admin (platform owner only) ---
 apiRouter.get("/admin/stats", requireAuth, requireAdmin, getAdminStats);
 apiRouter.get("/admin/organizations", requireAuth, requireAdmin, listAdminOrganizations);
+apiRouter.get("/admin/organizations/:id", requireAuth, requireAdmin, getAdminOrganization);
 apiRouter.patch("/admin/organizations/:id/plan", requireAuth, requireAdmin, adminChangePlan);
 apiRouter.patch("/admin/organizations/:id/suspend", requireAuth, requireAdmin, adminToggleSuspend);
 apiRouter.get("/admin/payment-gateways", requireAuth, requireAdmin, listPaymentGateways);

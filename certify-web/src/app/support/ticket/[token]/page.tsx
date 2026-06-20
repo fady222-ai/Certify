@@ -9,7 +9,7 @@ import { getGuestTicket, replyGuestTicket, STATUS_LABELS, type TicketDetail } fr
 import { IconMail } from "@/components/icons";
 
 function fmt(d: string) {
-  return new Date(d).toLocaleString("ar", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(d).toLocaleString("ar", { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" });
 }
 
 export default function GuestTicketPage() {

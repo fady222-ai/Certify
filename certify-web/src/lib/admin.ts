@@ -14,6 +14,23 @@ export type AdminOrg = {
   created_at: string;
 };
 
+export type AdminOrgDetail = AdminOrg & {
+  updated_at: string;
+  owner_verified: boolean;
+  owner_joined_at: string | null;
+  branding: { logo_url: string | null; primary_color: string };
+  subscription: {
+    status: string;
+    interval: string;
+    amount: number | null;
+    currency: string;
+    gateway: string;
+    current_period_end: string | null;
+    cancel_at_period_end: boolean;
+  } | null;
+  counts: { templates: number; certificates: number; batches: number; members: number; support_tickets: number };
+};
+
 export type AdminStats = {
   total_organizations: number;
   total_users: number;
@@ -47,6 +64,10 @@ export async function getAdminStats(): Promise<AdminStats> {
 export async function listAdminOrganizations(search?: string): Promise<{ data: AdminOrg[] }> {
   const q = search ? `?search=${encodeURIComponent(search)}` : "";
   return json(await authedFetch(`admin/organizations${q}`));
+}
+
+export async function getAdminOrganization(id: string): Promise<AdminOrgDetail> {
+  return json(await authedFetch(`admin/organizations/${id}`));
 }
 
 export async function adminChangePlan(orgId: string, slug: string): Promise<{ message: string }> {

@@ -21,7 +21,7 @@ const FILTERS: { key: "" | TicketStatus; label: string }[] = [
 ];
 
 function fmt(d: string) {
-  return new Date(d).toLocaleString("ar", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(d).toLocaleString("ar", { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" });
 }
 
 export default function AdminSupportPage() {

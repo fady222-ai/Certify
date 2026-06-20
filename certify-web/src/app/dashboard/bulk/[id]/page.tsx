@@ -80,7 +80,7 @@ export default function BatchDetailPage() {
             <div>
               <h1 className="font-display text-2xl font-black text-ink">{batch.name}</h1>
               <p className="mt-1 text-sm text-ink-muted">
-                {new Date(batch.createdAt).toLocaleDateString("ar-SA", { dateStyle: "long" })}
+                {new Date(batch.createdAt).toLocaleDateString("ar", { numberingSystem: "latn", dateStyle: "long" })}
                 {batch.completedAt && (
                   <> · اكتملت {new Date(batch.completedAt).toLocaleTimeString("ar-SA", { timeStyle: "short" })}</>
                 )}

@@ -146,6 +146,54 @@ export async function listAdminOrganizations(req, res) {
   });
 }
 
+/** GET /api/admin/organizations/:id — full drill-down detail for one org. */
+export async function getAdminOrganization(req, res) {
+  const { id } = req.params;
+  const month = currentMonth();
+
+  const org = await prisma.organization.findUnique({
+    where: { id },
+    include: {
+      owner: { select: { name: true, email: true, emailVerified: true, createdAt: true } },
+      plan: true,
+      subscriptions: { orderBy: { createdAt: "desc" }, take: 1 },
+      _count: { select: { templates: true, certificates: true, batches: true, members: true, supportTickets: true } },
+    },
+  });
+  if (!org) return res.status(404).json({ message: "المنظمة غير موجودة." });
+
+  const usage = await prisma.certificateUsage.findUnique({
+    where: { organizationId_month: { organizationId: id, month } },
+  });
+
+  const sub = org.subscriptions?.[0] ?? null;
+  res.json({
+    ...presentOrg(org, usage, org._count.certificates),
+    updated_at: org.updatedAt,
+    owner_verified: !!org.owner?.emailVerified,
+    owner_joined_at: org.owner?.createdAt ?? null,
+    branding: { logo_url: org.logoUrl, primary_color: org.primaryColor },
+    subscription: sub
+      ? {
+          status: sub.status,
+          interval: sub.interval,
+          amount: sub.amount,
+          currency: sub.currency,
+          gateway: sub.gateway,
+          current_period_end: sub.currentPeriodEnd,
+          cancel_at_period_end: sub.cancelAtPeriodEnd,
+        }
+      : null,
+    counts: {
+      templates: org._count.templates,
+      certificates: org._count.certificates,
+      batches: org._count.batches,
+      members: org._count.members,
+      support_tickets: org._count.supportTickets,
+    },
+  });
+}
+
 /** PATCH /api/admin/organizations/:id/plan — change any org's plan */
 export async function adminChangePlan(req, res) {
   const { id } = req.params;
