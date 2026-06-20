@@ -86,6 +86,14 @@ export async function adminToggleSuspend(
   return json(await authedFetch(`admin/organizations/${orgId}/suspend`, { method: "PATCH" }));
 }
 
+export async function adminResendOrgOtp(orgId: string): Promise<{ message: string }> {
+  return json(await authedFetch(`admin/organizations/${orgId}/resend-otp`, { method: "POST" }));
+}
+
+export async function adminVerifyOrgEmail(orgId: string): Promise<{ message: string }> {
+  return json(await authedFetch(`admin/organizations/${orgId}/verify-email`, { method: "POST" }));
+}
+
 // ── Payment gateways ─────────────────────────────────────────────────────────
 
 export type GatewayField = {

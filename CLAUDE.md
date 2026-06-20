@@ -147,6 +147,10 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
   وعدّادات (قوالب/دفعات/أعضاء/تذاكر) + العلامة التجارية. الإجراءات (تغيير الباقة،
   إيقاف/تفعيل) مضمّنة في الصفحة بإعادة استخدام `adminChangePlan`/`adminToggleSuspend`.
   (قراءة فقط — لا تغيير schema.)
+- **تحكّم بتحقّق بريد المالك:** من صفحة التفاصيل، إن كان بريد المالك غير مُحقّق يستطيع
+  الأدمن **إعادة إرسال OTP** (`POST /api/admin/organizations/:id/resend-otp`، يعيد استخدام
+  `authService.resendOtp`) أو **تحويله إلى مُحقّق مباشرةً** (`POST .../verify-email`، يضبط
+  `emailVerified=true` ويُبطل الرموز المعلّقة). كلاهما requireAuth+requireAdmin.
 - **أرقام التاريخ لاتينية:** `lib/format.ts` (`formatDate`/`formatDateTime` بـ
   `numberingSystem:"latn"`) لعرض أرقام غربية مع نصّ عربي؛ مُطبّقة عبر صفحات الأدمن/الفوترة/
   الدعم/الدفعات (بدل `ar-SA` الذي يُظهر أرقاماً عربية).

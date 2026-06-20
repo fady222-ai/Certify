@@ -1,4 +1,5 @@
 import { prisma } from "../db/prisma.js";
+import { resendOtp } from "../services/authService.js";
 import {
   GATEWAY_SPECS,
   presentAllGateways,
@@ -241,6 +242,39 @@ export async function adminToggleSuspend(req, res) {
 
   const action = updated.suspendedAt ? "إيقاف" : "تفعيل";
   res.json({ message: `تم ${action} منظمة ${updated.name}.`, organization: presentOrg(updated, null, 0) });
+}
+
+/** POST /api/admin/organizations/:id/resend-otp — resend the owner's verification code. */
+export async function adminResendOwnerOtp(req, res, next) {
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { id: req.params.id },
+      include: { owner: { select: { emailVerified: true } } },
+    });
+    if (!org || !org.owner) return res.status(404).json({ message: "المنظمة غير موجودة." });
+    if (org.owner.emailVerified) {
+      return res.status(400).json({ message: "بريد المالك مُحقّق بالفعل." });
+    }
+    await resendOtp({ userId: org.ownerId });
+    res.json({ message: "تم إرسال رمز تحقق جديد إلى بريد المالك." });
+  } catch (e) {
+    next(e);
+  }
+}
+
+/** POST /api/admin/organizations/:id/verify-email — mark the owner's email verified. */
+export async function adminVerifyOwnerEmail(req, res, next) {
+  try {
+    const org = await prisma.organization.findUnique({ where: { id: req.params.id } });
+    if (!org) return res.status(404).json({ message: "المنظمة غير موجودة." });
+
+    await prisma.user.update({ where: { id: org.ownerId }, data: { emailVerified: true } });
+    // Invalidate any outstanding verification codes — no longer needed.
+    await prisma.verificationToken.deleteMany({ where: { userId: org.ownerId } });
+    res.json({ message: "تم تحويل بريد المالك إلى «مُحقّق»." });
+  } catch (e) {
+    next(e);
+  }
 }
 
 // ── Payment gateway credentials (admin only) ─────────────────────────────────

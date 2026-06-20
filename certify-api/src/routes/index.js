@@ -61,6 +61,8 @@ import {
   getAdminOrganization,
   adminChangePlan,
   adminToggleSuspend,
+  adminResendOwnerOtp,
+  adminVerifyOwnerEmail,
   listPaymentGateways,
   updatePaymentGateway,
   deletePaymentGateway,
@@ -177,6 +179,8 @@ apiRouter.get("/admin/organizations", requireAuth, requireAdmin, listAdminOrgani
 apiRouter.get("/admin/organizations/:id", requireAuth, requireAdmin, getAdminOrganization);
 apiRouter.patch("/admin/organizations/:id/plan", requireAuth, requireAdmin, adminChangePlan);
 apiRouter.patch("/admin/organizations/:id/suspend", requireAuth, requireAdmin, adminToggleSuspend);
+apiRouter.post("/admin/organizations/:id/resend-otp", requireAuth, requireAdmin, adminResendOwnerOtp);
+apiRouter.post("/admin/organizations/:id/verify-email", requireAuth, requireAdmin, adminVerifyOwnerEmail);
 apiRouter.get("/admin/payment-gateways", requireAuth, requireAdmin, listPaymentGateways);
 apiRouter.put("/admin/payment-gateways/:gateway", requireAuth, requireAdmin, updatePaymentGateway);
 apiRouter.delete("/admin/payment-gateways/:gateway", requireAuth, requireAdmin, deletePaymentGateway);

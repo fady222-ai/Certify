@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
-  getAdminOrganization, adminChangePlan, adminToggleSuspend, type AdminOrgDetail,
+  getAdminOrganization, adminChangePlan, adminToggleSuspend,
+  adminResendOrgOtp, adminVerifyOrgEmail, type AdminOrgDetail,
 } from "@/lib/admin";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { IconArrow, IconBuilding, IconUsers, IconBadge, IconCreditCard, IconMail, IconCheck } from "@/components/icons";
@@ -94,6 +95,31 @@ export default function AdminOrgDetailPage() {
     }
   }
 
+  async function verifyEmail() {
+    setBusy(true);
+    try {
+      const res = await adminVerifyOrgEmail(id);
+      flash(res.message);
+      await load();
+    } catch (e) {
+      flash((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resendOtp() {
+    setBusy(true);
+    try {
+      const res = await adminResendOrgOtp(id);
+      flash(res.message);
+    } catch (e) {
+      flash((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (loading) {
     return <div className="flex justify-center py-20"><div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-600 border-t-transparent" /></div>;
   }
@@ -160,6 +186,18 @@ export default function AdminOrgDetailPage() {
               ? <span className="inline-flex items-center gap-1 text-emerald-700"><IconCheck className="h-3.5 w-3.5" /> محقق</span>
               : <span className="text-amber-700">غير محقق</span>}
           </Row>
+          {!org.owner_verified && (
+            <div className="flex flex-wrap gap-2 py-2">
+              <button onClick={verifyEmail} disabled={busy}
+                className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:opacity-60">
+                تحقيق البريد يدويا
+              </button>
+              <button onClick={resendOtp} disabled={busy}
+                className="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-bold text-ink-soft ring-1 ring-line transition hover:bg-brand-50 hover:text-brand-700 disabled:opacity-60">
+                إعادة إرسال الرمز
+              </button>
+            </div>
+          )}
           <Row label="انضم في">{formatDate(org.owner_joined_at)}</Row>
         </Card>
 
