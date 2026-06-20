@@ -19,6 +19,16 @@ export type AdminStats = {
   total_users: number;
   total_certificates: number;
   certificates_this_month: number;
+  new_orgs_this_month: number;
+  mrr: number;
+  arr: number;
+  active_subscriptions: number;
+  paid_conversion_pct: number;
+  past_due: number;
+  cancelling: number;
+  suspended_orgs: number;
+  open_tickets: number;
+  plan_distribution: { slug: string; name: string; count: number }[];
   recent_organizations: AdminOrg[];
 };
 

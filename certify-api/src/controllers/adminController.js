@@ -38,15 +38,25 @@ function presentOrg(org, usage, certTotal) {
 /** GET /api/admin/stats — platform-wide numbers */
 export async function getAdminStats(_req, res) {
   const month = currentMonth();
+  const startOfMonth = new Date(`${month}-01T00:00:00.000Z`);
 
-  const [totalOrgs, totalUsers, totalCerts, monthUsage, recentOrgs] = await Promise.all([
+  const [
+    totalOrgs, totalUsers, totalCerts, monthUsage, newOrgsThisMonth,
+    activeSubs, pastDue, cancelling, suspendedOrgs, openTickets,
+    planRows, orgPlanGroups, recentOrgs,
+  ] = await Promise.all([
     prisma.organization.count(),
     prisma.user.count(),
     prisma.certificate.count(),
-    prisma.certificateUsage.aggregate({
-      where: { month },
-      _sum: { certificatesIssued: true },
-    }),
+    prisma.certificateUsage.aggregate({ where: { month }, _sum: { certificatesIssued: true } }),
+    prisma.organization.count({ where: { createdAt: { gte: startOfMonth } } }),
+    prisma.subscription.findMany({ where: { status: "active" }, select: { amount: true, interval: true } }),
+    prisma.subscription.count({ where: { status: "past_due" } }),
+    prisma.subscription.count({ where: { status: "active", cancelAtPeriodEnd: true } }),
+    prisma.organization.count({ where: { suspendedAt: { not: null } } }),
+    prisma.supportTicket.count({ where: { status: "open" } }),
+    prisma.plan.findMany({ select: { id: true, slug: true, name: true } }),
+    prisma.organization.groupBy({ by: ["planId"], _count: { _all: true } }),
     prisma.organization.findMany({
       orderBy: { createdAt: "desc" },
       take: 5,
@@ -58,11 +68,42 @@ export async function getAdminStats(_req, res) {
     recentOrgs.map((o) => prisma.certificate.count({ where: { organizationId: o.id } }))
   );
 
+  // MRR: normalise every active subscription to a monthly amount (annual / 12).
+  const mrr = activeSubs.reduce(
+    (sum, s) => sum + (s.interval === "annual" ? (s.amount ?? 0) / 12 : (s.amount ?? 0)),
+    0,
+  );
+
+  // Plan distribution across all organizations (null planId → free bucket).
+  const planById = Object.fromEntries(planRows.map((p) => [p.id, p]));
+  const distMap = new Map();
+  for (const g of orgPlanGroups) {
+    const p = g.planId ? planById[g.planId] : null;
+    const slug = p?.slug ?? "free";
+    const name = p?.name ?? "مجانية";
+    const prev = distMap.get(slug);
+    distMap.set(slug, { slug, name, count: (prev?.count ?? 0) + g._count._all });
+  }
+  const order = { free: 0, pro: 1, business: 2 };
+  const planDistribution = [...distMap.values()].sort(
+    (a, b) => (order[a.slug] ?? 99) - (order[b.slug] ?? 99),
+  );
+
   res.json({
     total_organizations: totalOrgs,
     total_users: totalUsers,
     total_certificates: totalCerts,
     certificates_this_month: monthUsage._sum.certificatesIssued ?? 0,
+    new_orgs_this_month: newOrgsThisMonth,
+    mrr: Math.round(mrr),
+    arr: Math.round(mrr * 12),
+    active_subscriptions: activeSubs.length,
+    paid_conversion_pct: totalOrgs ? Math.round((activeSubs.length / totalOrgs) * 100) : 0,
+    past_due: pastDue,
+    cancelling,
+    suspended_orgs: suspendedOrgs,
+    open_tickets: openTickets,
+    plan_distribution: planDistribution,
     recent_organizations: recentOrgs.map((o, i) => presentOrg(o, null, recentCertTotals[i])),
   });
 }
