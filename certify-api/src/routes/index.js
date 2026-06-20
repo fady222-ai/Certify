@@ -78,7 +78,7 @@ import {
   adminListTickets,
   adminGetTicket,
   adminReplyTicket,
-  adminSetStatus,
+  adminCloseTicket,
 } from "../controllers/supportController.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
@@ -187,4 +187,4 @@ apiRouter.delete("/admin/payment-gateways/:gateway", requireAuth, requireAdmin, 
 apiRouter.get("/support/admin/tickets", requireAuth, requireAdmin, adminListTickets);
 apiRouter.get("/support/admin/tickets/:id", requireAuth, requireAdmin, adminGetTicket);
 apiRouter.post("/support/admin/tickets/:id/messages", requireAuth, requireAdmin, adminReplyTicket);
-apiRouter.patch("/support/admin/tickets/:id/status", requireAuth, requireAdmin, adminSetStatus);
+apiRouter.post("/support/admin/tickets/:id/close", requireAuth, requireAdmin, adminCloseTicket);

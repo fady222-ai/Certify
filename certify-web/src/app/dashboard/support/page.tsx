@@ -11,7 +11,6 @@ import { IconMail, IconArrow, IconCheck } from "@/components/icons";
 
 const STATUS_STYLE: Record<TicketStatus, string> = {
   open: "bg-brand-50 text-brand-700",
-  answered: "bg-verify-50 text-verify-700",
   closed: "bg-surface-2 text-ink-muted",
 };
 

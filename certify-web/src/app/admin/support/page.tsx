@@ -2,21 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  adminListTickets, adminGetTicket, adminReplyTicket, adminSetStatus,
+  adminListTickets, adminGetTicket, adminReplyTicket, adminCloseTicket,
   STATUS_LABELS, type SupportTicket, type TicketDetail, type TicketStatus,
 } from "@/lib/support";
 import { IconMail, IconArrow, IconSearch } from "@/components/icons";
 
 const STATUS_STYLE: Record<TicketStatus, string> = {
   open: "bg-brand-50 text-brand-700",
-  answered: "bg-verify-50 text-verify-700",
   closed: "bg-surface-2 text-ink-muted",
 };
 
 const FILTERS: { key: "" | TicketStatus; label: string }[] = [
   { key: "", label: "الكل" },
   { key: "open", label: "مفتوحة" },
-  { key: "answered", label: "تمت الإجابة" },
   { key: "closed", label: "مغلقة" },
 ];
 
@@ -82,11 +80,11 @@ export default function AdminSupportPage() {
     }
   }
 
-  async function changeStatus(s: TicketStatus) {
+  async function closeSelected() {
     if (!selected) return;
     setBusy(true);
     try {
-      await adminSetStatus(selected.ticket.id, s);
+      await adminCloseTicket(selected.ticket.id);
       await openTicket(selected.ticket.id);
       await load();
     } catch (e) {
@@ -148,19 +146,13 @@ export default function AdminSupportPage() {
               onChange={(e) => setReply(e.target.value)} required maxLength={5000}
             />
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-ink-soft">الحالة:</span>
-                {(["open", "answered", "closed"] as TicketStatus[]).map((s) => (
-                  <button
-                    key={s} type="button" disabled={busy || selected.ticket.status === s}
-                    onClick={() => changeStatus(s)}
-                    className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
-                      selected.ticket.status === s ? "bg-brand-600 text-white" : "bg-surface-2 text-ink-soft hover:bg-brand-50"}`}
-                  >
-                    {STATUS_LABELS[s]}
-                  </button>
-                ))}
-              </div>
+              {selected.ticket.status === "closed" ? (
+                <span className="text-xs font-bold text-ink-muted">التذكرة مغلقة</span>
+              ) : (
+                <button type="button" onClick={closeSelected} disabled={busy} className="btn-ghost text-red-600">
+                  إغلاق التذكرة
+                </button>
+              )}
               <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الرد</button>
             </div>
           </form>

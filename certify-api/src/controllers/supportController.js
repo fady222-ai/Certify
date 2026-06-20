@@ -24,11 +24,9 @@ const replySchema = z.object({
   body: z.string().trim().min(1, "نص الرسالة مطلوب.").max(5000),
 });
 
-const STATUSES = ["open", "answered", "closed"];
-const adminStatusSchema = z.object({ status: z.enum(STATUSES) });
-
+// A ticket is simply open or closed (no status lifecycle) — closed is terminal.
 const adminListQuery = z.object({
-  status: z.enum(STATUSES).optional(),
+  status: z.enum(["open", "closed"]).optional(),
   search: z.string().trim().max(160).optional(),
   page: z.coerce.number().int().min(1).max(100000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(50),
@@ -46,7 +44,6 @@ function validation(res, parsed) {
 // thread can't be grown without bound.
 const MAX_OPEN_TICKETS = 5;
 const MAX_MESSAGES_PER_TICKET = 200;
-const OPEN_STATES = ["open", "answered"];
 
 // --- Presenters (snake_case) --------------------------------------------------
 
@@ -57,7 +54,7 @@ function presentTicket(t) {
   return {
     id: t.id,
     subject: t.subject,
-    status: t.status,
+    status: t.status === "closed" ? "closed" : "open", // binary: open | closed
     last_message_at: t.lastMessageAt,
     created_at: t.createdAt,
     requester: {
@@ -97,7 +94,7 @@ export async function createTicket(req, res, next) {
     if (!parsed.success) return validation(res, parsed);
 
     const openCount = await prisma.supportTicket.count({
-      where: { userId: req.user.id, status: { in: OPEN_STATES } },
+      where: { userId: req.user.id, status: { not: "closed" } },
     });
     if (openCount >= MAX_OPEN_TICKETS) {
       return res.status(429).json({
@@ -127,7 +124,8 @@ export async function listMyTickets(req, res, next) {
   try {
     const where = { userId: req.user.id };
     const status = (req.query.status ?? "").toString().trim();
-    if (STATUSES.includes(status)) where.status = status;
+    if (status === "closed") where.status = "closed";
+    else if (status === "open") where.status = { not: "closed" };
 
     const tickets = await prisma.supportTicket.findMany({
       where,
@@ -171,19 +169,18 @@ export async function replyTicket(req, res, next) {
       return res.status(409).json({ message: "بلغت التذكرة الحد الأقصى للرسائل. افتح تذكرة جديدة." });
     }
 
-    // Notify the admin only on the answered→open transition, not on every reply:
-    // a burst of replies to an already-open ticket sends zero extra emails, so
-    // the admin inbox can't be flooded regardless of IP rotation.
-    const wasOpen = ticket.status === "open";
+    // Notify the admin only when the ball was in the customer's court (last
+    // message was the admin's) — a burst of consecutive customer replies sends
+    // zero extra emails, so the admin inbox can't be flooded.
+    const last = await prisma.supportMessage.findFirst({
+      where: { ticketId: ticket.id }, orderBy: { createdAt: "desc" }, select: { authorRole: true },
+    });
     const message = await prisma.supportMessage.create({
       data: { ticketId: ticket.id, authorRole: "user", authorId: req.user.id, body: parsed.data.body },
     });
-    await prisma.supportTicket.update({
-      where: { id: ticket.id },
-      data: { status: "open", lastMessageAt: new Date() },
-    });
+    await prisma.supportTicket.update({ where: { id: ticket.id }, data: { lastMessageAt: new Date() } });
 
-    if (!wasOpen) notifyCustomerReply({ ...ticket, user: { name: req.user.name, email: req.user.email } });
+    if (last?.authorRole === "admin") notifyCustomerReply({ ...ticket, user: { name: req.user.name, email: req.user.email } });
     return res.status(201).json(presentMessage(message));
   } catch (e) {
     next(e);
@@ -201,7 +198,7 @@ export async function createGuestTicket(req, res, next) {
     if (!parsed.success) return validation(res, parsed);
 
     const openCount = await prisma.supportTicket.count({
-      where: { guestEmail: parsed.data.email, status: { in: OPEN_STATES } },
+      where: { guestEmail: parsed.data.email, status: { not: "closed" } },
     });
     if (openCount >= MAX_OPEN_TICKETS) {
       return res.status(429).json({
@@ -270,16 +267,15 @@ export async function replyGuestTicket(req, res, next) {
       return res.status(409).json({ message: "بلغ الطلب الحد الأقصى للرسائل. أرسل طلباً جديداً." });
     }
 
-    const wasOpen = ticket.status === "open";
+    const last = await prisma.supportMessage.findFirst({
+      where: { ticketId: ticket.id }, orderBy: { createdAt: "desc" }, select: { authorRole: true },
+    });
     const message = await prisma.supportMessage.create({
       data: { ticketId: ticket.id, authorRole: "guest", body: parsed.data.body },
     });
-    await prisma.supportTicket.update({
-      where: { id: ticket.id },
-      data: { status: "open", lastMessageAt: new Date() },
-    });
+    await prisma.supportTicket.update({ where: { id: ticket.id }, data: { lastMessageAt: new Date() } });
 
-    if (!wasOpen) notifyCustomerReply(ticket);
+    if (last?.authorRole === "admin") notifyCustomerReply(ticket);
     return res.status(201).json(presentMessage(message));
   } catch (e) {
     next(e);
@@ -298,7 +294,8 @@ export async function adminListTickets(req, res, next) {
     const { status, search, page, pageSize } = parsed.data;
 
     const where = {};
-    if (status) where.status = status;
+    if (status === "closed") where.status = "closed";
+    else if (status === "open") where.status = { not: "closed" };
     if (search) {
       where.OR = [
         { subject: { contains: search, mode: "insensitive" } },
@@ -358,9 +355,10 @@ export async function adminReplyTicket(req, res, next) {
     const message = await prisma.supportMessage.create({
       data: { ticketId: ticket.id, authorRole: "admin", authorId: req.user.id, body: parsed.data.body },
     });
+    // Replying doesn't change the open/closed state — only lastMessageAt.
     await prisma.supportTicket.update({
       where: { id: ticket.id },
-      data: { status: "answered", lastMessageAt: new Date() },
+      data: { lastMessageAt: new Date() },
     });
 
     // Rebuild the guest's link from the stored ciphertext (raw token isn't kept).
@@ -375,18 +373,15 @@ export async function adminReplyTicket(req, res, next) {
   }
 }
 
-/** PATCH /api/support/admin/tickets/:id/status */
-export async function adminSetStatus(req, res, next) {
+/** POST /api/support/admin/tickets/:id/close — close a ticket (terminal). */
+export async function adminCloseTicket(req, res, next) {
   try {
-    const parsed = adminStatusSchema.safeParse(req.body);
-    if (!parsed.success) return validation(res, parsed);
-
     const ticket = await prisma.supportTicket.findUnique({ where: { id: req.params.id } });
     if (!ticket) return res.status(404).json({ message: "التذكرة غير موجودة." });
 
     const updated = await prisma.supportTicket.update({
       where: { id: ticket.id },
-      data: { status: parsed.data.status },
+      data: { status: "closed" },
       include: { user: { select: { name: true, email: true } } },
     });
     return res.json(presentTicket(updated));

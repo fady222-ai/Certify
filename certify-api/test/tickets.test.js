@@ -13,7 +13,7 @@ import {
   replyGuestTicket,
   adminListTickets,
   adminReplyTicket,
-  adminSetStatus,
+  adminCloseTicket,
 } from "../src/controllers/supportController.js";
 
 // Controller-level tests with an in-memory Prisma fake (no DB, no network),
@@ -30,6 +30,8 @@ function matchWhere(t, where) {
     if (k === "user") continue; // relation filters not exercised by these tests
     if (v && typeof v === "object" && Array.isArray(v.in)) {
       if (!v.in.includes(t[k])) return false;
+    } else if (v && typeof v === "object" && "not" in v) {
+      if (t[k] === v.not) return false;
     } else if (t[k] !== v) {
       return false;
     }
@@ -94,6 +96,11 @@ function installFakePrisma() {
     },
     findMany: async ({ where }) =>
       messages.filter((m) => m.ticketId === where.ticketId).map((m) => ({ ...m })),
+    findFirst: async ({ where }) => {
+      // latest message for the ticket (orderBy createdAt desc)
+      const list = messages.filter((m) => m.ticketId === where.ticketId);
+      return list.length ? { ...list[list.length - 1] } : null;
+    },
     count: async ({ where }) => messages.filter((m) => m.ticketId === where.ticketId).length,
   };
 }
@@ -164,7 +171,7 @@ test("replyTicket: replying to a closed ticket is rejected (409, stays closed)",
   await createTicket({ user: userA, organization: null, body: { subject: "tكت", body: "bbbbb" } }, makeRes(), rethrow);
   const id = tickets[0].id;
   // Only the admin can close a ticket now.
-  await adminSetStatus({ user: admin, params: { id }, body: { status: "closed" } }, makeRes(), rethrow);
+  await adminCloseTicket({ user: admin, params: { id } }, makeRes(), rethrow);
   assert.equal(tickets[0].status, "closed");
 
   const res = makeRes();
@@ -173,16 +180,16 @@ test("replyTicket: replying to a closed ticket is rejected (409, stays closed)",
   assert.equal(tickets[0].status, "closed");
 });
 
-test("replyTicket: replying to an answered ticket reopens it to open", async () => {
+test("replyTicket: a reply keeps the ticket open (no status lifecycle)", async () => {
   await createTicket({ user: userA, organization: null, body: { subject: "tكت", body: "bbbbb" } }, makeRes(), rethrow);
   const id = tickets[0].id;
   await adminReplyTicket({ user: admin, params: { id }, body: { body: "ردّ" } }, makeRes(), rethrow);
-  assert.equal(tickets[0].status, "answered");
+  assert.notEqual(tickets[0].status, "closed"); // admin reply does not close
 
   const res = makeRes();
   await replyTicket({ user: userA, params: { id }, body: { body: "شكراً، سؤال آخر" } }, res, rethrow);
   assert.equal(res.statusCode, 201);
-  assert.equal(tickets[0].status, "open");
+  assert.notEqual(tickets[0].status, "closed"); // still open after customer reply
 });
 
 // ── Public guest ─────────────────────────────────────────────────────────────
@@ -238,7 +245,7 @@ test("replyGuestTicket: reply to a closed ticket is rejected (409)", async () =>
   const cr = makeRes();
   await createGuestTicket({ body: { name: "زائر", email: "g@x.com", subject: "موضوع", body: "رسالة" } }, cr, rethrow);
   const token = cr.body.public_token;
-  await adminSetStatus({ user: admin, params: { id: tickets[0].id }, body: { status: "closed" } }, makeRes(), rethrow);
+  await adminCloseTicket({ user: admin, params: { id: tickets[0].id } }, makeRes(), rethrow);
 
   const res = makeRes();
   await replyGuestTicket({ params: { token }, body: { body: "متابعة" } }, res, rethrow);
@@ -248,7 +255,7 @@ test("replyGuestTicket: reply to a closed ticket is rejected (409)", async () =>
 
 // ── Admin ────────────────────────────────────────────────────────────────────
 
-test("adminReplyTicket: sets answered, message authorRole admin", async () => {
+test("adminReplyTicket: message authorRole admin, ticket stays open", async () => {
   await createTicket({ user: userA, organization: null, body: { subject: "tكت", body: "bbbbb" } }, makeRes(), rethrow);
   const id = tickets[0].id;
 
@@ -256,26 +263,23 @@ test("adminReplyTicket: sets answered, message authorRole admin", async () => {
   await adminReplyTicket({ user: admin, params: { id }, body: { body: "تم الحل" } }, res, rethrow);
   assert.equal(res.statusCode, 201);
   assert.equal(res.body.author_role, "admin");
-  assert.equal(tickets[0].status, "answered");
+  assert.notEqual(tickets[0].status, "closed");
 });
 
-test("adminSetStatus: invalid status → 422; valid → applied", async () => {
+test("adminCloseTicket: marks the ticket closed", async () => {
   await createTicket({ user: userA, organization: null, body: { subject: "tكت", body: "bbbbb" } }, makeRes(), rethrow);
   const id = tickets[0].id;
 
-  const bad = makeRes();
-  await adminSetStatus({ user: admin, params: { id }, body: { status: "weird" } }, bad, rethrow);
-  assert.equal(bad.statusCode, 422);
-
   const ok = makeRes();
-  await adminSetStatus({ user: admin, params: { id }, body: { status: "closed" } }, ok, rethrow);
+  await adminCloseTicket({ user: admin, params: { id } }, ok, rethrow);
   assert.equal(ok.body.status, "closed");
+  assert.equal(tickets[0].status, "closed");
 });
 
 test("adminListTickets: status filter + pagination metadata", async () => {
   await createTicket({ user: userA, organization: null, body: { subject: "open one", body: "bbbbb" } }, makeRes(), rethrow);
   await createTicket({ user: userB, organization: null, body: { subject: "closed one", body: "bbbbb" } }, makeRes(), rethrow);
-  await adminSetStatus({ user: admin, params: { id: tickets[1].id }, body: { status: "closed" } }, makeRes(), rethrow);
+  await adminCloseTicket({ user: admin, params: { id: tickets[1].id } }, makeRes(), rethrow);
 
   const res = makeRes();
   await adminListTickets({ user: admin, query: { status: "closed", page: "1", pageSize: "50" } }, res, rethrow);

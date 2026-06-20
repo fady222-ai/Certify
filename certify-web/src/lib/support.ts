@@ -1,7 +1,7 @@
 import { authedFetch } from "./auth";
 import { API_URL } from "./api";
 
-export type TicketStatus = "open" | "answered" | "closed";
+export type TicketStatus = "open" | "closed";
 
 export type TicketRequester = {
   kind: "user" | "guest";
@@ -30,7 +30,6 @@ export type TicketDetail = { ticket: SupportTicket; messages: SupportMessage[] }
 
 export const STATUS_LABELS: Record<TicketStatus, string> = {
   open: "مفتوحة",
-  answered: "تمت الإجابة",
   closed: "مغلقة",
 };
 
@@ -106,14 +105,8 @@ export async function adminReplyTicket(id: string, body: string): Promise<Suppor
   );
 }
 
-export async function adminSetStatus(id: string, status: TicketStatus): Promise<SupportTicket> {
-  return json(
-    await authedFetch(`support/admin/tickets/${id}/status`, {
-      method: "PATCH",
-      headers: JSON_HEADERS,
-      body: JSON.stringify({ status }),
-    }),
-  );
+export async function adminCloseTicket(id: string): Promise<SupportTicket> {
+  return json(await authedFetch(`support/admin/tickets/${id}/close`, { method: "POST" }));
 }
 
 // ── Public guest (no auth — plain fetch, like lib/api.ts) ─────────────────────
