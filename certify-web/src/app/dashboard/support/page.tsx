@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import {
-  listMyTickets, createTicket, getMyTicket, replyTicket, closeTicket,
+  listMyTickets, createTicket, getMyTicket, replyTicket,
   STATUS_LABELS, type SupportTicket, type TicketDetail, type TicketStatus,
 } from "@/lib/support";
 import { IconMail, IconArrow, IconCheck } from "@/components/icons";
@@ -102,21 +102,6 @@ export default function SupportPage() {
     }
   }
 
-  async function onClose() {
-    if (!selected) return;
-    setBusy(true);
-    try {
-      await closeTicket(selected.ticket.id);
-      await openTicket(selected.ticket.id);
-      await load();
-      flash("تم إغلاق التذكرة.");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
       <div className="mb-6 flex items-center justify-between gap-3">
@@ -171,8 +156,7 @@ export default function SupportPage() {
                 className="input min-h-24" placeholder="اكتب ردك…" value={reply}
                 onChange={(e) => setReply(e.target.value)} required maxLength={5000}
               />
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <button type="button" onClick={onClose} disabled={busy} className="btn-ghost">إغلاق التذكرة</button>
+              <div className="mt-3 flex items-center justify-end gap-3">
                 <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الرد</button>
               </div>
             </form>

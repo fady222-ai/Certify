@@ -190,24 +190,6 @@ export async function replyTicket(req, res, next) {
   }
 }
 
-/** POST /api/support/tickets/:id/close */
-export async function closeTicket(req, res, next) {
-  try {
-    const ticket = await prisma.supportTicket.findFirst({
-      where: { id: req.params.id, userId: req.user.id },
-    });
-    if (!ticket) return res.status(404).json({ message: "التذكرة غير موجودة." });
-
-    const updated = await prisma.supportTicket.update({
-      where: { id: ticket.id },
-      data: { status: "closed" },
-    });
-    return res.json(presentTicket(updated));
-  } catch (e) {
-    next(e);
-  }
-}
-
 // =============================================================================
 // Public guest (token capability, no auth)
 // =============================================================================

@@ -72,7 +72,6 @@ import {
   listMyTickets,
   getMyTicket,
   replyTicket,
-  closeTicket,
   createGuestTicket,
   getGuestTicket,
   replyGuestTicket,
@@ -171,7 +170,6 @@ apiRouter.post("/support/tickets", requireAuth, createTicket);
 apiRouter.get("/support/tickets", requireAuth, listMyTickets);
 apiRouter.get("/support/tickets/:id", requireAuth, getMyTicket);
 apiRouter.post("/support/tickets/:id/messages", requireAuth, replyTicket);
-apiRouter.post("/support/tickets/:id/close", requireAuth, closeTicket);
 
 // --- Admin (platform owner only) ---
 apiRouter.get("/admin/stats", requireAuth, requireAdmin, getAdminStats);

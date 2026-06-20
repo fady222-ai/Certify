@@ -8,7 +8,6 @@ import {
   listMyTickets,
   getMyTicket,
   replyTicket,
-  closeTicket,
   createGuestTicket,
   getGuestTicket,
   replyGuestTicket,
@@ -161,23 +160,11 @@ test("IDOR: user cannot read another user's ticket → 404", async () => {
   assert.equal(res.statusCode, 404);
 });
 
-test("closeTicket: owner closes; non-owner gets 404", async () => {
-  await createTicket({ user: userA, organization: null, body: { subject: "tكت", body: "bbbbb" } }, makeRes(), rethrow);
-  const id = tickets[0].id;
-
-  const denied = makeRes();
-  await closeTicket({ user: userB, params: { id } }, denied, rethrow);
-  assert.equal(denied.statusCode, 404);
-
-  const ok = makeRes();
-  await closeTicket({ user: userA, params: { id } }, ok, rethrow);
-  assert.equal(ok.body.status, "closed");
-});
-
 test("replyTicket: replying to a closed ticket is rejected (409, stays closed)", async () => {
   await createTicket({ user: userA, organization: null, body: { subject: "tكت", body: "bbbbb" } }, makeRes(), rethrow);
   const id = tickets[0].id;
-  await closeTicket({ user: userA, params: { id } }, makeRes(), rethrow);
+  // Only the admin can close a ticket now.
+  await adminSetStatus({ user: admin, params: { id }, body: { status: "closed" } }, makeRes(), rethrow);
   assert.equal(tickets[0].status, "closed");
 
   const res = makeRes();

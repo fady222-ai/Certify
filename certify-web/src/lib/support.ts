@@ -75,10 +75,6 @@ export async function replyTicket(id: string, body: string): Promise<SupportMess
   );
 }
 
-export async function closeTicket(id: string): Promise<SupportTicket> {
-  return json(await authedFetch(`support/tickets/${id}/close`, { method: "POST" }));
-}
-
 // ── Admin ────────────────────────────────────────────────────────────────────
 
 export async function adminListTickets(opts: {
