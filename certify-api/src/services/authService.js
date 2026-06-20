@@ -1,15 +1,20 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
+import QRCode from "qrcode";
 import { prisma } from "../db/prisma.js";
 import { config } from "../config/index.js";
 import { sendEmail, logMailFailure } from "./email/index.js";
 import { otpEmail, passwordResetEmail } from "./email/authTemplates.js";
+import * as totp from "./totp.js";
+import { encryptSecret, decryptSecret } from "./secretCrypto.js";
 
 const TOKEN_TTL = "7d";
 const OTP_TTL_MINUTES = 15;
 const RESET_TTL_HOURS = 1;
 const MAX_OTP_ATTEMPTS = 5;
+const MFA_CHALLENGE_TTL = "5m";
+const BACKUP_CODE_COUNT = 8;
 
 export function slugify(name) {
   const base = String(name ?? "")
@@ -40,6 +45,139 @@ export function verifyToken(token) {
   return jwt.verify(token, config.appKey, { algorithms: ["HS256"] });
 }
 
+// ── MFA (TOTP) ───────────────────────────────────────────────────────────────
+
+// A short-lived token proving the FIRST factor (password) passed. The MFA-verify
+// step requires it, so an attacker can't brute-force TOTP with just a userId.
+function signMfaChallenge(userId) {
+  return jwt.sign({ sub: userId, typ: "mfa", jti: crypto.randomUUID() }, config.appKey, {
+    expiresIn: MFA_CHALLENGE_TTL,
+    algorithm: "HS256",
+  });
+}
+
+const normalizeBackup = (c) => String(c ?? "").toLowerCase().replace(/[\s-]/g, "");
+const hashBackup = (c) => crypto.createHash("sha256").update(normalizeBackup(c)).digest("hex");
+
+function makeBackupCodes() {
+  const plain = Array.from({ length: BACKUP_CODE_COUNT }, () => crypto.randomBytes(5).toString("hex"));
+  return { plain, hashes: plain.map(hashBackup) };
+}
+
+// True if `code` is the current TOTP or a valid backup code. A matched backup
+// code is consumed (single-use) unless consumeBackup is false.
+async function checkMfaCode(user, code, { consumeBackup = true } = {}) {
+  if (!user.totpSecret) return false;
+  let secret;
+  try { secret = decryptSecret(user.totpSecret); } catch { return false; }
+  if (totp.verify(code, secret)) return true;
+
+  let hashes;
+  try { hashes = JSON.parse(user.mfaBackupCodes ?? "[]"); } catch { hashes = []; }
+  const idx = hashes.indexOf(hashBackup(code));
+  if (idx === -1) return false;
+  if (consumeBackup) {
+    hashes.splice(idx, 1);
+    await prisma.user.update({ where: { id: user.id }, data: { mfaBackupCodes: JSON.stringify(hashes) } });
+  }
+  return true;
+}
+
+/** Step 2 of login: exchange the MFA challenge + a code for a real session. */
+export async function verifyMfaLogin({ mfaToken, code }) {
+  let payload;
+  try {
+    payload = jwt.verify(mfaToken, config.appKey, { algorithms: ["HS256"] });
+  } catch {
+    const err = new Error("انتهت جلسة التحقق. سجّل الدخول من جديد.");
+    err.statusCode = 401;
+    throw err;
+  }
+  if (payload.typ !== "mfa") {
+    const err = new Error("طلب غير صالح.");
+    err.statusCode = 401;
+    throw err;
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  if (!user || !user.totpEnabled) {
+    const err = new Error("طلب غير صالح.");
+    err.statusCode = 401;
+    throw err;
+  }
+
+  if (!(await checkMfaCode(user, code))) {
+    const err = new Error("رمز التحقق غير صحيح.");
+    err.statusCode = 401;
+    throw err;
+  }
+
+  const org = await primaryOrg(user.id);
+  return { token: signToken(user), user, org };
+}
+
+/** Begin enrollment: store an (encrypted) pending secret, return the QR + secret. */
+export async function setupMfa(user) {
+  if (user.totpEnabled) {
+    const err = new Error("المصادقة الثنائية مفعّلة بالفعل.");
+    err.statusCode = 400;
+    throw err;
+  }
+  const secret = totp.generateSecret();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpSecret: encryptSecret(secret), totpEnabled: false },
+  });
+  const otpauthUri = totp.keyuri(user.email, secret);
+  const qrDataUrl = await QRCode.toDataURL(otpauthUri);
+  return { otpauthUri, qrDataUrl, secret };
+}
+
+/** Confirm the pending secret with a code, enable MFA, return one-time backup codes. */
+export async function enableMfa(user, code) {
+  if (user.totpEnabled) {
+    const err = new Error("المصادقة الثنائية مفعّلة بالفعل.");
+    err.statusCode = 400;
+    throw err;
+  }
+  if (!user.totpSecret) {
+    const err = new Error("ابدأ إعداد المصادقة الثنائية أولاً.");
+    err.statusCode = 400;
+    throw err;
+  }
+  let secret;
+  try { secret = decryptSecret(user.totpSecret); } catch { secret = ""; }
+  if (!totp.verify(code, secret)) {
+    const err = new Error("الرمز غير صحيح. تأكّد من تطبيق المصادقة وحاول مجدداً.");
+    err.statusCode = 422;
+    throw err;
+  }
+  const { plain, hashes } = makeBackupCodes();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpEnabled: true, mfaBackupCodes: JSON.stringify(hashes) },
+  });
+  return { backupCodes: plain };
+}
+
+/** Turn MFA off after verifying a current code (TOTP or backup). */
+export async function disableMfa(user, code) {
+  if (!user.totpEnabled) {
+    const err = new Error("المصادقة الثنائية غير مفعّلة.");
+    err.statusCode = 400;
+    throw err;
+  }
+  if (!(await checkMfaCode(user, code, { consumeBackup: false }))) {
+    const err = new Error("الرمز غير صحيح.");
+    err.statusCode = 422;
+    throw err;
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { totpSecret: null, totpEnabled: false, mfaBackupCodes: null },
+  });
+}
+
 export function presentUser(user, org) {
   return {
     user: {
@@ -49,6 +187,7 @@ export function presentUser(user, org) {
       locale: user.locale,
       is_admin: user.role === "admin",
       email_verified: user.emailVerified,
+      mfa_enabled: !!user.totpEnabled,
     },
     organization: org
       ? {
@@ -255,6 +394,11 @@ export async function login({ identifier, password }) {
     err.statusCode = 403;
     err.userId = user.id;
     throw err;
+  }
+
+  // Password OK — if MFA is on, withhold the session until the second factor.
+  if (user.totpEnabled) {
+    return { requiresMfa: true, mfaToken: signMfaChallenge(user.id) };
   }
 
   const org = await primaryOrg(user.id);

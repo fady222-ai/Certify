@@ -13,6 +13,9 @@ CREATE TABLE "users" (
     "failed_login_attempts" INTEGER NOT NULL DEFAULT 0,
     "locked_until" TIMESTAMP(3),
     "token_revoked_at" TIMESTAMP(3),
+    "totp_secret" TEXT,
+    "totp_enabled" BOOLEAN NOT NULL DEFAULT false,
+    "mfa_backup_codes" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 

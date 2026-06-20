@@ -11,6 +11,7 @@ import {
   forgotPassword,
   resetPassword,
   refreshProfile,
+  verifyMfa,
 } from "./auth";
 
 const USER_KEY = "certify_user";
@@ -80,6 +81,31 @@ describe("login", () => {
   test("throws the server message on failure", async () => {
     mockFetch(401, { message: "بيانات غير صحيحة" });
     await expect(login({ identifier: "a@x.com", password: "wrong" })).rejects.toThrow("بيانات غير صحيحة");
+  });
+
+  test("surfaces the MFA challenge (without persisting) when 2FA is on", async () => {
+    mockFetch(200, { requires_mfa: true, mfa_token: "challenge-jwt" });
+    const result = await login({ identifier: "a@x.com", password: "secret" });
+    expect(result).toMatchObject({ requires_mfa: true, mfa_token: "challenge-jwt" });
+    expect(getToken()).toBeNull(); // no session until the 2nd factor
+  });
+});
+
+describe("verifyMfa (login step 2)", () => {
+  test("posts the challenge + code to /auth/mfa/verify and persists the session", async () => {
+    const spy = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ token: "jwt-mfa", ...sampleProfile }) }));
+    global.fetch = spy as unknown as typeof fetch;
+    const profile = await verifyMfa("challenge-jwt", "123456");
+    expect(profile).toEqual(sampleProfile);
+    expect(getToken()).toBe("jwt-mfa");
+    const [url, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toContain("/api/auth/mfa/verify");
+    expect(JSON.parse(init.body as string)).toEqual({ mfa_token: "challenge-jwt", code: "123456" });
+  });
+
+  test("throws the server message on a bad code", async () => {
+    mockFetch(401, { message: "رمز التحقق غير صحيح." });
+    await expect(verifyMfa("challenge-jwt", "000000")).rejects.toThrow("رمز التحقق غير صحيح.");
   });
 });
 

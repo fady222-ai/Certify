@@ -2,9 +2,12 @@ import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import nodeCrypto from "node:crypto";
 import { prisma } from "../src/db/prisma.js";
 import { config } from "../src/config/index.js";
-import { signToken, verifyToken, login, verifyEmail } from "../src/services/authService.js";
+import { signToken, verifyToken, login, verifyEmail, verifyMfaLogin, enableMfa, disableMfa } from "../src/services/authService.js";
+import * as totp from "../src/services/totp.js";
+import { encryptSecret } from "../src/services/secretCrypto.js";
 
 // These are integration tests for the auth flow. The Prisma singleton is a
 // plain object, so we isolate the DB by swapping its model methods with an
@@ -200,6 +203,99 @@ test("login: correct password but unverified email throws 403 and (re)sends an O
   assert.equal(err.userId, "u1", "exposes the userId so the client can prompt for the OTP");
   assert.ok(calls.otpDeleted, "old codes cleared");
   assert.equal(calls.vTokenCreate.length, 1, "a fresh OTP is issued");
+});
+
+// ── MFA (TOTP) ───────────────────────────────────────────────────────────────
+test("login: an MFA-enabled account gets a challenge, not a session", async () => {
+  const passwordHash = await bcrypt.hash("correct-horse", 10);
+  const secret = totp.generateSecret();
+  installFakePrisma({
+    user: { id: "u1", email: "a@x.com", passwordHash, emailVerified: true, failedLoginAttempts: 0, totpEnabled: true, totpSecret: encryptSecret(secret) },
+    org: { id: "o1", ownerId: "u1", name: "أكاديميتي", plan: null },
+  });
+
+  const result = await login({ identifier: "a@x.com", password: "correct-horse" });
+  assert.equal(result.requiresMfa, true);
+  assert.ok(result.mfaToken, "a short-lived challenge token is returned");
+  assert.equal(result.token, undefined, "no session token until the 2nd factor");
+});
+
+test("verifyMfaLogin: a valid TOTP code exchanges the challenge for a session", async () => {
+  const passwordHash = await bcrypt.hash("pw", 10);
+  const secret = totp.generateSecret();
+  installFakePrisma({
+    user: { id: "u1", email: "a@x.com", passwordHash, emailVerified: true, failedLoginAttempts: 0, totpEnabled: true, totpSecret: encryptSecret(secret) },
+    org: { id: "o1", ownerId: "u1", name: "أكاديميتي", plan: null },
+  });
+
+  const { mfaToken } = await login({ identifier: "a@x.com", password: "pw" });
+  const { token } = await verifyMfaLogin({ mfaToken, code: totp.generate(secret) });
+  assert.equal(verifyToken(token).sub, "u1");
+});
+
+test("verifyMfaLogin: a wrong code is rejected with 401", async () => {
+  const passwordHash = await bcrypt.hash("pw", 10);
+  const secret = totp.generateSecret();
+  installFakePrisma({
+    user: { id: "u1", email: "a@x.com", passwordHash, emailVerified: true, failedLoginAttempts: 0, totpEnabled: true, totpSecret: encryptSecret(secret) },
+    org: { id: "o1", ownerId: "u1", name: "أكاديميتي", plan: null },
+  });
+
+  const { mfaToken } = await login({ identifier: "a@x.com", password: "pw" });
+  const real = totp.generate(secret);
+  const wrong = real === "000000" ? "111111" : "000000";
+  await expectStatus(verifyMfaLogin({ mfaToken, code: wrong }), 401);
+});
+
+test("verifyMfaLogin: a forged challenge token (no mfa type) is rejected", async () => {
+  installFakePrisma({ user: { id: "u1", email: "a@x.com", totpEnabled: true, totpSecret: encryptSecret(totp.generateSecret()) } });
+  const forged = jwt.sign({ sub: "u1" }, config.appKey, { algorithm: "HS256" }); // missing typ:"mfa"
+  await expectStatus(verifyMfaLogin({ mfaToken: forged, code: "123456" }), 401);
+});
+
+test("verifyMfaLogin: a backup code works once, then is consumed", async () => {
+  const secret = totp.generateSecret();
+  const backupHash = nodeCrypto.createHash("sha256").update("abc12def34").digest("hex");
+  const passwordHash = await bcrypt.hash("pw", 10);
+  installFakePrisma({
+    user: {
+      id: "u1", email: "a@x.com", passwordHash, emailVerified: true, failedLoginAttempts: 0,
+      totpEnabled: true, totpSecret: encryptSecret(secret), mfaBackupCodes: JSON.stringify([backupHash]),
+    },
+    org: { id: "o1", ownerId: "u1", name: "أكاديميتي", plan: null },
+  });
+
+  const first = await login({ identifier: "a@x.com", password: "pw" });
+  const { token } = await verifyMfaLogin({ mfaToken: first.mfaToken, code: "abc12def34" });
+  assert.equal(verifyToken(token).sub, "u1");
+  // consumed → the backup-codes column was rewritten without it
+  assert.ok(calls.userUpdate.some((u) => u.data.mfaBackupCodes === "[]"), "backup code removed after use");
+
+  const second = await login({ identifier: "a@x.com", password: "pw" });
+  await expectStatus(verifyMfaLogin({ mfaToken: second.mfaToken, code: "abc12def34" }), 401);
+});
+
+test("enableMfa: wrong code → 422; correct code enables and returns backup codes", async () => {
+  const secret = totp.generateSecret();
+  const user = { id: "u1", email: "a@x.com", totpSecret: encryptSecret(secret), totpEnabled: false, mfaBackupCodes: null };
+  installFakePrisma({ user });
+
+  const real = totp.generate(secret);
+  const wrong = real === "000000" ? "111111" : "000000";
+  await expectStatus(enableMfa(user, wrong), 422);
+
+  const { backupCodes } = await enableMfa(user, real);
+  assert.equal(backupCodes.length, 8);
+  assert.ok(calls.userUpdate.some((u) => u.data.totpEnabled === true), "MFA turned on");
+});
+
+test("disableMfa: a valid code clears the secret and backup codes", async () => {
+  const secret = totp.generateSecret();
+  const user = { id: "u1", email: "a@x.com", totpSecret: encryptSecret(secret), totpEnabled: true, mfaBackupCodes: "[]" };
+  installFakePrisma({ user });
+
+  await disableMfa(user, totp.generate(secret));
+  assert.ok(calls.userUpdate.some((u) => u.data.totpSecret === null && u.data.totpEnabled === false));
 });
 
 // ── JWT hardening ────────────────────────────────────────────────────────────

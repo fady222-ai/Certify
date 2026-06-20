@@ -172,6 +172,32 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
 حقول `User` المضافة: `emailVerified`, `failedLoginAttempts`, `lockedUntil`,
 `tokenRevokedAt`.
 
+### المصادقة الثنائية (MFA / TOTP)
+
+تحقّق بخطوتين اختياري لأي حساب، **والوسيلة الأقوى لحماية حساب الأدمن المميّز**
+(الدخول يبقى موحّداً — لا صفحة أدمن منفصلة؛ القرار: الصفحة المنفصلة «إخفاء» بلا أمان).
+- **TOTP نقي بلا تبعية:** `services/totp.js` (RFC 6238 بـ`node:crypto`؛ مختبَر بمتجهات
+  RFC في `test/totp.test.js`). QR عبر مكتبة `qrcode` الموجودة.
+- **التدفّق:** الدخول بخطوتين كنمط OTP القائم — بعد كلمة المرور، إن `totpEnabled`
+  يُرجِع `login` **توكن تحدٍّ قصير العمر** (`{typ:"mfa"}`, 5د) بلا جلسة؛ ثم
+  `POST /auth/mfa/verify {mfa_token, code}` يتحقّق (TOTP أو رمز احتياطي) ويُصدر JWT.
+  توكن التحدّي يمنع تخمين TOTP بالـuserId وحده (يثبت نجاح العامل الأول).
+- **التسجيل:** `POST /auth/mfa/setup` (يولّد سرّاً، يخزّنه **مشفّراً** عبر `secretCrypto`،
+  يُعيد QR + السرّ) → `POST /auth/mfa/enable {code}` (يؤكّد، يُفعّل، يُعيد **رموز احتياط**
+  أحادية الاستخدام مرة واحدة، تُخزَّن بصماتها SHA-256) → `POST /auth/mfa/disable {code}`.
+  كلها `requireAuth`. الواجهة: `app/admin/security/page.tsx` (+ بند تنقّل «الأمان» ولافتة
+  حثّ في `/admin`)، وخطوة رمز في `LoginForm`، ودوالّ `lib/auth.ts`
+  (`verifyMfa`/`setupMfa`/`enableMfa`/`disableMfa`، و`mfa_enabled` في `presentUser`).
+- **at-rest:** سرّ TOTP مشفّر AES-GCM، الرموز الاحتياطية مُجزّأة SHA-256 (تسرّب DB وحده
+  لا يكفي). محدِّد معدّل على `/auth/mfa/verify` (نفس حدود الدخول) لكبح تخمين الرمز.
+- **التعافي من القفل:** `ADMIN_RESET_MFA=true` + إعادة تشغيل → `ensureAdmin` يصفّر MFA
+  للأدمن (مخرج طوارئ إن فقد جهازه؛ يُلغى المتغيّر بعدها).
+- **اختبارات:** `test/totp.test.js` + توسيع `test/auth.test.js` (تحدٍّ، TOTP صحيح/خاطئ،
+  رمز احتياطي أحادي، توكن مزيّف، enable/disable) + `src/lib/auth.test.ts`.
+
+> **تنبيه schema:** أُضيفت حقول `totpSecret`/`totpEnabled`/`mfaBackupCodes` إلى `User`.
+> شغّل `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
+
 ### تحصينات إضافية (مراجعة pentest — PR #2)
 
 - **عزل المستأجرين (IDOR):** الإصدار يتحقّق أن `templateId` عام أو يخصّ نفس

@@ -9,6 +9,10 @@ import {
   forgotPasswordHandler,
   resetPasswordHandler,
   meHandler,
+  mfaVerifyHandler,
+  mfaSetupHandler,
+  mfaEnableHandler,
+  mfaDisableHandler,
 } from "../controllers/authController.js";
 import {
   listCertificates,
@@ -102,6 +106,7 @@ apiRouter.post("/auth/resend-otp", resendOtpHandler);
 apiRouter.post("/auth/login", loginHandler);
 apiRouter.post("/auth/forgot-password", forgotPasswordHandler);
 apiRouter.post("/auth/reset-password", resetPasswordHandler);
+apiRouter.post("/auth/mfa/verify", mfaVerifyHandler); // step 2 of login (public)
 
 // Support — public guest flow (token capability, no auth)
 apiRouter.post("/support/public/tickets", createGuestTicket);
@@ -111,6 +116,9 @@ apiRouter.post("/support/public/tickets/:token/messages", replyGuestTicket);
 // --- Protected ---
 apiRouter.get("/auth/me", requireAuth, meHandler);
 apiRouter.post("/auth/logout", requireAuth, logoutHandler);
+apiRouter.post("/auth/mfa/setup", requireAuth, mfaSetupHandler);
+apiRouter.post("/auth/mfa/enable", requireAuth, mfaEnableHandler);
+apiRouter.post("/auth/mfa/disable", requireAuth, mfaDisableHandler);
 apiRouter.get("/me/stats", requireAuth, dashboardStats);
 apiRouter.get("/certificates", requireAuth, listCertificates);
 apiRouter.post("/certificates", requireAuth, createCertificate);

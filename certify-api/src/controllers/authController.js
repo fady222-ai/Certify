@@ -35,6 +35,14 @@ const resetPasswordSchema = z.object({
   password: passwordSchema,
 });
 
+// TOTP codes are 6 digits; backup codes are longer — accept a small range.
+const mfaCodeSchema = z.string().trim().min(6, "الرمز مطلوب.").max(20);
+const mfaVerifySchema = z.object({
+  mfa_token: z.string().min(1, "طلب غير صالح."),
+  code: mfaCodeSchema,
+});
+const mfaCodeBodySchema = z.object({ code: mfaCodeSchema });
+
 function validationError(res, parsed) {
   return res.status(422).json({
     message: parsed.error.issues[0]?.message ?? "بيانات غير صالحة.",
@@ -87,13 +95,66 @@ export async function loginHandler(req, res, next) {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) return validationError(res, parsed);
 
-    const { token, user, org } = await auth.login(parsed.data);
+    const result = await auth.login(parsed.data);
+    // MFA enabled → withhold the session; client must complete /auth/mfa/verify.
+    if (result.requiresMfa) {
+      return res.json({ requires_mfa: true, mfa_token: result.mfaToken });
+    }
+    const { token, user, org } = result;
     return res.json({ token, ...auth.presentUser(user, org) });
   } catch (e) {
     // Pass userId hint for unverified users so the frontend can show the OTP step
     if (e.statusCode === 403 && e.userId) {
       return res.status(403).json({ message: e.message, userId: e.userId, requires_verification: true });
     }
+    next(e);
+  }
+}
+
+export async function mfaVerifyHandler(req, res, next) {
+  try {
+    const parsed = mfaVerifySchema.safeParse(req.body);
+    if (!parsed.success) return validationError(res, parsed);
+
+    const { token, user, org } = await auth.verifyMfaLogin({
+      mfaToken: parsed.data.mfa_token,
+      code: parsed.data.code,
+    });
+    return res.json({ token, ...auth.presentUser(user, org) });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function mfaSetupHandler(req, res, next) {
+  try {
+    const { otpauthUri, qrDataUrl, secret } = await auth.setupMfa(req.user);
+    return res.json({ otpauth_uri: otpauthUri, qr_data_url: qrDataUrl, secret });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function mfaEnableHandler(req, res, next) {
+  try {
+    const parsed = mfaCodeBodySchema.safeParse(req.body);
+    if (!parsed.success) return validationError(res, parsed);
+
+    const { backupCodes } = await auth.enableMfa(req.user, parsed.data.code);
+    return res.json({ message: "تم تفعيل المصادقة الثنائية.", backup_codes: backupCodes });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function mfaDisableHandler(req, res, next) {
+  try {
+    const parsed = mfaCodeBodySchema.safeParse(req.body);
+    if (!parsed.success) return validationError(res, parsed);
+
+    await auth.disableMfa(req.user, parsed.data.code);
+    return res.json({ message: "تم تعطيل المصادقة الثنائية." });
+  } catch (e) {
     next(e);
   }
 }

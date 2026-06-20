@@ -3,16 +3,18 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { login, verifyEmail, resendOtp, getToken, getStoredUser } from "@/lib/auth";
+import { login, verifyEmail, verifyMfa, resendOtp, getToken, getStoredUser } from "@/lib/auth";
 import { IconMail, IconLock, IconArrow } from "./icons";
 
 export function LoginForm() {
   const router = useRouter();
-  const [step, setStep] = useState<"form" | "otp">("form");
+  const [step, setStep] = useState<"form" | "otp" | "mfa">("form");
   const [userId, setUserId] = useState<string | null>(null);
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,7 +43,26 @@ export function LoginForm() {
         setLoading(false);
         return;
       }
+      if ("requires_mfa" in result) {
+        setMfaToken(result.mfa_token);
+        setStep("mfa");
+        setLoading(false);
+        return;
+      }
       router.push(result.user?.is_admin ? "/admin" : "/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حدث خطأ ما.");
+      setLoading(false);
+    }
+  }
+
+  async function onMfaSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const profile = await verifyMfa(mfaToken!, mfaCode.trim());
+      router.push(profile.user?.is_admin ? "/admin" : "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ ما.");
       setLoading(false);
@@ -78,6 +99,48 @@ export function LoginForm() {
       <div className="flex justify-center py-8">
         <div className="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
       </div>
+    );
+  }
+
+  if (step === "mfa") {
+    return (
+      <form className="space-y-4" onSubmit={onMfaSubmit}>
+        <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-700 ring-1 ring-blue-100">
+          أدخل الرمز من تطبيق المصادقة (أو أحد رموز الاحتياط).
+        </div>
+
+        {error && (
+          <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600 ring-1 ring-red-100">
+            {error}
+          </div>
+        )}
+
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-bold text-ink">رمز التحقق</span>
+          <input
+            type="text"
+            inputMode="text"
+            autoComplete="one-time-code"
+            maxLength={20}
+            required
+            value={mfaCode}
+            onChange={(e) => setMfaCode(e.target.value)}
+            placeholder="123456"
+            className="input text-center text-2xl font-black tracking-widest"
+            dir="ltr"
+            autoFocus
+          />
+        </label>
+
+        <button type="submit" disabled={loading || mfaCode.trim().length < 6} className="btn-primary w-full disabled:opacity-60">
+          {loading ? "جار التحقق…" : "تأكيد"}
+          {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
+        </button>
+
+        <p className="text-center text-xs text-ink-muted">
+          فقدت جهازك؟ استخدم أحد رموز الاحتياط التي حفظتها عند التفعيل.
+        </p>
+      </form>
     );
   }
 

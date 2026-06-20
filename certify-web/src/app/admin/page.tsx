@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminStats, type AdminStats } from "@/lib/admin";
+import { getStoredUser } from "@/lib/auth";
 import {
   IconBuilding, IconUsers, IconBadge, IconChart, IconArrow,
-  IconCreditCard, IconBolt, IconMail, IconClock, IconBan,
+  IconCreditCard, IconBolt, IconMail, IconClock, IconBan, IconLock,
 } from "@/components/icons";
 
 const toneMap: Record<string, string> = {
@@ -75,9 +76,11 @@ const PLAN_BAR: Record<string, string> = {
 export default function AdminOverviewPage() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mfaEnabled, setMfaEnabled] = useState(true); // assume on until checked (no flash)
 
   useEffect(() => {
     getAdminStats().then(setStats).finally(() => setLoading(false));
+    setMfaEnabled(!!getStoredUser()?.user?.mfa_enabled);
   }, []);
 
   const money = (n?: number) => `$${(n ?? 0).toLocaleString("en-US")}`;
@@ -89,6 +92,18 @@ export default function AdminOverviewPage() {
         <h1 className="font-display text-2xl font-black text-ink">نظرة عامة على المنصة</h1>
         <p className="mt-1 text-sm text-ink-soft">مؤشرات الأعمال والتشغيل — مباشرة من قاعدة البيانات.</p>
       </div>
+
+      {!mfaEnabled && (
+        <Link
+          href="/admin/security"
+          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 transition hover:bg-amber-100/70"
+        >
+          <IconLock className="h-5 w-5 shrink-0 text-amber-700" />
+          <span className="text-sm font-bold text-amber-800">
+            فعل المصادقة الثنائية لحماية حسابك الإداري — اضغط للإعداد.
+          </span>
+        </Link>
+      )}
 
       {/* مؤشرات الأعمال (الأهم) */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

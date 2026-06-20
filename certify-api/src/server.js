@@ -71,6 +71,10 @@ const sensitiveAuthLimiter = rateLimit({
 });
 app.use("/api/auth/login", loginLimiter);
 app.use("/api/auth/login", loginFailureLimiter);
+// MFA second step — cap TOTP/backup-code guessing per IP (the 6-digit space is
+// small, so this matters even behind the challenge token).
+app.use("/api/auth/mfa/verify", loginLimiter);
+app.use("/api/auth/mfa/verify", loginFailureLimiter);
 app.use("/api/auth/register", registerLimiter);
 app.use("/api/auth/forgot-password", sensitiveAuthLimiter);
 app.use("/api/auth/resend-otp", sensitiveAuthLimiter);

@@ -6,7 +6,7 @@ const TOKEN_KEY = "certify_token";
 const USER_KEY = "certify_user";
 
 export type AuthUser = {
-  user: { id: string; name: string; email: string; locale: string; is_admin?: boolean };
+  user: { id: string; name: string; email: string; locale: string; is_admin?: boolean; mfa_enabled?: boolean };
   organization: {
     id: string;
     name: string;
@@ -127,7 +127,11 @@ export async function resetPassword(token: string, password: string): Promise<vo
 export async function login(input: {
   identifier: string;
   password: string;
-}): Promise<AuthUser | { userId: string; requires_verification: true; message: string }> {
+}): Promise<
+  | AuthUser
+  | { userId: string; requires_verification: true; message: string }
+  | { requires_mfa: true; mfa_token: string }
+> {
   const res = await fetch(`${API_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -137,11 +141,53 @@ export async function login(input: {
   if (res.status === 403 && (data as { requires_verification?: boolean }).requires_verification) {
     return data as { userId: string; requires_verification: true; message: string };
   }
+  // Password OK but MFA on — caller must complete verifyMfa with the challenge token.
+  if (res.ok && (data as { requires_mfa?: boolean }).requires_mfa) {
+    return data as { requires_mfa: true; mfa_token: string };
+  }
   if (!res.ok) throw new Error((data as { message?: string }).message ?? "حدث خطأ ما.");
   const { token, user, organization } = data as { token: string } & AuthUser;
   const profile = { user, organization };
   persist(token, profile);
   return profile;
+}
+
+/** Step 2 of login: submit the MFA challenge token + a TOTP/backup code. */
+export async function verifyMfa(mfaToken: string, code: string): Promise<AuthUser> {
+  const { token, user, organization } = await postAuth("auth/mfa/verify", { mfa_token: mfaToken, code });
+  const profile = { user, organization };
+  persist(token, profile);
+  return profile;
+}
+
+export async function setupMfa(): Promise<{ qr_data_url: string; otpauth_uri: string; secret: string }> {
+  const res = await authedFetch("auth/mfa/setup", { method: "POST" });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { message?: string }).message ?? "تعذر بدء الإعداد.");
+  return data as { qr_data_url: string; otpauth_uri: string; secret: string };
+}
+
+export async function enableMfa(code: string): Promise<{ backup_codes: string[] }> {
+  const res = await authedFetch("auth/mfa/enable", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error((data as { message?: string }).message ?? "تعذر التفعيل.");
+  return data as { backup_codes: string[] };
+}
+
+export async function disableMfa(code: string): Promise<void> {
+  const res = await authedFetch("auth/mfa/disable", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { message?: string }).message ?? "تعذر التعطيل.");
+  }
 }
 
 /** Re-fetch the profile from /auth/me and update local storage. */

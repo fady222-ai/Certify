@@ -27,13 +27,18 @@ export async function ensureAdmin() {
 
   const passwordHash = await bcrypt.hash(adminPassword, 10);
 
+  // Emergency MFA recovery: if the admin loses their authenticator, set
+  // ADMIN_RESET_MFA=true and redeploy to clear it (then unset the var).
+  const resetMfa = String(process.env.ADMIN_RESET_MFA ?? "").toLowerCase() === "true";
+  const mfaReset = resetMfa ? { totpSecret: null, totpEnabled: false, mfaBackupCodes: null } : {};
+
   const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (existing) {
     await prisma.user.update({
       where: { email: adminEmail },
-      data: { role: "admin", passwordHash, emailVerified: true },
+      data: { role: "admin", passwordHash, emailVerified: true, ...mfaReset },
     });
-    console.log(`[admin] Updated admin account: ${adminEmail}`);
+    console.log(`[admin] Updated admin account: ${adminEmail}${resetMfa ? " (MFA reset)" : ""}`);
   } else {
     await prisma.user.create({
       data: { email: adminEmail, name: adminName, role: "admin", passwordHash, emailVerified: true },
