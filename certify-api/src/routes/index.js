@@ -1,11 +1,6 @@
 import express, { Router } from "express";
 import { showVerification, trackEvent } from "../controllers/verificationController.js";
 import {
-  getCredential,
-  getIssuerProfile,
-  getIssuerJwks,
-} from "../controllers/openBadgeController.js";
-import {
   registerHandler,
   verifyEmailHandler,
   resendOtpHandler,
@@ -107,11 +102,7 @@ apiRouter.get("/health", (_req, res) => res.json({ status: "ok" }));
 
 // --- Public ---
 apiRouter.get("/verify/:code", showVerification);
-apiRouter.get("/verify/:code/openbadge", getCredential);
 apiRouter.post("/verify/:code/track", trackEvent);
-// Open Badges 3.0 issuer (public profile + keys for VC-JWT verification)
-apiRouter.get("/credentials/issuer", getIssuerProfile);
-apiRouter.get("/credentials/issuer/jwks.json", getIssuerJwks);
 apiRouter.get("/plans", listPlans);
 apiRouter.post("/auth/register", registerHandler);
 apiRouter.post("/auth/verify-email", verifyEmailHandler);

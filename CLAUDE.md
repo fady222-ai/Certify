@@ -463,35 +463,6 @@ cd certify-web && npm install && npm run dev
 
 ---
 
-## Open Badges 3.0 / Verifiable Credentials (شهادات قابلة للتحقق عالمياً)
-
-كل شهادة تُعرَض أيضاً كـ**Verifiable Credential** متوافقة مع W3C VC 2.0 + 1EdTech Open
-Badges 3.0، موقّعة تشفيرياً بصيغة **VC-JWT (EdDSA / Ed25519)** — تميّز عربي كامل (لا منافس
-عربي يدعمه) ومكافأة للمعيار العالمي. **بلا أي تبعية**: `node:crypto` فقط (نمط TOTP/secretCrypto).
-- **الخدمة:** `services/openBadge.js` — `buildCredential(cert, org)` (يبني JSON-LD: السياقان
-  `VC_CONTEXT`+`OB_CONTEXT`، النوع `[VerifiableCredential, OpenBadgeCredential]`،
-  `issuer` كـ`Profile`، `credentialSubject.achievement`، `validFrom/validUntil`)؛
-  `signCredentialJwt` (JWS مدمج، رأس `alg:EdDSA, typ:vc+jwt, kid→jwks`)؛ `verifyCredentialJwt`؛
-  `issuerProfile`/`issuerJwks`.
-- **مفتاح المُصدِر:** Ed25519. يُشتقّ **حتمياً من `APP_KEY`** (بادئة PKCS8 + بذرة SHA-256) فتبقى
-  الشهادات قابلة للتحقق عبر إعادات التشغيل؛ أو يُضبط خارجياً عبر `OB_SIGNING_KEY` (PKCS8 PEM)
-  للتدوير/مفتاح did:web. مُخزَّن بالذاكرة (cache).
-- **المسارات (عامة):** `GET /api/verify/:code/openbadge` (يرجع `{credential, jwt}`، و`?format=jwt`
-  يُنزِّل التوكن الخام بـ`application/vc+jwt`؛ الملغاة → 409) · `GET /api/credentials/issuer`
-  (Profile) · `GET /api/credentials/issuer/jwks.json` (مفاتيح التحقق العامة). محميّة بمحدِّد
-  `/api/verify` (60/د) والعام.
-- **الواجهة:** زر «الشهادة الرقمية الموثّقة» في `CertificateActions` (prop `openBadge`، يظهر
-  لغير الملغاة) يفتح **صفحة عرض أنيقة** `verify/[code]/credential` (server component) تعرض
-  الإنجاز/الحاصل/الجهة/التواريخ + صندوق ثقة «موقّعة تشفيرياً EdDSA» وشرحاً مبسّطاً، مع تنزيل
-  ملف `.jwt` ورابط مفاتيح التحقق **للخبراء/الأنظمة فقط** (لا يُفرض التنزيل الخام على المستخدم).
-  تجلب الصفحة عبر `getCredential` في `lib/api.ts` (404→غير موجودة، 409→ملغاة). صُمّمت بعد أن
-  أربك التنزيلُ الخام المستخدمَ (قرار المالك).
-- **اختبارات** (`test/openbadge.test.js`): بنية الـVC، حذف `validUntil`/`identifier` عند الغياب،
-  اسم إنجاز افتراضي، رأس JWS، تحقّق التوقيع (قبول الصحيح، رفض المعبوث/المشوّه)، حتمية المفتاح،
-  وشكل JWK (OKP/Ed25519). لا تغيير schema.
-
----
-
 ## ملاحظات للجلسات الجديدة
 
 - المستودع نُظِّف من مشروع `branch-chat-server` غير المرتبط (كان في الجذر) — لا
