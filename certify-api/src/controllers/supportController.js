@@ -351,6 +351,10 @@ export async function adminReplyTicket(req, res, next) {
       include: { user: { select: { name: true, email: true } } },
     });
     if (!ticket) return res.status(404).json({ message: "التذكرة غير موجودة." });
+    // Closed is terminal for everyone — even the admin can't reply to a closed ticket.
+    if (ticket.status === "closed") {
+      return res.status(409).json({ message: "التذكرة مغلقة — لا يمكن الردّ عليها." });
+    }
 
     const message = await prisma.supportMessage.create({
       data: { ticketId: ticket.id, authorRole: "admin", authorId: req.user.id, body: parsed.data.body },

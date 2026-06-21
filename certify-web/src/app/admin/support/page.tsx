@@ -140,22 +140,24 @@ export default function AdminSupportPage() {
             ))}
           </div>
 
-          <form onSubmit={submitReply} className="mt-5 border-t pt-4">
-            <textarea
-              className="input min-h-24" placeholder="اكتب ردك للعميل…" value={reply}
-              onChange={(e) => setReply(e.target.value)} required maxLength={5000}
-            />
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              {selected.ticket.status === "closed" ? (
-                <span className="text-xs font-bold text-ink-muted">التذكرة مغلقة</span>
-              ) : (
+          {selected.ticket.status === "closed" ? (
+            <p className="mt-5 flex items-center gap-1.5 border-t pt-4 text-sm font-bold text-ink-muted">
+              هذه التذكرة مغلقة — لا يمكن إرسال ردود. سيفتح العميل تذكرة جديدة عند الحاجة.
+            </p>
+          ) : (
+            <form onSubmit={submitReply} className="mt-5 border-t pt-4">
+              <textarea
+                className="input min-h-24" placeholder="اكتب ردك للعميل…" value={reply}
+                onChange={(e) => setReply(e.target.value)} required maxLength={5000}
+              />
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <button type="button" onClick={closeSelected} disabled={busy} className="btn-ghost text-red-600">
                   إغلاق التذكرة
                 </button>
-              )}
-              <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الرد</button>
-            </div>
-          </form>
+                <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الرد</button>
+              </div>
+            </form>
+          )}
         </div>
       ) : (
         <>
