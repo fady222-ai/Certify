@@ -142,7 +142,7 @@ export default function AdminSupportPage() {
 
           {selected.ticket.status === "closed" ? (
             <p className="mt-5 flex items-center gap-1.5 border-t pt-4 text-sm font-bold text-ink-muted">
-              هذه التذكرة مغلقة — لا يمكن إرسال ردود. سيفتح العميل تذكرة جديدة عند الحاجة.
+              هذه التذكرة مغلقة
             </p>
           ) : (
             <form onSubmit={submitReply} className="mt-5 border-t pt-4">
