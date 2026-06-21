@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import {
-  getCertificate, revokeCertificate, reactivateCertificate, resendCertificateEmail, eventLabel,
-  type CertificateDetail,
+  getCertificate, revokeCertificate, reactivateCertificate, deleteCertificate,
+  resendCertificateEmail, eventLabel, type CertificateDetail,
 } from "@/lib/certificates";
 import { RevokeCertificateModal } from "@/components/RevokeCertificateModal";
+import { DeleteCertificateModal } from "@/components/DeleteCertificateModal";
 import {
-  IconCheck, IconArrow, IconQr, IconMail, IconBan,
+  IconCheck, IconArrow, IconQr, IconMail, IconBan, IconTrash,
   IconDownload, IconLinkedin, IconClock,
 } from "@/components/icons";
 
@@ -22,6 +23,7 @@ export default function CertificateDetailPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [revokeOpen, setRevokeOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -78,6 +80,17 @@ export default function CertificateDetailPage() {
     } catch (e) {
       flash(e instanceof Error ? e.message : "تعذرت إعادة التفعيل.");
     } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDelete() {
+    setBusy(true);
+    try {
+      await deleteCertificate(id);
+      router.push("/dashboard/certificates");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "تعذر الحذف.");
       setBusy(false);
     }
   }
@@ -173,6 +186,10 @@ export default function CertificateDetailPage() {
                 <IconBan className="h-4 w-4" /> إلغاء الشهادة
               </button>
             )}
+            <button onClick={() => setDeleteOpen(true)} disabled={busy}
+              className="btn inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
+              <IconTrash className="h-4 w-4" /> حذف نهائي
+            </button>
           </div>
         </div>
 
@@ -222,6 +239,13 @@ export default function CertificateDetailPage() {
           busy={busy}
           onClose={() => setRevokeOpen(false)}
           onConfirm={onRevoke}
+        />
+        <DeleteCertificateModal
+          open={deleteOpen}
+          recipientName={cert.recipient_name}
+          busy={busy}
+          onClose={() => setDeleteOpen(false)}
+          onConfirm={onDelete}
         />
       </main>
   );

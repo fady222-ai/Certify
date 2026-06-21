@@ -205,6 +205,42 @@ export async function createCertificate(req, res, next) {
   }
 }
 
+/** DELETE /api/certificates/:id — permanently delete a certificate. */
+export async function deleteCertificate(req, res) {
+  if (!req.organization) return res.status(404).json({ message: "غير موجود." });
+
+  const cert = await prisma.certificate.findFirst({
+    where: { id: req.params.id, organizationId: req.organization.id },
+  });
+  if (!cert) return res.status(404).json({ message: "الشهادة غير موجودة." });
+
+  // Derive the certificate's own issue month (same format incrementUsage used at
+  // issuance) so we decrement the right monthly counter — never the wrong month.
+  const month = new Date(cert.createdAt).toISOString().slice(0, 7);
+
+  await prisma.$transaction(async (tx) => {
+    const usage = await tx.certificateUsage.findUnique({
+      where: { organizationId_month: { organizationId: req.organization.id, month } },
+    });
+    // Floor at zero: never let the monthly counter go negative.
+    if (usage && usage.certificatesIssued > 0) {
+      await tx.certificateUsage.update({
+        where: { organizationId_month: { organizationId: req.organization.id, month } },
+        data: { certificatesIssued: { decrement: 1 } },
+      });
+    }
+    // Events cascade-delete with the certificate (onDelete: Cascade).
+    await tx.certificate.delete({ where: { id: cert.id } });
+  });
+
+  // Remove the rendered PDF from disk (best-effort) — the record is gone.
+  if (cert.pdfUrl && !/^https?:\/\//i.test(cert.pdfUrl)) {
+    fs.unlink(path.join(config.storageDir, cert.pdfUrl)).catch(() => {});
+  }
+
+  return res.json({ message: "تم حذف الشهادة نهائياً." });
+}
+
 /** POST /api/certificates/:id/resend-email — re-send the certificate email. */
 export async function resendCertificateEmail(req, res) {
   if (!req.organization) return res.status(404).json({ message: "غير موجود." });

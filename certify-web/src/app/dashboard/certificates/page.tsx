@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getToken, authedFetch } from "@/lib/auth";
-import { revokeCertificate, reactivateCertificate } from "@/lib/certificates";
+import { revokeCertificate, reactivateCertificate, deleteCertificate } from "@/lib/certificates";
 import { RevokeCertificateModal } from "@/components/RevokeCertificateModal";
+import { DeleteCertificateModal } from "@/components/DeleteCertificateModal";
 import {
-  IconBadge, IconCheck, IconArrow, IconSearch, IconBan, IconDownload, IconMail,
+  IconBadge, IconCheck, IconSearch, IconBan, IconDownload, IconMail, IconShield, IconTrash,
 } from "@/components/icons";
 
 type Certificate = {
@@ -39,6 +40,8 @@ export default function CertificatesPage() {
   const [revoking, setRevoking] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<string | null>(null);
   const [reactivating, setReactivating] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [resending, setResending] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -117,6 +120,23 @@ export default function CertificatesPage() {
     }
   }
 
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setToast(null);
+    try {
+      await deleteCertificate(deleteTarget.id);
+      setDeleteTarget(null);
+      setToast("تم حذف الشهادة.");
+      load();
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : "تعذر الحذف.");
+    } finally {
+      setDeleting(false);
+      setTimeout(() => setToast(null), 3000);
+    }
+  }
+
   return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <div>
@@ -169,7 +189,15 @@ export default function CertificatesPage() {
           ) : (
             <div className="divide-y">
               {certs.map((c) => (
-                <div key={c.id} className="flex items-center justify-between gap-4 px-6 py-4 transition hover:bg-surface-2/60">
+                <div key={c.id} className="flex items-center gap-3 px-6 py-4 transition hover:bg-surface-2/60">
+                  {/* وسم الحالة — أقصى اليمين */}
+                  {c.status === "revoked" ? (
+                    <span className="shrink-0 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">ملغاة</span>
+                  ) : (
+                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-verify-50 px-3 py-1 text-xs font-bold text-verify-700">
+                      <IconCheck className="h-3.5 w-3.5" /> نشطة
+                    </span>
+                  )}
                   <Link href={`/dashboard/certificates/${c.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                     <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl font-display font-black ${
                       c.status === "revoked" ? "bg-red-50 text-red-400" : "bg-brand-50 text-brand-600"
@@ -183,34 +211,28 @@ export default function CertificatesPage() {
                       </p>
                     </div>
                   </Link>
-                  <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                    {c.status === "revoked" ? (
-                      <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">ملغاة</span>
-                    ) : (
-                      <span className="flex items-center gap-1 rounded-full bg-verify-50 px-3 py-1 text-xs font-bold text-verify-700">
-                        <IconCheck className="h-3.5 w-3.5" /> نشطة
-                      </span>
-                    )}
+                  {/* مجموعة أيقونات الإجراءات — يساراً */}
+                  <div className="flex shrink-0 items-center gap-1.5">
                     {c.pdf_url && (
                       <a href={c.pdf_url} target="_blank" rel="noreferrer"
-                        className="hidden rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700 sm:inline-flex" title="تحميل PDF">
+                        className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700" title="تحميل PDF">
                         <IconDownload className="h-4 w-4" />
                       </a>
                     )}
                     {c.recipient_email && c.status !== "revoked" && (
                       <button onClick={() => resend(c.id)} disabled={resending === c.id}
-                        className="hidden rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700 disabled:opacity-50 sm:inline-flex" title="إعادة إرسال البريد">
+                        className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700 disabled:opacity-50" title="إعادة إرسال البريد">
                         <IconMail className="h-4 w-4" />
                       </button>
                     )}
                     <Link href={`/verify/${c.verification_code}`} target="_blank"
-                      className="text-sm font-bold text-brand-700 hover:underline">
-                      تحقق <IconArrow className="inline h-3.5 w-3.5" />
+                      className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700" title="صفحة التحقق">
+                      <IconShield className="h-4 w-4" />
                     </Link>
                     {c.status === "revoked" ? (
                       <button onClick={() => reactivate(c.id)} disabled={reactivating === c.id}
-                        className="rounded-lg px-3 py-1.5 text-xs font-bold text-verify-700 hover:bg-verify-50 disabled:opacity-50" title="إعادة تفعيل الشهادة">
-                        {reactivating === c.id ? "..." : "إعادة تفعيل"}
+                        className="rounded-lg p-2 text-verify-600 hover:bg-verify-50 disabled:opacity-50" title="إعادة تفعيل الشهادة">
+                        <IconCheck className="h-4 w-4" />
                       </button>
                     ) : (
                       <button onClick={() => setRevokeTarget(c.id)} disabled={revoking === c.id}
@@ -218,6 +240,10 @@ export default function CertificatesPage() {
                         <IconBan className="h-4 w-4" />
                       </button>
                     )}
+                    <button onClick={() => setDeleteTarget({ id: c.id, name: c.recipient_name })}
+                      className="rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600" title="حذف نهائي">
+                      <IconTrash className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -253,6 +279,13 @@ export default function CertificatesPage() {
           busy={revoking !== null}
           onClose={() => setRevokeTarget(null)}
           onConfirm={confirmRevoke}
+        />
+        <DeleteCertificateModal
+          open={deleteTarget !== null}
+          recipientName={deleteTarget?.name ?? ""}
+          busy={deleting}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
         />
       </main>
   );

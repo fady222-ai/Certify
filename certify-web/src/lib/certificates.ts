@@ -49,6 +49,13 @@ export async function reactivateCertificate(id: string) {
   return data;
 }
 
+export async function deleteCertificate(id: string) {
+  const res = await authedFetch(`certificates/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message ?? "تعذر الحذف.");
+  return data;
+}
+
 export async function resendCertificateEmail(id: string) {
   const res = await authedFetch(`certificates/${id}/resend-email`, { method: "POST" });
   const data = await res.json();
