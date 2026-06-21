@@ -424,6 +424,23 @@ cd certify-web && npm install && npm run dev
 > **تنبيه schema:** أُضيف حقل `defaultTemplateId` إلى `Organization`. شغّل
 > `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
 
+### إلغاء الشهادة وإعادة تفعيلها
+
+- **الإلغاء** عبر **نافذة داخل التطبيق** (`components/RevokeCertificateModal.tsx`، بنمط
+  `IssueCertificateModal`) بحقل **سبب اختياري** — حلّت محلّ `prompt()` المتصفح في صفحتَي
+  `dashboard/certificates` (القائمة والتفاصيل). الخلفية `revokeCertificate` تبقى كما هي:
+  تصفّر `pdfUrl` وتحذف ملف الـPDF فيتوقف التحقق فوراً.
+- **إعادة التفعيل** (`POST /api/certificates/:id/reactivate` → `reactivateCertificate`):
+  مقيّدة بالمنظمة؛ 409 إن لم تكن الحالة `revoked`؛ تُعيد `status:"active"` وتصفّر
+  `revokedAt/revokedReason` وتُضيف حدث `reactivated`، ثم **تُعيد توليد الـPDF** عبر
+  `renderPdf` (ملفوف بـtry/catch فلا يفشل الطلب إن تعثّر المتصفح). لا زيادة على حصّة الشهر
+  (ليست إصداراً جديداً). الواجهة: زر «إعادة تفعيل» للصفوف/الشهادات الملغاة.
+- **صفحة التحقق متماسكة الحالة** (`verify/[code]/page.tsx`): دالّة `verifyState` تشتقّ
+  حالة واحدة (`verified`/`revoked`/`expired`/`tampered`/`invalid`) من `status`+`integrity`+
+  `valid` بدل عرض «تعذّر التحقق» (أحمر) مع «لا تلاعب» (أخضر) معاً للشهادة الملغاة. اللافتة
+  العلوية وصندوق الحالة يعرضان رسالة واحدة متّسقة (ملغاة/منتهية/تلاعب/موثّقة). المنتهية
+  تُشتقّ من `valid=false` مع بقاء البصمة (الخلفية تُبقي `status="active"`).
+
 ---
 
 ## ملاحظات للجلسات الجديدة

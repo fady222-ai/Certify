@@ -5,6 +5,7 @@ import { prisma } from "../db/prisma.js";
 import { config } from "../config/index.js";
 import { issueCertificate, PlanLimitError } from "../services/certificateIssuer.js";
 import { sendCertificateEmail } from "../services/certificateMailer.js";
+import { renderPdf } from "../services/certificateRenderer.js";
 
 const issueSchema = z.object({
   recipientName: z.string().trim().min(2, "اسم المتدرب مطلوب.").max(160),
@@ -131,6 +132,41 @@ export async function revokeCertificate(req, res) {
   // immediately — a revoked certificate must not remain downloadable.
   if (cert.pdfUrl && !/^https?:\/\//i.test(cert.pdfUrl)) {
     fs.unlink(path.join(config.storageDir, cert.pdfUrl)).catch(() => {});
+  }
+
+  return res.json(presentCertificate(updated));
+}
+
+/** POST /api/certificates/:id/reactivate — restore a revoked certificate. */
+export async function reactivateCertificate(req, res) {
+  if (!req.organization) return res.status(404).json({ message: "غير موجود." });
+
+  const cert = await prisma.certificate.findFirst({
+    where: { id: req.params.id, organizationId: req.organization.id },
+  });
+  if (!cert) return res.status(404).json({ message: "الشهادة غير موجودة." });
+  if (cert.status !== "revoked") {
+    return res.status(409).json({ message: "الشهادة غير ملغاة." });
+  }
+
+  const updated = await prisma.certificate.update({
+    where: { id: cert.id },
+    data: {
+      status: "active",
+      revokedAt: null,
+      revokedReason: null,
+      events: { create: { eventType: "reactivated" } },
+    },
+  });
+
+  // Re-render the PDF that revocation deleted so the public /storage link works
+  // again. renderPdf persists pdfUrl itself; wrap in try/catch so a transient
+  // browser failure doesn't fail the whole request (status is already active).
+  try {
+    const relPath = await renderPdf(updated);
+    updated.pdfUrl = relPath;
+  } catch {
+    // PDF can be regenerated later (e.g. via resend); status restore stands.
   }
 
   return res.json(presentCertificate(updated));

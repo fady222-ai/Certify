@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import {
-  getCertificate, revokeCertificate, resendCertificateEmail, eventLabel,
+  getCertificate, revokeCertificate, reactivateCertificate, resendCertificateEmail, eventLabel,
   type CertificateDetail,
 } from "@/lib/certificates";
+import { RevokeCertificateModal } from "@/components/RevokeCertificateModal";
 import {
   IconCheck, IconArrow, IconQr, IconMail, IconBan,
   IconDownload, IconLinkedin, IconClock,
@@ -20,6 +21,7 @@ export default function CertificateDetailPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [revokeOpen, setRevokeOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -53,16 +55,28 @@ export default function CertificateDetailPage() {
     }
   }
 
-  async function onRevoke() {
-    const reason = prompt("سبب الإلغاء (اختياري):");
-    if (reason === null) return;
+  async function onRevoke(reason: string) {
     setBusy(true);
     try {
       await revokeCertificate(id, reason);
+      setRevokeOpen(false);
       await load();
       flash("تم إلغاء الشهادة.");
     } catch (e) {
       flash(e instanceof Error ? e.message : "تعذر الإلغاء.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onReactivate() {
+    setBusy(true);
+    try {
+      await reactivateCertificate(id);
+      await load();
+      flash("تمت إعادة تفعيل الشهادة.");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "تعذرت إعادة التفعيل.");
     } finally {
       setBusy(false);
     }
@@ -148,8 +162,13 @@ export default function CertificateDetailPage() {
                 <IconMail className="h-4 w-4" /> إعادة إرسال البريد
               </button>
             )}
-            {!revoked && (
-              <button onClick={onRevoke} disabled={busy}
+            {revoked ? (
+              <button onClick={onReactivate} disabled={busy}
+                className="btn inline-flex items-center gap-2 border border-verify-200 bg-verify-50 text-verify-700 hover:bg-verify-100 disabled:opacity-60">
+                <IconCheck className="h-4 w-4" /> إعادة تفعيل الشهادة
+              </button>
+            ) : (
+              <button onClick={() => setRevokeOpen(true)} disabled={busy}
                 className="btn inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
                 <IconBan className="h-4 w-4" /> إلغاء الشهادة
               </button>
@@ -197,6 +216,13 @@ export default function CertificateDetailPage() {
             </ul>
           )}
         </div>
+
+        <RevokeCertificateModal
+          open={revokeOpen}
+          busy={busy}
+          onClose={() => setRevokeOpen(false)}
+          onConfirm={onRevoke}
+        />
       </main>
   );
 }

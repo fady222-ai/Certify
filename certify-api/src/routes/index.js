@@ -19,6 +19,7 @@ import {
   createCertificate,
   getCertificate,
   revokeCertificate,
+  reactivateCertificate,
   resendCertificateEmail,
   dashboardStats,
 } from "../controllers/certificateController.js";
@@ -126,6 +127,7 @@ apiRouter.get("/certificates", requireAuth, listCertificates);
 apiRouter.post("/certificates", requireAuth, createCertificate);
 apiRouter.get("/certificates/:id", requireAuth, getCertificate);
 apiRouter.post("/certificates/:id/revoke", requireAuth, revokeCertificate);
+apiRouter.post("/certificates/:id/reactivate", requireAuth, reactivateCertificate);
 apiRouter.post("/certificates/:id/resend-email", requireAuth, resendCertificateEmail);
 
 apiRouter.get("/templates", requireAuth, listTemplates);

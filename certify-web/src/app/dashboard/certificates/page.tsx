@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getToken, authedFetch } from "@/lib/auth";
+import { revokeCertificate, reactivateCertificate } from "@/lib/certificates";
+import { RevokeCertificateModal } from "@/components/RevokeCertificateModal";
 import {
   IconBadge, IconCheck, IconArrow, IconSearch, IconBan, IconDownload, IconMail,
 } from "@/components/icons";
@@ -35,6 +37,8 @@ export default function CertificatesPage() {
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 50;
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<string | null>(null);
+  const [reactivating, setReactivating] = useState<string | null>(null);
   const [resending, setResending] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -82,19 +86,34 @@ export default function CertificatesPage() {
     }
   }
 
-  async function revoke(id: string) {
-    const reason = prompt("سبب الإلغاء (اختياري):") ?? "";
-    if (reason === null) return;
+  async function confirmRevoke(reason: string) {
+    if (!revokeTarget) return;
+    const id = revokeTarget;
     setRevoking(id);
     try {
-      await authedFetch(`certificates/${id}/revoke`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason }),
-      });
+      await revokeCertificate(id, reason);
+      setRevokeTarget(null);
       load();
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : "تعذر الإلغاء.");
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setRevoking(null);
+    }
+  }
+
+  async function reactivate(id: string) {
+    setReactivating(id);
+    setToast(null);
+    try {
+      await reactivateCertificate(id);
+      setToast("تمت إعادة تفعيل الشهادة.");
+      load();
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : "تعذرت إعادة التفعيل.");
+    } finally {
+      setReactivating(null);
+      setTimeout(() => setToast(null), 3000);
     }
   }
 
@@ -188,8 +207,13 @@ export default function CertificatesPage() {
                       className="text-sm font-bold text-brand-700 hover:underline">
                       تحقق <IconArrow className="inline h-3.5 w-3.5" />
                     </Link>
-                    {c.status !== "revoked" && (
-                      <button onClick={() => revoke(c.id)} disabled={revoking === c.id}
+                    {c.status === "revoked" ? (
+                      <button onClick={() => reactivate(c.id)} disabled={reactivating === c.id}
+                        className="rounded-lg px-3 py-1.5 text-xs font-bold text-verify-700 hover:bg-verify-50 disabled:opacity-50" title="إعادة تفعيل الشهادة">
+                        {reactivating === c.id ? "..." : "إعادة تفعيل"}
+                      </button>
+                    ) : (
+                      <button onClick={() => setRevokeTarget(c.id)} disabled={revoking === c.id}
                         className="rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50" title="إلغاء الشهادة">
                         <IconBan className="h-4 w-4" />
                       </button>
@@ -223,6 +247,13 @@ export default function CertificatesPage() {
             </div>
           </div>
         )}
+
+        <RevokeCertificateModal
+          open={revokeTarget !== null}
+          busy={revoking !== null}
+          onClose={() => setRevokeTarget(null)}
+          onConfirm={confirmRevoke}
+        />
       </main>
   );
 }

@@ -5,10 +5,28 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { verifyCertificate } from "@/lib/api";
 import { CertificateActions } from "@/components/CertificateActions";
 import {
-  IconCheck, IconShield, IconBadge, IconArrow,
+  IconCheck, IconShield, IconBadge, IconArrow, IconBan, IconClock,
 } from "@/components/icons";
+import type { VerificationResult } from "@/lib/api";
 
 type Params = { params: Promise<{ code: string }> };
+
+type VerifyState = "verified" | "revoked" | "expired" | "tampered" | "invalid";
+
+/**
+ * Collapse the raw verification flags into one coherent state so the page never
+ * shows contradictory messages (e.g. "cannot verify" alongside "no tampering").
+ * Status takes precedence: a revoked/expired certificate is not "verified" even
+ * though its integrity hash still matches.
+ */
+function verifyState(result: VerificationResult): VerifyState {
+  if (result.status === "revoked") return "revoked";
+  if (!result.integrity) return "tampered";
+  if (result.valid) return "verified";
+  // Found, not revoked, hash intact, yet not valid → past its expiry date.
+  if (result.status === "expired" || result.certificate?.expiry_date) return "expired";
+  return "invalid";
+}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { code } = await params;
@@ -22,7 +40,8 @@ export default async function VerifyPage({ params }: Params) {
   const { code } = await params;
   const result = await verifyCertificate(code);
 
-  const verified = result.found && result.valid && result.integrity;
+  const state = verifyState(result);
+  const verified = result.found && state === "verified";
 
   return (
     <>
@@ -32,23 +51,43 @@ export default async function VerifyPage({ params }: Params) {
         <div className="relative mx-auto max-w-3xl px-5 py-14 lg:py-20">
           {/* شريط الحالة */}
           <div className="mx-auto mb-8 text-center">
-            {verified ? (
+            {!result.found ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-5 py-2 text-sm font-extrabold text-red-600 ring-1 ring-red-100">
+                <IconShield className="h-5 w-5" />
+                الشهادة غير موجودة
+              </span>
+            ) : state === "verified" ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-verify-50 px-5 py-2 text-sm font-extrabold text-verify-700 ring-1 ring-verify-100">
                 <span className="grid h-6 w-6 place-items-center rounded-full bg-verify-500 text-white">
                   <IconCheck className="h-4 w-4" />
                 </span>
                 شهادة موثقة وصحيحة
               </span>
+            ) : state === "revoked" ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-5 py-2 text-sm font-extrabold text-red-600 ring-1 ring-red-100">
+                <IconBan className="h-5 w-5" />
+                هذه الشهادة ملغاة
+              </span>
+            ) : state === "expired" ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-5 py-2 text-sm font-extrabold text-amber-700 ring-1 ring-amber-100">
+                <IconClock className="h-5 w-5" />
+                انتهت صلاحية هذه الشهادة
+              </span>
+            ) : state === "tampered" ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-5 py-2 text-sm font-extrabold text-red-600 ring-1 ring-red-100">
+                <IconShield className="h-5 w-5" />
+                تحذير: بصمة الشهادة غير متطابقة
+              </span>
             ) : (
               <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-5 py-2 text-sm font-extrabold text-red-600 ring-1 ring-red-100">
                 <IconShield className="h-5 w-5" />
-                {result.found ? "تعذر التحقق من صحة الشهادة" : "الشهادة غير موجودة"}
+                تعذر التحقق من صحة الشهادة
               </span>
             )}
           </div>
 
           {result.found && result.certificate ? (
-            <CertificateCard result={result} verified={!!verified} />
+            <CertificateCard result={result} verified={!!verified} state={state} />
           ) : (
             <div className="card mx-auto max-w-md p-10 text-center">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-red-50 text-red-500">
@@ -82,13 +121,60 @@ export default async function VerifyPage({ params }: Params) {
 function CertificateCard({
   result,
   verified,
+  state,
 }: {
   result: Awaited<ReturnType<typeof verifyCertificate>>;
   verified: boolean;
+  state: VerifyState;
 }) {
   const c = result.certificate!;
   const org = c.organization;
   const accent = org.primary_color || "#4f46e5";
+
+  // Status box: one coherent message per state (no contradictory green/red).
+  const statusBox = {
+    verified: {
+      tone: "bg-verify-50 ring-verify-100",
+      iconBg: "bg-verify-500",
+      icon: IconShield,
+      title: "لم يتم العثور على أي تلاعب",
+      titleColor: "text-verify-700",
+      body: "بيانات الشهادة مطابقة للبصمة الرقمية المسجلة وقت الإصدار.",
+    },
+    revoked: {
+      tone: "bg-red-50 ring-red-100",
+      iconBg: "bg-red-500",
+      icon: IconBan,
+      title: "هذه الشهادة ملغاة",
+      titleColor: "text-red-700",
+      body: "ألغت جهة الإصدار هذه الشهادة فلم تعد سارية.",
+    },
+    expired: {
+      tone: "bg-amber-50 ring-amber-100",
+      iconBg: "bg-amber-500",
+      icon: IconClock,
+      title: "انتهت صلاحية هذه الشهادة",
+      titleColor: "text-amber-700",
+      body: "تجاوزت الشهادة تاريخ انتهاء صلاحيتها المحدد وقت الإصدار.",
+    },
+    tampered: {
+      tone: "bg-red-50 ring-red-100",
+      iconBg: "bg-red-500",
+      icon: IconShield,
+      title: "تحذير: بصمة الشهادة غير متطابقة",
+      titleColor: "text-red-700",
+      body: "قد تكون بيانات هذه الشهادة عدلت بعد إصدارها.",
+    },
+    invalid: {
+      tone: "bg-red-50 ring-red-100",
+      iconBg: "bg-red-500",
+      icon: IconShield,
+      title: "تعذر التحقق من صحة الشهادة",
+      titleColor: "text-red-700",
+      body: "هذه الشهادة ليست سارية حاليا.",
+    },
+  }[state];
+  const StatusIcon = statusBox.icon;
 
   return (
     <div className="card mx-auto max-w-2xl overflow-hidden">
@@ -126,20 +212,14 @@ function CertificateCard({
           <Field label="رمز التحقق" value={c.verification_code} mono />
         </div>
 
-        {/* تحقق السلامة */}
-        <div className="mt-6 flex items-center gap-3 rounded-xl bg-verify-50 p-4 ring-1 ring-verify-100">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-verify-500 text-white">
-            <IconShield className="h-5 w-5" />
+        {/* حالة الشهادة */}
+        <div className={`mt-6 flex items-center gap-3 rounded-xl p-4 ring-1 ${statusBox.tone}`}>
+          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-white ${statusBox.iconBg}`}>
+            <StatusIcon className="h-5 w-5" />
           </span>
           <div>
-            <p className="text-sm font-extrabold text-verify-700">
-              {result.integrity ? "لم يتم العثور على أي تلاعب" : "تحذير: بصمة الشهادة غير متطابقة"}
-            </p>
-            <p className="text-xs text-ink-soft">
-              {result.integrity
-                ? "بيانات الشهادة مطابقة للبصمة الرقمية المسجلة وقت الإصدار."
-                : "قد تكون بيانات هذه الشهادة عدلت بعد إصدارها."}
-            </p>
+            <p className={`text-sm font-extrabold ${statusBox.titleColor}`}>{statusBox.title}</p>
+            <p className="text-xs text-ink-soft">{statusBox.body}</p>
           </div>
         </div>
 

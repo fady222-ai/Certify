@@ -42,6 +42,13 @@ export async function revokeCertificate(id: string, reason: string) {
   return data;
 }
 
+export async function reactivateCertificate(id: string) {
+  const res = await authedFetch(`certificates/${id}/reactivate`, { method: "POST" });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message ?? "تعذرت إعادة التفعيل.");
+  return data;
+}
+
 export async function resendCertificateEmail(id: string) {
   const res = await authedFetch(`certificates/${id}/resend-email`, { method: "POST" });
   const data = await res.json();
@@ -57,6 +64,7 @@ const EVENT_LABELS: Record<string, string> = {
   added_to_linkedin: "أضيفت إلى لينكدإن",
   emailed: "أرسل البريد",
   revoked: "ألغيت الشهادة",
+  reactivated: "أعيد تفعيلها",
 };
 
 export function eventLabel(type: string): string {
