@@ -1,5 +1,6 @@
 import { prisma } from "../db/prisma.js";
 import { hashMatches } from "../services/certificateHasher.js";
+import { logCertificateEvent } from "../services/certificateEvents.js";
 import { config } from "../config/index.js";
 
 function issueDateLabel(date) {
@@ -38,17 +39,11 @@ export async function showVerification(req, res) {
   }
 
   // Log the verification view (network-effect surface) — fire and forget.
-  prisma.certificateEvent
-    .create({
-      data: {
-        certificateId: cert.id,
-        eventType: "opened",
-        ipAddress: req.ip,
-        userAgent: req.get("user-agent") ?? null,
-        referrer: req.get("referer") ?? null,
-      },
-    })
-    .catch(() => {});
+  logCertificateEvent(cert.id, "opened", {
+    ipAddress: req.ip,
+    userAgent: req.get("user-agent") ?? null,
+    referrer: req.get("referer") ?? null,
+  }).catch(() => {});
   prisma.certificate
     .update({
       where: { id: cert.id },
@@ -114,16 +109,12 @@ export async function trackEvent(req, res) {
   });
   if (!cert) return res.status(404).json({ message: "غير موجود." });
 
-  const data = {
-    eventType: type,
-    certificateId: cert.id,
+  // Log event + bump the matching counter (and linkedinAdded flag).
+  logCertificateEvent(cert.id, type, {
     ipAddress: req.ip,
     userAgent: req.get("user-agent") ?? null,
     referrer: req.get("referer") ?? null,
-  };
-
-  // Log event + bump the matching counter (and linkedinAdded flag).
-  prisma.certificateEvent.create({ data }).catch(() => {});
+  }).catch(() => {});
 
   const counterField = TRACKABLE[type];
   const update = {};

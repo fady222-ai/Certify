@@ -3,6 +3,7 @@ import { config } from "../config/index.js";
 import { verifyUrl } from "./certificateRenderer.js";
 import { sendEmail } from "./email/index.js";
 import { certificateEmail } from "./email/templates.js";
+import { logCertificateEvent } from "./certificateEvents.js";
 
 function pdfAbsoluteUrl(pdfUrl) {
   if (!pdfUrl) return null;
@@ -37,15 +38,9 @@ export async function sendCertificateEmail(cert) {
   const result = await sendEmail({ to: cert.recipientEmail, subject, html, text });
 
   if (result.ok) {
-    prisma.certificateEvent
-      .create({
-        data: {
-          certificateId: cert.id,
-          eventType: "emailed",
-          metadata: JSON.stringify({ transport: result.transport, id: result.id ?? null }),
-        },
-      })
-      .catch(() => {});
+    logCertificateEvent(cert.id, "emailed", {
+      metadata: JSON.stringify({ transport: result.transport, id: result.id ?? null }),
+    }).catch(() => {});
   }
 
   return result;

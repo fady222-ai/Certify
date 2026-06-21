@@ -6,6 +6,7 @@ import { config } from "../config/index.js";
 import { issueCertificate, PlanLimitError } from "../services/certificateIssuer.js";
 import { sendCertificateEmail } from "../services/certificateMailer.js";
 import { renderPdf } from "../services/certificateRenderer.js";
+import { pruneCertificateEvents, EVENT_RETENTION } from "../services/certificateEvents.js";
 
 const issueSchema = z.object({
   recipientName: z.string().trim().min(2, "اسم المتدرب مطلوب.").max(160),
@@ -81,7 +82,7 @@ export async function getCertificate(req, res) {
   const cert = await prisma.certificate.findFirst({
     where: { id: req.params.id, organizationId: req.organization.id },
     include: {
-      events: { orderBy: { createdAt: "desc" }, take: 25 },
+      events: { orderBy: { createdAt: "desc" }, take: EVENT_RETENTION },
       template: { select: { id: true, name: true } },
     },
   });
@@ -128,6 +129,9 @@ export async function revokeCertificate(req, res) {
     },
   });
 
+  // Keep only the latest events per certificate (DB bloat guard).
+  await pruneCertificateEvents(prisma, cert.id);
+
   // Delete the rendered PDF from disk so the public /storage link stops working
   // immediately — a revoked certificate must not remain downloadable.
   if (cert.pdfUrl && !/^https?:\/\//i.test(cert.pdfUrl)) {
@@ -158,6 +162,9 @@ export async function reactivateCertificate(req, res) {
       events: { create: { eventType: "reactivated" } },
     },
   });
+
+  // Keep only the latest events per certificate (DB bloat guard).
+  await pruneCertificateEvents(prisma, cert.id);
 
   // Re-render the PDF that revocation deleted so the public /storage link works
   // again. renderPdf persists pdfUrl itself; wrap in try/catch so a transient
