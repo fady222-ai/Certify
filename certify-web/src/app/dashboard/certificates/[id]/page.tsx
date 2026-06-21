@@ -187,7 +187,7 @@ export default function CertificateDetailPage() {
               </button>
             )}
             <button onClick={() => setDeleteOpen(true)} disabled={busy}
-              className="btn inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
+              className="btn ms-auto inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
               <IconTrash className="h-4 w-4" /> حذف نهائي
             </button>
           </div>
