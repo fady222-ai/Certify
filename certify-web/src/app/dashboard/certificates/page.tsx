@@ -241,7 +241,7 @@ export default function CertificatesPage() {
                       </button>
                     )}
                     <button onClick={() => setDeleteTarget({ id: c.id, name: c.recipient_name })}
-                      className="rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600" title="حذف نهائي">
+                      className="ms-2 rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600" title="حذف نهائي">
                       <IconTrash className="h-4 w-4" />
                     </button>
                   </div>
