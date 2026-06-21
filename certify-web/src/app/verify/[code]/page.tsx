@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { verifyCertificate } from "@/lib/api";
+import { API_URL, verifyCertificate } from "@/lib/api";
 import { CertificateActions } from "@/components/CertificateActions";
 import {
   IconCheck, IconShield, IconBadge, IconArrow, IconBan, IconClock,
@@ -30,9 +30,28 @@ function verifyState(result: VerificationResult): VerifyState {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { code } = await params;
+  const result = await verifyCertificate(code);
+  const c = result.certificate;
+
+  // Rich title/description so shares on WhatsApp/LinkedIn/X render an
+  // achievement card, not a bare link.
+  const title = c
+    ? `${c.recipient_name}${c.course_name ? ` — ${c.course_name}` : ""} | شهادة موثّقة`
+    : `التحقق من الشهادة ${code} | Certify`;
+  const description = c
+    ? `شهادة${c.course_name ? ` «${c.course_name}»` : ""} صادرة عن ${
+        c.organization.name ?? "منصة الشهادات"
+      }. اضغط للتحقق من صحتها.`
+    : "صفحة التحقق الرسمية من صحة الشهادة الرقمية.";
+  // Use the org logo as the preview image when available (Arabic OG-image
+  // generation is avoided for now — see CLAUDE.md).
+  const images = c?.organization.logo_url ? [{ url: c.organization.logo_url }] : undefined;
+
   return {
-    title: `التحقق من الشهادة ${code} | Certify`,
-    description: "صفحة التحقق الرسمية من صحة الشهادة الرقمية.",
+    title,
+    description,
+    openGraph: { title, description, type: "website", images },
+    twitter: { card: "summary", title, description, images },
   };
 }
 
@@ -223,12 +242,32 @@ function CertificateCard({
           </div>
         </div>
 
+        {/* رمز التحقق السريع QR */}
+        {state !== "revoked" && (
+          <div className="mt-6 flex items-center gap-4 rounded-xl bg-surface-2/60 p-4">
+            <img
+              src={`${API_URL}/api/verify/${encodeURIComponent(c.verification_code)}/qr.png`}
+              alt="رمز التحقق السريع"
+              width={96}
+              height={96}
+              className="h-24 w-24 shrink-0 rounded-lg bg-white p-1.5 ring-1 ring-black/5"
+            />
+            <div>
+              <p className="text-sm font-extrabold text-ink">امسح للتحقق الفوري</p>
+              <p className="mt-1 text-xs text-ink-soft">
+                وجّه كاميرا هاتفك إلى الرمز لفتح صفحة التحقق الرسمية من هذه الشهادة.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* إجراءات */}
         <CertificateActions
           code={c.verification_code}
           pdfUrl={c.pdf_url}
           courseName={c.course_name}
           orgName={org.name}
+          recipientName={c.recipient_name}
           issueDate={c.issue_date}
           expiryDate={c.expiry_date}
         />

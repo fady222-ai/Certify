@@ -27,6 +27,7 @@ function presentCertificate(c) {
     id: c.id,
     recipient_name: c.recipientName,
     recipient_email: c.recipientEmail,
+    recipient_phone: c.recipientPhone,
     course_name: c.courseName,
     issue_date: c.issueDate ? new Date(c.issueDate).toISOString().slice(0, 10) : null,
     status: c.status,

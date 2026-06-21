@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { API_URL } from "@/lib/api";
-import { IconQr, IconLinkedin } from "@/components/icons";
+import { whatsappShareUrl, twitterShareUrl, shareText } from "@/lib/share";
+import { IconQr, IconLinkedin, IconWhatsapp, IconX, IconCopy, IconCheck } from "@/components/icons";
 
 type Props = {
   code: string;
   pdfUrl: string | null;
   courseName: string | null;
   orgName: string | null;
+  recipientName?: string | null;
   issueDate: string | null; // YYYY-MM-DD
   expiryDate: string | null; // YYYY-MM-DD
 };
@@ -57,32 +60,90 @@ function linkedinUrl({ code, courseName, orgName, issueDate, expiryDate }: Props
 }
 
 export function CertificateActions(props: Props) {
-  const { code, pdfUrl } = props;
+  const { code, pdfUrl, courseName, orgName, recipientName } = props;
+  const [copied, setCopied] = useState(false);
+
+  const verifyHref =
+    typeof window !== "undefined" ? `${window.location.origin}/verify/${code}` : `/verify/${code}`;
+  const text = shareText({ recipientName, courseName, orgName });
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(verifyHref);
+      setCopied(true);
+      track(code, "shared");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable — ignore */
+    }
+  }
 
   return (
-    <div className="mt-7 flex flex-wrap gap-3">
-      {pdfUrl && (
+    <div className="mt-7">
+      <div className="flex flex-wrap gap-3">
+        {pdfUrl && (
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => track(code, "downloaded")}
+            className="btn-primary"
+          >
+            <IconQr className="h-4 w-4" />
+            عرض الشهادة (PDF)
+          </a>
+        )}
         <a
-          href={pdfUrl}
+          href={linkedinUrl(props)}
           target="_blank"
           rel="noreferrer"
-          onClick={() => track(code, "downloaded")}
-          className="btn-primary"
+          onClick={() => track(code, "added_to_linkedin")}
+          className="btn-ghost"
         >
-          <IconQr className="h-4 w-4" />
-          عرض الشهادة (PDF)
+          <IconLinkedin className="h-4 w-4 text-[#0a66c2]" />
+          إضافة إلى لينكدإن
         </a>
-      )}
-      <a
-        href={linkedinUrl(props)}
-        target="_blank"
-        rel="noreferrer"
-        onClick={() => track(code, "added_to_linkedin")}
-        className="btn-ghost"
-      >
-        <IconLinkedin className="h-4 w-4 text-[#0a66c2]" />
-        إضافة إلى لينكدإن
-      </a>
+      </div>
+
+      {/* مشاركة الشهادة */}
+      <div className="mt-4 border-t pt-4">
+        <p className="mb-2 text-xs font-bold text-ink-muted">شارك الشهادة</p>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={whatsappShareUrl({ text, url: verifyHref })}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => track(code, "shared")}
+            className="btn-ghost"
+          >
+            <IconWhatsapp className="h-4 w-4 text-[#25d366]" />
+            واتساب
+          </a>
+          <a
+            href={twitterShareUrl({ text, url: verifyHref })}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => track(code, "shared")}
+            className="btn-ghost"
+          >
+            <IconX className="h-4 w-4" />
+            X
+          </a>
+          <button onClick={copyLink} className="btn-ghost">
+            {copied ? (
+              <>
+                <IconCheck className="h-4 w-4 text-verify-600" />
+                تم النسخ
+              </>
+            ) : (
+              <>
+                <IconCopy className="h-4 w-4" />
+                نسخ الرابط
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

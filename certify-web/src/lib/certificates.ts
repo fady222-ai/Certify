@@ -8,6 +8,7 @@ export type CertificateDetail = {
   id: string;
   recipient_name: string;
   recipient_email: string | null;
+  recipient_phone: string | null;
   course_name: string | null;
   issue_date: string | null;
   expiry_date: string | null;

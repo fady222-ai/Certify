@@ -12,8 +12,9 @@ import { RevokeCertificateModal } from "@/components/RevokeCertificateModal";
 import { DeleteCertificateModal } from "@/components/DeleteCertificateModal";
 import {
   IconCheck, IconArrow, IconQr, IconMail, IconBan, IconTrash,
-  IconDownload, IconLinkedin, IconClock,
+  IconDownload, IconLinkedin, IconClock, IconWhatsapp,
 } from "@/components/icons";
+import { whatsappShareUrl, shareText } from "@/lib/share";
 
 export default function CertificateDetailPage() {
   const router = useRouter();
@@ -170,6 +171,23 @@ export default function CertificateDetailPage() {
             <Link href={`/verify/${cert.verification_code}`} target="_blank" className="btn-ghost">
               <IconQr className="h-4 w-4" /> صفحة التحقق
             </Link>
+            {!revoked && (
+              <a
+                href={whatsappShareUrl({
+                  text: shareText({ recipientName: cert.recipient_name, courseName: cert.course_name }),
+                  url:
+                    typeof window !== "undefined"
+                      ? `${window.location.origin}/verify/${cert.verification_code}`
+                      : `/verify/${cert.verification_code}`,
+                  phone: cert.recipient_phone,
+                })}
+                target="_blank"
+                rel="noreferrer"
+                className="btn-ghost"
+              >
+                <IconWhatsapp className="h-4 w-4 text-[#25d366]" /> إرسال عبر واتساب
+              </a>
+            )}
             {cert.recipient_email && !revoked && (
               <button onClick={onResend} disabled={busy} className="btn-ghost disabled:opacity-60">
                 <IconMail className="h-4 w-4" /> إعادة إرسال البريد

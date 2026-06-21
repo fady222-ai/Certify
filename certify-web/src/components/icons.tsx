@@ -86,3 +86,14 @@ export const IconGoogle = (p: IconProps) => (
     <path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.5l3.4 2.6C7.3 7.6 9.4 5.9 12 5.9Z" />
   </svg>
 );
+export const IconWhatsapp = (p: IconProps) => (
+  <svg {...base(p)}><path d="M12 3a9 9 0 0 0-7.7 13.7L3 21l4.4-1.2A9 9 0 1 0 12 3Z" /><path d="M9 8.5c0 4 2.5 6.5 6.5 6.5.6 0 1-.5 1-1.1l-.2-1-2-.7-.9.9c-1.4-.5-2.3-1.4-2.8-2.8l.9-.9-.7-2-1-.2c-.6 0-1.1.4-1.1 1Z" /></svg>
+);
+export const IconX = (p: IconProps) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...p}>
+    <path d="M18.2 2H21l-6.5 7.4L22 22h-6.2l-4.9-6.4L5.3 22H2.5l7-8L2 2h6.3l4.4 5.9L18.2 2Zm-1.1 18h1.7L7 3.9H5.2L17.1 20Z" />
+  </svg>
+);
+export const IconCopy = (p: IconProps) => (
+  <svg {...base(p)}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h8" /></svg>
+);
