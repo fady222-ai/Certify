@@ -8,31 +8,19 @@ import { revokeCertificate, reactivateCertificate, deleteCertificate } from "@/l
 import { RevokeCertificateModal } from "@/components/RevokeCertificateModal";
 import { DeleteCertificateModal } from "@/components/DeleteCertificateModal";
 import {
-  IconBadge, IconCheck, IconSearch, IconBan, IconDownload, IconMail, IconShield, IconTrash, IconWhatsapp,
+  IconBadge, IconCheck, IconSearch, IconBan, IconDownload, IconMail, IconShield, IconTrash,
 } from "@/components/icons";
-import { whatsappShareUrl, shareText } from "@/lib/share";
 
 type Certificate = {
   id: string;
   recipient_name: string;
   recipient_email: string | null;
-  recipient_phone: string | null;
   course_name: string | null;
   verification_code: string;
   status: string;
   pdf_url: string | null;
   issue_date: string | null;
 };
-
-/** Owner-side "send to trainee via WhatsApp" link (uses the trainee phone if present). */
-function waSend(c: Certificate): string {
-  const url =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/verify/${c.verification_code}`
-      : `/verify/${c.verification_code}`;
-  const text = shareText({ recipientName: c.recipient_name, courseName: c.course_name });
-  return whatsappShareUrl({ text, url, phone: c.recipient_phone });
-}
 
 const FILTERS = [
   { key: "", label: "الكل" },
@@ -241,12 +229,6 @@ export default function CertificatesPage() {
                       className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700" title="صفحة التحقق">
                       <IconShield className="h-4 w-4" />
                     </Link>
-                    {c.status !== "revoked" && (
-                      <a href={waSend(c)} target="_blank" rel="noreferrer"
-                        className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-[#25d366]" title="إرسال عبر واتساب">
-                        <IconWhatsapp className="h-4 w-4" />
-                      </a>
-                    )}
                     {c.status === "revoked" ? (
                       <button onClick={() => reactivate(c.id)} disabled={reactivating === c.id}
                         className="rounded-lg p-2 text-verify-600 hover:bg-verify-50 disabled:opacity-50" title="إعادة تفعيل الشهادة">
