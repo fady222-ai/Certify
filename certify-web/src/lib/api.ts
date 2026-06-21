@@ -44,3 +44,42 @@ export async function verifyCertificate(
     return { found: false, message: "تعذر الاتصال بخدمة التحقق." };
   }
 }
+
+/** A minimal view of the Open Badges 3.0 credential JSON-LD we render. */
+export type OpenBadgeCredential = {
+  "@context": string[];
+  id: string;
+  type: string[];
+  name?: string;
+  issuer: { id: string; name?: string; image?: { id: string } };
+  validFrom?: string;
+  validUntil?: string;
+  credentialSubject: {
+    name?: string;
+    achievement?: { name?: string; description?: string };
+  };
+};
+
+export type CredentialResult =
+  | { ok: true; credential: OpenBadgeCredential; jwt: string }
+  | { ok: false; status: "not_found" | "revoked" | "error"; message?: string };
+
+/** Fetch the signed Open Badges 3.0 credential for a certificate (public). */
+export async function getCredential(code: string): Promise<CredentialResult> {
+  try {
+    const res = await fetch(
+      `${API_URL}/api/verify/${encodeURIComponent(code)}/openbadge`,
+      { cache: "no-store", headers: { Accept: "application/json" } },
+    );
+    if (res.ok) {
+      const body = (await res.json()) as { credential: OpenBadgeCredential; jwt: string };
+      return { ok: true, ...body };
+    }
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 404) return { ok: false, status: "not_found", message: body.message };
+    if (res.status === 409) return { ok: false, status: "revoked", message: body.message };
+    return { ok: false, status: "error", message: body.message };
+  } catch {
+    return { ok: false, status: "error", message: "تعذر الاتصال بخدمة التحقق." };
+  }
+}

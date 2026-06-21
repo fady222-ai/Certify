@@ -231,6 +231,7 @@ function CertificateCard({
           orgName={org.name}
           issueDate={c.issue_date}
           expiryDate={c.expiry_date}
+          openBadge={state !== "revoked"}
         />
       </div>
     </div>

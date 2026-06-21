@@ -60,7 +60,7 @@ function linkedinUrl({ code, courseName, orgName, issueDate, expiryDate }: Props
 
 export function CertificateActions(props: Props) {
   const { code, pdfUrl, openBadge } = props;
-  const credentialUrl = `${API_URL}/api/verify/${encodeURIComponent(code)}/openbadge?format=jwt`;
+  const credentialPage = `/verify/${encodeURIComponent(code)}/credential`;
 
   return (
     <div className="mt-7 flex flex-wrap gap-3">
@@ -88,14 +88,12 @@ export function CertificateActions(props: Props) {
       </a>
       {openBadge && (
         <a
-          href={credentialUrl}
-          target="_blank"
-          rel="noreferrer"
+          href={credentialPage}
           className="btn-ghost"
           title="شهادة رقمية موثّقة متوافقة مع معيار Open Badges 3.0"
         >
           <IconBadge className="h-4 w-4 text-brand-600" />
-          الشهادة الرقمية (Open Badge)
+          الشهادة الرقمية الموثّقة
         </a>
       )}
     </div>
