@@ -125,89 +125,108 @@ export default function CertificateDetailPage() {
         )}
 
         {/* Header card */}
-        <div className="card p-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <span className={`grid h-14 w-14 place-items-center rounded-2xl font-display text-2xl font-black ${
-                revoked ? "bg-red-50 text-red-400" : "bg-brand-50 text-brand-600"
-              }`}>
-                {cert.recipient_name.charAt(0)}
-              </span>
-              <div>
-                <h1 className="font-display text-2xl font-black text-ink">{cert.recipient_name}</h1>
-                <p className="mt-0.5 text-sm text-ink-muted">{cert.course_name ?? "—"}</p>
+        <div className="card overflow-hidden">
+          {/* Hero — identity on an accent header */}
+          <div
+            className={`px-6 py-7 text-white ${
+              revoked
+                ? "bg-gradient-to-br from-red-500 to-red-600"
+                : "bg-gradient-to-br from-brand-600 to-brand-700"
+            }`}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white/15 font-display text-2xl font-black">
+                  {cert.recipient_name.charAt(0)}
+                </span>
+                <div className="min-w-0">
+                  <h1 className="font-display text-2xl font-black">{cert.recipient_name}</h1>
+                  <p className="mt-0.5 text-sm opacity-80">{cert.course_name ?? "—"}</p>
+                </div>
               </div>
-            </div>
-            {revoked ? (
-              <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-bold text-red-600">ملغاة</span>
-            ) : (
-              <span className="flex items-center gap-1.5 rounded-full bg-verify-50 px-3 py-1 text-sm font-bold text-verify-700">
-                <IconCheck className="h-4 w-4" /> نشطة
+              <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-bold">
+                {revoked ? (
+                  <>
+                    <IconBan className="h-4 w-4" /> ملغاة
+                  </>
+                ) : (
+                  <>
+                    <IconCheck className="h-4 w-4" /> نشطة
+                  </>
+                )}
               </span>
-            )}
+            </div>
           </div>
 
-          {revoked && cert.revoked_reason && (
-            <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-100">
-              سبب الإلغاء: {cert.revoked_reason}
-            </p>
-          )}
+          {/* Body */}
+          <div className="p-6">
+            {revoked && cert.revoked_reason && (
+              <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-100">
+                سبب الإلغاء: {cert.revoked_reason}
+              </p>
+            )}
 
-          {/* Meta grid */}
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Meta label="رمز التحقق" value={cert.verification_code} mono />
-            <Meta label="تاريخ الإصدار" value={cert.issue_date ?? "—"} />
-            <Meta label="البريد" value={cert.recipient_email ?? "—"} />
-            <Meta label="القالب" value={cert.template?.name ?? "الافتراضي"} />
-          </div>
+            {/* Meta tiles */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <Meta label="رمز التحقق" value={cert.verification_code} mono />
+              <Meta label="تاريخ الإصدار" value={cert.issue_date ?? "—"} />
+              <Meta label="البريد" value={cert.recipient_email ?? "—"} />
+              <Meta label="القالب" value={cert.template?.name ?? "الافتراضي"} />
+            </div>
 
-          {/* Actions */}
-          <div className="mt-6 flex flex-wrap gap-3">
-            {cert.pdf_url && (
-              <a href={cert.pdf_url} target="_blank" rel="noreferrer" className="btn-primary">
-                <IconDownload className="h-4 w-4" /> تحميل PDF
-              </a>
-            )}
-            <Link href={`/verify/${cert.verification_code}`} target="_blank" className="btn-ghost">
-              <IconQr className="h-4 w-4" /> صفحة التحقق
-            </Link>
-            {!revoked && (
-              <a
-                href={whatsappShareUrl({
-                  text: shareText({ recipientName: cert.recipient_name, courseName: cert.course_name }),
-                  url:
-                    typeof window !== "undefined"
-                      ? `${window.location.origin}/verify/${cert.verification_code}`
-                      : `/verify/${cert.verification_code}`,
-                  phone: cert.recipient_phone,
-                })}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-ghost"
-              >
-                <IconWhatsapp className="h-4 w-4 text-[#25d366]" /> إرسال عبر واتساب
-              </a>
-            )}
-            {cert.recipient_email && !revoked && (
-              <button onClick={onResend} disabled={busy} className="btn-ghost disabled:opacity-60">
-                <IconMail className="h-4 w-4" /> إعادة إرسال البريد
+            {/* Primary & share actions */}
+            <div className="mt-6 flex flex-wrap gap-3">
+              {cert.pdf_url && (
+                <a href={cert.pdf_url} target="_blank" rel="noreferrer" className="btn-primary">
+                  <IconDownload className="h-4 w-4" /> تحميل PDF
+                </a>
+              )}
+              <Link href={`/verify/${cert.verification_code}`} target="_blank" className="btn-ghost">
+                <IconQr className="h-4 w-4" /> صفحة التحقق
+              </Link>
+              {!revoked && (
+                <a
+                  href={whatsappShareUrl({
+                    text: shareText({ recipientName: cert.recipient_name, courseName: cert.course_name }),
+                    url:
+                      typeof window !== "undefined"
+                        ? `${window.location.origin}/verify/${cert.verification_code}`
+                        : `/verify/${cert.verification_code}`,
+                    phone: cert.recipient_phone,
+                  })}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-ghost"
+                >
+                  <IconWhatsapp className="h-4 w-4 text-[#25d366]" /> إرسال عبر واتساب
+                </a>
+              )}
+              {cert.recipient_email && !revoked && (
+                <button onClick={onResend} disabled={busy} className="btn-ghost disabled:opacity-60">
+                  <IconMail className="h-4 w-4" /> إعادة إرسال البريد
+                </button>
+              )}
+            </div>
+
+            {/* Sensitive actions — visually separated */}
+            <div className="mt-5 flex flex-wrap items-center gap-3 border-t pt-5">
+              <span className="text-xs font-bold text-ink-muted">إجراءات حسّاسة</span>
+              {revoked ? (
+                <button onClick={onReactivate} disabled={busy}
+                  className="btn inline-flex items-center gap-2 border border-verify-200 bg-verify-50 text-verify-700 hover:bg-verify-100 disabled:opacity-60">
+                  <IconCheck className="h-4 w-4" /> إعادة تفعيل الشهادة
+                </button>
+              ) : (
+                <button onClick={() => setRevokeOpen(true)} disabled={busy}
+                  className="btn inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
+                  <IconBan className="h-4 w-4" /> إلغاء الشهادة
+                </button>
+              )}
+              <button onClick={() => setDeleteOpen(true)} disabled={busy}
+                className="btn ms-auto inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
+                <IconTrash className="h-4 w-4" /> حذف نهائي
               </button>
-            )}
-            {revoked ? (
-              <button onClick={onReactivate} disabled={busy}
-                className="btn inline-flex items-center gap-2 border border-verify-200 bg-verify-50 text-verify-700 hover:bg-verify-100 disabled:opacity-60">
-                <IconCheck className="h-4 w-4" /> إعادة تفعيل الشهادة
-              </button>
-            ) : (
-              <button onClick={() => setRevokeOpen(true)} disabled={busy}
-                className="btn inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
-                <IconBan className="h-4 w-4" /> إلغاء الشهادة
-              </button>
-            )}
-            <button onClick={() => setDeleteOpen(true)} disabled={busy}
-              className="btn ms-auto inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
-              <IconTrash className="h-4 w-4" /> حذف نهائي
-            </button>
+            </div>
           </div>
         </div>
 
@@ -271,7 +290,7 @@ export default function CertificateDetailPage() {
 
 function Meta({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div>
+    <div className="rounded-xl bg-surface-2/60 px-4 py-3">
       <p className="text-xs font-bold text-ink-muted">{label}</p>
       <p className={`mt-1 truncate text-sm font-bold text-ink ${mono ? "font-mono" : ""}`} title={value}>
         {value}
