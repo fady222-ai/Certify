@@ -137,7 +137,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </svg>
             </button>
             <span className="lg:hidden"><Logo /></span>
-            <p className="hidden text-sm font-bold text-ink-soft sm:block">{org?.name ?? "—"}</p>
+            {org && (
+              <div className="hidden items-center gap-2.5 ps-1 sm:flex">
+                <span className="hidden h-8 w-px bg-border lg:block" aria-hidden />
+                {org.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={org.logo_url}
+                    alt={org.name}
+                    className="h-9 w-9 rounded-xl object-cover ring-1 ring-black/5"
+                  />
+                ) : (
+                  <span
+                    className="grid h-9 w-9 shrink-0 place-items-center rounded-xl font-display text-sm font-black"
+                    style={{ backgroundColor: `${org.primary_color}1a`, color: org.primary_color }}
+                  >
+                    {org.name.charAt(0)}
+                  </span>
+                )}
+                <div className="leading-tight">
+                  <p className="max-w-[180px] truncate text-sm font-extrabold text-ink" title={org.name}>
+                    {org.name}
+                  </p>
+                  <p className="text-[11px] font-bold text-ink-muted">لوحة التحكم</p>
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button className="btn-primary" type="button" onClick={() => setModalOpen(true)}>
