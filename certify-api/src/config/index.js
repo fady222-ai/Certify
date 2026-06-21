@@ -70,9 +70,14 @@ export const config = {
   tapSecretKey: process.env.TAP_SECRET_KEY ?? "",
   tapWebhookSecret: process.env.TAP_WEBHOOK_SECRET ?? "",
 
+  // Open Badges 3.0 issuer signing key (Ed25519 private key, PKCS8 PEM). Optional:
+  // when unset, a stable key is derived deterministically from APP_KEY so issued
+  // credentials remain verifiable across restarts. Set this to use/rotate an
+  // external key (e.g. a did:web key) without changing APP_KEY.
+  obSigningKey: process.env.OB_SIGNING_KEY || null,
+
   // Paymob (Egypt — Vodafone Cash, InstaPay, Fawry, Meeza, cards) — leave empty in dev.
-  paymobApiKey: process.env.PAYMOB_API_KEY ?? "",
-  paymobIntegrationId: process.env.PAYMOB_INTEGRATION_ID ?? "",
+  paymobApiKey: process.env.PAYMOB_API_KEY ?? "",  paymobIntegrationId: process.env.PAYMOB_INTEGRATION_ID ?? "",
   paymobIframeId: process.env.PAYMOB_IFRAME_ID ?? "",
   paymobHmacSecret: process.env.PAYMOB_HMAC_SECRET ?? "",
   // Conversion rate USD→EGP used when charging via Paymob (update when rate changes).

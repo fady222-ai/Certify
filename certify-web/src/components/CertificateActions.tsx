@@ -1,7 +1,7 @@
 "use client";
 
 import { API_URL } from "@/lib/api";
-import { IconQr, IconLinkedin } from "@/components/icons";
+import { IconQr, IconLinkedin, IconBadge } from "@/components/icons";
 
 type Props = {
   code: string;
@@ -10,6 +10,8 @@ type Props = {
   orgName: string | null;
   issueDate: string | null; // YYYY-MM-DD
   expiryDate: string | null; // YYYY-MM-DD
+  /** Whether to surface the verifiable-credential (Open Badge) download. */
+  openBadge?: boolean;
 };
 
 /** Fire-and-forget tracking ping (download / share / LinkedIn add). */
@@ -57,7 +59,8 @@ function linkedinUrl({ code, courseName, orgName, issueDate, expiryDate }: Props
 }
 
 export function CertificateActions(props: Props) {
-  const { code, pdfUrl } = props;
+  const { code, pdfUrl, openBadge } = props;
+  const credentialUrl = `${API_URL}/api/verify/${encodeURIComponent(code)}/openbadge?format=jwt`;
 
   return (
     <div className="mt-7 flex flex-wrap gap-3">
@@ -83,6 +86,18 @@ export function CertificateActions(props: Props) {
         <IconLinkedin className="h-4 w-4 text-[#0a66c2]" />
         إضافة إلى لينكدإن
       </a>
+      {openBadge && (
+        <a
+          href={credentialUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-ghost"
+          title="شهادة رقمية موثّقة متوافقة مع معيار Open Badges 3.0"
+        >
+          <IconBadge className="h-4 w-4 text-brand-600" />
+          الشهادة الرقمية (Open Badge)
+        </a>
+      )}
     </div>
   );
 }

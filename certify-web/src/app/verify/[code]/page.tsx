@@ -231,7 +231,15 @@ function CertificateCard({
           orgName={org.name}
           issueDate={c.issue_date}
           expiryDate={c.expiry_date}
+          openBadge={state !== "revoked"}
         />
+
+        {state !== "revoked" && (
+          <p className="mt-4 flex items-center gap-1.5 text-xs text-ink-muted">
+            <IconBadge className="h-3.5 w-3.5 text-brand-500" />
+            متوافقة مع معيار <span className="font-bold">Open Badges 3.0</span> — شهادة رقمية موثّقة قابلة للتحقق.
+          </p>
+        )}
       </div>
     </div>
   );
