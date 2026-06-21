@@ -231,42 +231,56 @@ export default function CertificateDetailPage() {
         </div>
 
         {/* Engagement metrics */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {metrics.map((m) => (
-            <div key={m.label} className="card p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-bold text-ink-soft">{m.label}</p>
-                  <p className="mt-2 font-display text-3xl font-black text-ink">{m.value}</p>
+        <div>
+          <h2 className="mb-3 font-display text-lg font-extrabold text-ink">مؤشرات التفاعل</h2>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            {metrics.map((m) => (
+              <div key={m.label} className="card p-5">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-ink-soft">{m.label}</p>
+                    <p className="mt-2 font-display text-3xl font-black text-ink">{m.value}</p>
+                  </div>
+                  <span className={`grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${toneMap[m.tone]}`}>
+                    <m.icon className="h-5 w-5" />
+                  </span>
                 </div>
-                <span className={`grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${toneMap[m.tone]}`}>
-                  <m.icon className="h-5 w-5" />
-                </span>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Event timeline */}
         <div className="card overflow-hidden">
-          <div className="border-b px-6 py-4">
+          <div className="flex items-center justify-between border-b px-6 py-4">
             <h2 className="font-display text-lg font-extrabold text-ink">سجل النشاط</h2>
+            <span className="text-xs text-ink-muted">آخر 5 أحداث</span>
           </div>
           {cert.events.length === 0 ? (
-            <p className="px-6 py-8 text-center text-sm text-ink-muted">لا يوجد نشاط بعد.</p>
+            <p className="px-6 py-10 text-center text-sm text-ink-muted">لا يوجد نشاط بعد.</p>
           ) : (
-            <ul className="divide-y">
-              {cert.events.map((e, i) => (
-                <li key={i} className="flex items-center gap-3 px-6 py-3.5">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-2 text-ink-soft">
-                    <IconClock className="h-4 w-4" />
-                  </span>
-                  <span className="flex-1 text-sm font-bold text-ink">{eventLabel(e.type)}</span>
-                  <span className="text-xs text-ink-muted">
-                    {new Date(e.at).toLocaleString("ar", { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" })}
-                  </span>
-                </li>
-              ))}
+            <ul className="px-6 py-2">
+              {cert.events.map((e, i) => {
+                const { Icon, cls } = eventVisual(e.type);
+                const last = i === cert.events.length - 1;
+                return (
+                  <li key={i} className="flex gap-3">
+                    {/* الأيقونة + خط الزمن العمودي */}
+                    <div className="flex flex-col items-center">
+                      <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${cls}`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      {!last && <span className="w-px flex-1 bg-border" />}
+                    </div>
+                    <div className={`min-w-0 flex-1 ${last ? "pb-2" : "pb-5"} pt-1`}>
+                      <p className="text-sm font-bold text-ink">{eventLabel(e.type)}</p>
+                      <p className="mt-0.5 text-xs text-ink-muted">
+                        {new Date(e.at).toLocaleString("ar", { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" })}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -286,6 +300,29 @@ export default function CertificateDetailPage() {
         />
       </main>
   );
+}
+
+// Distinct icon + color per activity-log event type (replaces the generic clock).
+function eventVisual(type: string): { Icon: typeof IconClock; cls: string } {
+  switch (type) {
+    case "issued":
+    case "reactivated":
+      return { Icon: IconCheck, cls: "bg-verify-50 text-verify-600" };
+    case "opened":
+      return { Icon: IconQr, cls: "bg-brand-50 text-brand-600" };
+    case "downloaded":
+      return { Icon: IconDownload, cls: "bg-verify-50 text-verify-600" };
+    case "shared":
+      return { Icon: IconArrow, cls: "bg-gold-50 text-gold-600" };
+    case "added_to_linkedin":
+      return { Icon: IconLinkedin, cls: "bg-brand-50 text-[#0a66c2]" };
+    case "emailed":
+      return { Icon: IconMail, cls: "bg-brand-50 text-brand-600" };
+    case "revoked":
+      return { Icon: IconBan, cls: "bg-red-50 text-red-500" };
+    default:
+      return { Icon: IconClock, cls: "bg-surface-2 text-ink-soft" };
+  }
 }
 
 function Meta({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
