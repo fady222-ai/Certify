@@ -10,16 +10,26 @@ import {
   IconBadge, IconUpload, IconPalette, IconChart, IconBolt as IconBoltNav, IconSettings, IconMail, IconUsers, IconKey,
 } from "@/components/icons";
 
-const nav = [
-  { label: "نظرة عامة", icon: IconChart, href: "/dashboard" },
-  { label: "الشهادات", icon: IconBadge, href: "/dashboard/certificates" },
-  { label: "القوالب", icon: IconPalette, href: "/dashboard/templates" },
-  { label: "الإصدار الجماعي", icon: IconUpload, href: "/dashboard/bulk" },
-  { label: "أعضاء الفريق", icon: IconUsers, href: "/dashboard/members" },
-  { label: "المطوّرون (API)", icon: IconKey, href: "/dashboard/developers" },
-  { label: "الباقة والفوترة", icon: IconBoltNav, href: "/dashboard/billing" },
-  { label: "الدعم الفني", icon: IconMail, href: "/dashboard/support" },
-  { label: "إعدادات المنظمة", icon: IconSettings, href: "/dashboard/settings" },
+const navSections = [
+  {
+    title: null,
+    items: [
+      { label: "نظرة عامة", icon: IconChart, href: "/dashboard" },
+      { label: "الشهادات", icon: IconBadge, href: "/dashboard/certificates" },
+      { label: "القوالب", icon: IconPalette, href: "/dashboard/templates" },
+      { label: "الإصدار الجماعي", icon: IconUpload, href: "/dashboard/bulk" },
+      { label: "الباقة والفوترة", icon: IconBoltNav, href: "/dashboard/billing" },
+      { label: "الدعم الفني", icon: IconMail, href: "/dashboard/support" },
+    ],
+  },
+  {
+    title: "الإعدادات",
+    items: [
+      { label: "أعضاء الفريق", icon: IconUsers, href: "/dashboard/members" },
+      { label: "المطوّرون (API)", icon: IconKey, href: "/dashboard/developers" },
+      { label: "هوية الأكاديمية", icon: IconSettings, href: "/dashboard/settings" },
+    ],
+  },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -59,19 +69,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = (
     <>
-      {nav.map((n) => {
-        const active =
-          n.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(n.href);
-        return (
-          <Link key={n.href} href={n.href}
-            className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
-              active ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
-                : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"}`}>
-            <n.icon className="h-5 w-5" />
-            {n.label}
-          </Link>
-        );
-      })}
+      {navSections.map((section, si) => (
+        <div key={si} className={si > 0 ? "mt-5 border-t pt-4" : ""}>
+          {section.title && (
+            <p className="mb-1.5 px-3.5 text-[11px] font-extrabold uppercase tracking-wide text-ink-muted">
+              {section.title}
+            </p>
+          )}
+          <div className="space-y-1">
+            {section.items.map((n) => {
+              const active =
+                n.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(n.href);
+              return (
+                <Link key={n.href} href={n.href}
+                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
+                    active ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
+                      : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"}`}>
+                  <n.icon className="h-5 w-5" />
+                  {n.label}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </>
   );
 

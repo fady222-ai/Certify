@@ -87,8 +87,8 @@ export default function SettingsPage() {
   return (
       <main className="mx-auto max-w-3xl space-y-6 p-6">
         <div>
-          <h1 className="font-display text-2xl font-black text-ink">إعدادات المنظمة</h1>
-          <p className="mt-1 text-sm text-ink-soft">حدد هوية منظمتك — تظهر على كل شهادة تصدرها.</p>
+          <h1 className="font-display text-2xl font-black text-ink">هوية الأكاديمية</h1>
+          <p className="mt-1 text-sm text-ink-soft">حدد هوية أكاديميتك — تظهر على كل شهادة تصدرها.</p>
         </div>
 
         {notice && (
