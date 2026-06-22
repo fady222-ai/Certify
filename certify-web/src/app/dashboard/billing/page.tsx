@@ -26,9 +26,9 @@ const GATEWAY_LABELS: Record<string, { label: string; cls: string }> = {
 // prepended from certsLabel at render time so it never drifts.
 const UPGRADE_PLANS = [
   { ...PLAN_PRICING.pro, popular: true,
-    features: ["الإصدار الجماعي", "توقيع رقمي مخصص", "تكامل لينكدإن"] },
+    features: [`حتى ${PLAN_PRICING.pro.teamLabel}`, "الإصدار الجماعي", "توقيع رقمي مخصص", "تكامل لينكدإن"] },
   { ...PLAN_PRICING.business, popular: false,
-    features: ["شهادات بشعار وألوان أكاديميتك", "تتبع مشاهدات وتحميلات الشهادات", "دعم أولوية"] },
+    features: [`حتى ${PLAN_PRICING.business.teamLabel}`, "شهادات بشعار وألوان أكاديميتك", "تتبع مشاهدات وتحميلات الشهادات", "دعم أولوية"] },
 ];
 
 type PendingUpgrade = { slug: string; interval: "monthly" | "annual" };

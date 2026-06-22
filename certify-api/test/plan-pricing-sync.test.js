@@ -15,13 +15,18 @@ const pricingPath = fileURLToPath(
   new URL("../../certify-web/src/lib/pricing.ts", import.meta.url),
 );
 
-/** Parse `plan("slug", "name", monthly, yearly, certsPerMonth)` lines. */
+/** Parse `plan("slug", "name", monthly, yearly, certsPerMonth, teamMembers)` lines. */
 function parseFrontendPricing(src) {
-  const re = /plan\(\s*"(\w+)"\s*,\s*"[^"]*"\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g;
+  const re = /plan\(\s*"(\w+)"\s*,\s*"[^"]*"\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/g;
   const out = {};
   let m;
   while ((m = re.exec(src)) !== null) {
-    out[m[1]] = { monthly: Number(m[2]), yearly: Number(m[3]), certsPerMonth: Number(m[4]) };
+    out[m[1]] = {
+      monthly: Number(m[2]),
+      yearly: Number(m[3]),
+      certsPerMonth: Number(m[4]),
+      teamMembers: Number(m[5]),
+    };
   }
   return out;
 }
@@ -47,6 +52,11 @@ test("frontend pricing.ts mirrors the canonical backend plan catalogue", () => {
       f.certsPerMonth,
       p.certificatesPerMonth,
       `monthly certificate quota mismatch for "${p.slug}"`,
+    );
+    assert.equal(
+      f.teamMembers,
+      p.teamMembersLimit,
+      `team-member seats mismatch for "${p.slug}"`,
     );
   }
 });

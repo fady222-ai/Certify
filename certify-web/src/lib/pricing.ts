@@ -14,6 +14,8 @@ export type PlanPricing = {
   yearly: number; // USD / year
   certsPerMonth: number; // monthly certificate quota (matches backend)
   certsLabel: string; // derived human label for the quota
+  teamMembers: number; // team-member seats (matches backend teamMembersLimit)
+  teamLabel: string; // derived human label for the seats
 };
 
 /** Arabic-correct quota label, derived from the numeric quota. */
@@ -22,14 +24,26 @@ function certsLabel(n: number): string {
   return `${n.toLocaleString("en-US")} ${noun} / شهر`;
 }
 
-function plan(slug: string, name: string, monthly: number, yearly: number, certsPerMonth: number): PlanPricing {
-  return { slug, name, monthly, yearly, certsPerMonth, certsLabel: certsLabel(certsPerMonth) };
+/** Arabic-correct team-seats label, derived from the numeric seat count. */
+function teamLabel(n: number): string {
+  if (n <= 1) return "مستخدم واحد";
+  if (n === 2) return "عضوا فريق";
+  if (n <= 10) return `${n} أعضاء فريق`;
+  return `${n} عضو فريق`;
+}
+
+function plan(slug: string, name: string, monthly: number, yearly: number, certsPerMonth: number, teamMembers: number): PlanPricing {
+  return {
+    slug, name, monthly, yearly, certsPerMonth,
+    certsLabel: certsLabel(certsPerMonth),
+    teamMembers, teamLabel: teamLabel(teamMembers),
+  };
 }
 
 export const PLAN_PRICING: Record<string, PlanPricing> = {
-  free:     plan("free",     "مجاني",    0,  0,   10),
-  pro:      plan("pro",      "Pro",      29, 290, 2000),
-  business: plan("business", "Business", 79, 790, 10000),
+  free:     plan("free",     "مجاني",    0,  0,   10,    1),
+  pro:      plan("pro",      "Pro",      29, 290, 2000,  3),
+  business: plan("business", "Business", 79, 790, 10000, 10),
 };
 
 /** Approximate % saved by paying yearly instead of monthly (≈ 2 months free). */

@@ -32,9 +32,9 @@ const stats = [
 // Prices/names come from the canonical pricing module (single source of truth,
 // kept in sync with the backend seed); only marketing copy lives here.
 const plans = [
-  { ...PLAN_PRICING.free, tag: "للتجربة", features: ["محرر القوالب", "صفحة تحقق عامة", "تكامل لينكدإن"], cta: "ابدأ مجانا", highlight: false },
-  { ...PLAN_PRICING.pro, tag: "الأكثر اختيارا", features: ["كل ميزات المجاني", "إصدار جماعي من Excel", "توقيع رقمي مخصص", "تحليلات متقدمة", "تتبع مشاهدات وتحميلات الشهادة"], cta: "ابدأ الآن", highlight: true },
-  { ...PLAN_PRICING.business, tag: "للأكاديميات", features: ["كل ميزات Pro", "شهادات بشعار وألوان أكاديميتك", "تتبع مشاهدات وتحميلات الشهادات", "أولوية في الدعم الفني"], cta: "تواصل معنا", highlight: false },
+  { ...PLAN_PRICING.free, tag: "للتجربة", features: [PLAN_PRICING.free.teamLabel, "محرر القوالب", "صفحة تحقق عامة", "تكامل لينكدإن"], cta: "ابدأ مجانا", highlight: false },
+  { ...PLAN_PRICING.pro, tag: "الأكثر اختيارا", features: [`حتى ${PLAN_PRICING.pro.teamLabel}`, "كل ميزات المجاني", "إصدار جماعي من Excel", "توقيع رقمي مخصص", "تتبع مشاهدات وتحميلات الشهادة"], cta: "ابدأ الآن", highlight: true },
+  { ...PLAN_PRICING.business, tag: "للأكاديميات", features: [`حتى ${PLAN_PRICING.business.teamLabel}`, "كل ميزات Pro", "شهادات بشعار وألوان أكاديميتك", "أولوية في الدعم الفني"], cta: "تواصل معنا", highlight: false },
 ];
 
 export default function Home() {

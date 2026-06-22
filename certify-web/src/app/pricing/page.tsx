@@ -11,9 +11,9 @@ import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
 // Prices/names come from the canonical pricing module; only marketing copy
 // (feature bullets, CTA, highlight) is defined here.
 const PLANS = [
-  { ...PLAN_PRICING.free, features: ["قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجانا", highlight: false },
-  { ...PLAN_PRICING.pro, features: ["كل ميزات Free", "إصدار جماعي", "تكامل لينكدإن", "تتبع مشاهدات الشهادات", "تقارير متقدمة"], cta: "ابدأ الآن", highlight: true },
-  { ...PLAN_PRICING.business, features: ["كل ميزات Pro", "تتبع مشاهدات الشهادات", "شهادات بشعار وألوان أكاديميتك", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
+  { ...PLAN_PRICING.free, features: [PLAN_PRICING.free.teamLabel, "قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجانا", highlight: false },
+  { ...PLAN_PRICING.pro, features: [`حتى ${PLAN_PRICING.pro.teamLabel}`, "كل ميزات Free", "إصدار جماعي", "تكامل لينكدإن", "تتبع مشاهدات الشهادات"], cta: "ابدأ الآن", highlight: true },
+  { ...PLAN_PRICING.business, features: [`حتى ${PLAN_PRICING.business.teamLabel}`, "كل ميزات Pro", "شهادات بشعار وألوان أكاديميتك", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
 ];
 
 export default function PricingPage() {
