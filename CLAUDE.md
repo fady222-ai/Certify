@@ -408,6 +408,12 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
   `components/templateEditor/canvas.ts`، وعناصر الواجهة الصغيرة (`Panel`/`ToolBtn`/
   `NumberRow`/`ColorRow`) في `components/templateEditor/controls.tsx`. المنطق النقي
   مُغطّى باختبار `canvas.test.ts`. `vitest.config.ts` يحلّ الآن alias `@/` كـtsconfig.
+- **مكتبة القوالب الجاهزة:** `certify-api/src/templates/presetTemplates.js` يولّد قوالب **عامة**
+  (`isPublic`, `organizationId:null`) يزرعها `seed.js` (upsert بالـid + حذف العامة غير المدرجة)
+  فتظهر لكل المنظمات. تُبنى من نظام التصميم (gradient rects + ornaments) بلا أصول صور، وكلٌّ له
+  `theme` (لونان + `logoBox`) للمُخصِّص الخفيف. أُضيفت **4 تصاميم عصرية** (13–16: شريط غروب،
+  داكن نيلي، لوحة زمردية، إطار متدرّج + بطاقة بيضاء) ليصبح المجموع 16. **بعد النشر شغّل
+  `node prisma/seed.js` لإضافتها.** (خلفية الصورة الفوتوغرافية تبقى لكل منظمة ترفعها بنفسها.)
 - **صورة خلفية للقالب:** المحرّر يدعم رفع **صورة خلفية** كاملة للشهادة (لوحة «خلفية الشهادة»)
   عبر `POST /api/templates/background` (يُعيد استخدام وسيط `uploadImage`: ذاكرة/2MB/png-jpg-webp)
   الذي يخزّن الملف تحت `storageDir/template-backgrounds/` ويُعيد `{path,url}`. يُخزَّن **المسار

@@ -130,7 +130,7 @@ function dark({ from, to, title, accent }) {
   ]);
 }
 
-// The 12 designs ──────────────────────────────────────────────────────────────
+// The designs ──────────────────────────────────────────────────────────────
 const designs = [
   // 1) classic navy + gold corners + seal
   page("#ffffff", [
@@ -219,6 +219,21 @@ const designs = [
     { type: "qr", left: 359, top: 690, width: 76 },
     { type: "variable", variableKey: "verification_code", left: 297, top: 800, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
   ]),
+
+  // 13) modern sunset header band (rose → amber)
+  headerBand({ from: "#e11d48", to: "#f59e0b" }),
+  // 14) modern dark indigo gradient
+  dark({ from: "#1e1b4b", to: "#4338ca", title: "#c7d2fe", accent: "#a5b4fc" }),
+  // 15) modern emerald side panel
+  sidePanel({ from: "#10b981", to: "#0d9488", accent: "#047857" }),
+  // 16) modern gradient frame + white card (Canva-style)
+  page("#ffffff", [
+    { type: "rect", left: 0, top: 0, width: 1123, height: 794, gradient: { from: "#6366f1", to: "#8b5cf6", angle: 135 } },
+    { type: "rect", left: 111, top: 80, width: 901, height: 634, fill: "#ffffff", rx: 24 },
+    { type: "ornament", name: "rosette", left: 905, top: 108, width: 84, height: 84 },
+    ...centeredCore({ title: INK, name: "#6d28d9", course: INK, line: "#8b5cf6", sub: MUTE }),
+    ...footerCenter({ label: INK }),
+  ]),
 ];
 
 // Per-design theme metadata for the lightweight customizer: the two identity
@@ -237,6 +252,10 @@ const THEMES = [
   { accent: "#5b6f5b", accent2: "#3f4a3f", logoBox: lb(511, 60, 100, 80) }, // 10 botanical
   { accent: "#0ea5e9", accent2: "#0369a1", logoBox: lb(110, 40, 90, 90) }, // 11 wave
   { accent: GOLD, accent2: NAVY, logoBox: lb(347, 70, 100, 100) },         // 12 portrait
+  { accent: "#e11d48", accent2: "#f59e0b", logoBox: lb(511, 112, 100, 72) }, // 13 sunset band
+  { accent: "#a5b4fc", accent2: "#4338ca", logoBox: lb(965, 40, 86, 86) },   // 14 dark indigo
+  { accent: "#047857", accent2: "#0d9488", logoBox: lb(893, 80, 130, 130) }, // 15 emerald panel
+  { accent: "#6d28d9", accent2: "#8b5cf6", logoBox: lb(150, 104, 90, 80) },  // 16 gradient card
 ];
 
 export const presetTemplates = designs.map((design, i) => ({
