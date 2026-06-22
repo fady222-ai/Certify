@@ -92,6 +92,8 @@ export async function buildHtml(cert) {
 
   const design = parseDesign(template?.designData);
   if (design) {
+    // Resolve a stored background-image path to an absolute URL Chrome can fetch.
+    if (design.backgroundImage) design.backgroundImage = assetUrl(design.backgroundImage);
     const vars = {
       recipient_name: cert.recipientName,
       course_name: cert.courseName ?? "",

@@ -1,10 +1,17 @@
 import { z } from "zod";
+import crypto from "node:crypto";
+import path from "node:path";
+import fs from "node:fs/promises";
 import { prisma } from "../db/prisma.js";
+import { config } from "../config/index.js";
 
 const designSchema = z.object({
   width: z.number().optional(),
   height: z.number().optional(),
   background: z.string().optional(),
+  // Optional full-page background image (relative storage path or absolute URL).
+  // Kept short — the image itself lives in /storage, never inline in design_data.
+  backgroundImage: z.string().max(1024).optional(),
   elements: z.array(z.record(z.string(), z.any())).max(120, "عدد عناصر التصميم كبير جداً.").default([]),
   // Optional theme metadata (accent colors + logo box) used by the lightweight
   // customizer; kept so customized templates remain re-customizable.
@@ -130,6 +137,36 @@ export async function deleteTemplate(req, res, next) {
   } catch (e) {
     next(e);
   }
+}
+
+const BG_EXT = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
+
+/** Resolve a stored asset path to an absolute URL (passthrough if already absolute). */
+function assetUrl(url) {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${config.appUrl.replace(/\/$/, "")}/storage/${url}`;
+}
+
+/**
+ * POST /api/templates/background — multipart/form-data with `file`.
+ * Stores a full-page certificate background image and returns its path + URL.
+ * The path is what gets saved into design_data.backgroundImage.
+ */
+export async function uploadTemplateBackground(req, res) {
+  if (!req.organization) return res.status(400).json({ message: "لا توجد منظمة." });
+  if (!req.file) return res.status(400).json({ message: "يرجى رفع صورة." });
+
+  const ext = BG_EXT[req.file.mimetype] ?? "png";
+  const relPath = path.join(
+    "template-backgrounds",
+    `${req.organization.id}-${crypto.randomBytes(6).toString("hex")}.${ext}`,
+  );
+  const absPath = path.join(config.storageDir, relPath);
+  await fs.mkdir(path.dirname(absPath), { recursive: true });
+  await fs.writeFile(absPath, req.file.buffer);
+
+  res.status(201).json({ path: relPath, url: assetUrl(relPath) });
 }
 
 function validationError(res, parsed) {

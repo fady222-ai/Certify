@@ -31,6 +31,7 @@ import {
   createTemplate,
   updateTemplate,
   deleteTemplate,
+  uploadTemplateBackground,
 } from "../controllers/templateController.js";
 import {
   createBatch,
@@ -139,6 +140,12 @@ apiRouter.post("/templates", requireAuth, createTemplate);
 apiRouter.get("/templates/:id", requireAuth, getTemplate);
 apiRouter.put("/templates/:id", requireAuth, updateTemplate);
 apiRouter.delete("/templates/:id", requireAuth, deleteTemplate);
+apiRouter.post("/templates/background", requireAuth, (req, res, next) => {
+  uploadImage(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    next();
+  });
+}, uploadTemplateBackground);
 
 // Billing
 apiRouter.get("/billing", requireAuth, getBilling);

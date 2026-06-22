@@ -8,10 +8,12 @@ import {
   createTemplate,
   updateTemplate,
   getTemplate,
+  uploadTemplateBackground,
   VARIABLE_OPTIONS,
   variableLabel,
 } from "@/lib/templates";
 import { getToken } from "@/lib/auth";
+import { API_URL } from "@/lib/api";
 import { IconBadge, IconPalette, IconUpload, IconCheck, IconArrow } from "./icons";
 import {
   STAGE_W,
@@ -35,6 +37,8 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
   const [ready, setReady] = useState(false);
   const [name, setName] = useState("قالب بدون عنوان");
   const [bg, setBg] = useState("#ffffff");
+  const [bgImage, setBgImage] = useState<string | null>(null); // saved relative path/URL
+  const [bgUploading, setBgUploading] = useState(false);
   const [selected, setSelected] = useState<FObj | null>(null);
   const [, force] = useState(0);
   const rerender = () => force((n) => n + 1);
@@ -83,6 +87,16 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
             setName(tpl.name);
             setBg(tpl.design_data.background ?? "#ffffff");
             canvas.backgroundColor = tpl.design_data.background ?? "#ffffff";
+            const savedBg = tpl.design_data.backgroundImage;
+            if (savedBg) {
+              setBgImage(savedBg);
+              const url = /^https?:\/\//i.test(savedBg)
+                ? savedBg
+                : `${API_URL}/storage/${savedBg}`;
+              const img = await fabric.FabricImage.fromURL(url, { crossOrigin: "anonymous" });
+              img.set({ scaleX: STAGE_W / img.width, scaleY: STAGE_H / img.height });
+              canvas.backgroundImage = img;
+            }
             for (const el of tpl.design_data.elements) {
               const obj = await buildObject(fabric, el);
               canvas.add(obj);
@@ -167,6 +181,42 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
     }
   }
 
+  // Paint (or clear) the full-page background image on the canvas. `url` is an
+  // absolute URL for preview; pass null to remove it.
+  async function paintBgImage(url: string | null) {
+    const fabric = fabricRef.current;
+    const canvas = canvasRef.current;
+    if (!fabric || !canvas) return;
+    if (!url) {
+      canvas.backgroundImage = null;
+      canvas.renderAll();
+      return;
+    }
+    const img = await fabric.FabricImage.fromURL(url, { crossOrigin: "anonymous" });
+    img.set({ scaleX: STAGE_W / img.width, scaleY: STAGE_H / img.height });
+    canvas.backgroundImage = img;
+    canvas.renderAll();
+  }
+
+  async function onUploadBg(file: File) {
+    setBgUploading(true);
+    setError(null);
+    try {
+      const { path, url } = await uploadTemplateBackground(file);
+      setBgImage(path);
+      await paintBgImage(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "تعذر رفع صورة الخلفية.");
+    } finally {
+      setBgUploading(false);
+    }
+  }
+
+  function removeBgImage() {
+    setBgImage(null);
+    paintBgImage(null);
+  }
+
   // ---- Serialize canvas → design_data ----
   function serialize(): DesignData {
     const canvas = canvasRef.current;
@@ -175,7 +225,7 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
       const el = objectToElement(obj);
       if (el) elements.push(el);
     }
-    return { width: STAGE_W, height: STAGE_H, background: bg, elements };
+    return { width: STAGE_W, height: STAGE_H, background: bg, backgroundImage: bgImage ?? undefined, elements };
   }
 
   async function save() {
@@ -253,6 +303,21 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
 
           <Panel title="خلفية الشهادة">
             <ColorRow label="اللون" value={bg} onChange={setBackground} />
+            <div className="mt-2 space-y-1.5">
+              <label className={`btn-ghost w-full cursor-pointer ${bgUploading ? "opacity-60" : ""}`}>
+                <IconUpload className="h-4 w-4" />
+                {bgUploading ? "جار الرفع…" : bgImage ? "تغيير صورة الخلفية" : "رفع صورة خلفية"}
+                <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={bgUploading}
+                  onChange={(e) => { if (e.target.files?.[0]) onUploadBg(e.target.files[0]); e.target.value = ""; }} />
+              </label>
+              {bgImage && (
+                <button onClick={removeBgImage}
+                  className="w-full rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-100">
+                  إزالة صورة الخلفية
+                </button>
+              )}
+              <p className="px-1 text-[11px] text-ink-muted">PNG/JPG/WebP حتى 2MB، بمقاس أفقي 1123×794.</p>
+            </div>
           </Panel>
         </aside>
 

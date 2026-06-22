@@ -349,6 +349,13 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
   `components/templateEditor/canvas.ts`، وعناصر الواجهة الصغيرة (`Panel`/`ToolBtn`/
   `NumberRow`/`ColorRow`) في `components/templateEditor/controls.tsx`. المنطق النقي
   مُغطّى باختبار `canvas.test.ts`. `vitest.config.ts` يحلّ الآن alias `@/` كـtsconfig.
+- **صورة خلفية للقالب:** المحرّر يدعم رفع **صورة خلفية** كاملة للشهادة (لوحة «خلفية الشهادة»)
+  عبر `POST /api/templates/background` (يُعيد استخدام وسيط `uploadImage`: ذاكرة/2MB/png-jpg-webp)
+  الذي يخزّن الملف تحت `storageDir/template-backgrounds/` ويُعيد `{path,url}`. يُخزَّن **المسار
+  النسبي** في `design_data.backgroundImage` (لا data URL — تجنّباً لحدّ الجسم 2MB)، ويُرسَم على
+  `.stage` بـ`cover` في `designRenderer.js` بعد تحويله لمطلق عبر `assetUrl` في `buildHtml` ومروره
+  بـ`safeImageSrc` (حجب SSRF؛ قيد dev: مضيف localhost محجوب كما الشعار). الكانفس (Fabric) يعرضها
+  كـ`backgroundImage` مُحجّمة لـ`STAGE_W×STAGE_H`. مغطّى بـ`test/design-renderer.test.js`.
 - **مصدر حقائق الباقات موحّد (الخلفية = المرجع):** الكتالوج المرجعي للباقات
   (الأسعار + الحصة الشهرية + الحدود) في `certify-api/src/config/plans.js`؛
   `prisma/seed.js` يستورده ويكتبه للـDB. الواجهة تحمل **نسخة عرض** في

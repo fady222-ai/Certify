@@ -34,6 +34,8 @@ export type DesignData = {
   width: number;
   height: number;
   background: string;
+  /** Optional full-page background image (relative storage path or absolute URL). */
+  backgroundImage?: string;
   elements: DesignElement[];
 };
 
@@ -91,6 +93,18 @@ export async function updateTemplate(
 export async function deleteTemplate(id: string): Promise<void> {
   const res = await authedFetch(`templates/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("تعذر حذف القالب.");
+}
+
+/** Upload a full-page background image; returns its stored path + absolute URL. */
+export async function uploadTemplateBackground(
+  file: File,
+): Promise<{ path: string; url: string }> {
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await authedFetch("templates/background", { method: "POST", body: fd });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message ?? "تعذر رفع صورة الخلفية.");
+  return data;
 }
 
 export const VARIABLE_OPTIONS: { key: string; label: string }[] = [

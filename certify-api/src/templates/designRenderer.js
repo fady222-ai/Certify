@@ -26,6 +26,13 @@ export function renderDesignToHtml(design, vars, qrSvg) {
   const background = design.background ?? "#ffffff";
   const elements = Array.isArray(design.elements) ? design.elements : [];
 
+  // Optional full-page background image, painted over the background color.
+  // Routed through safeImageSrc so a hostile/internal src (SSRF) is dropped.
+  const bgImage = safeImageSrc(design.backgroundImage);
+  const bgImageCss = bgImage
+    ? `background-image:url("${escapeAttr(bgImage)}");background-size:cover;background-position:center;background-repeat:no-repeat;`
+    : "";
+
   const body = elements.map((el) => renderElement(el, vars, qrSvg)).join("\n");
 
   return `<!DOCTYPE html>
@@ -37,7 +44,8 @@ export function renderDesignToHtml(design, vars, qrSvg) {
   html, body { width: ${width}px; height: ${height}px; overflow: hidden; }
   .stage {
     position: relative; width: ${width}px; height: ${height}px;
-    background: ${escapeAttr(background)};
+    background-color: ${escapeAttr(background)};
+    ${bgImageCss}
     font-family: "Cairo", "Noto Sans Arabic", "Arial", sans-serif;
     direction: rtl;
   }
