@@ -9,6 +9,8 @@ export type Member = {
   email: string | null;
   role: "owner" | "admin" | "member";
   is_owner: boolean;
+  monthly_limit: number | null;
+  used_this_month: number;
   joined_at: string;
 };
 
@@ -29,6 +31,7 @@ export async function createMember(input: {
   email: string;
   password: string;
   role: "admin" | "member";
+  monthlyLimit: number;
 }): Promise<Member> {
   const res = await authedFetch("members", {
     method: "POST",
@@ -40,14 +43,17 @@ export async function createMember(input: {
   return data;
 }
 
-export async function updateMemberRole(id: string, role: "admin" | "member"): Promise<Member> {
+export async function updateMember(
+  id: string,
+  patch: { role?: "admin" | "member"; monthlyLimit?: number },
+): Promise<Member> {
   const res = await authedFetch(`members/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ role }),
+    body: JSON.stringify(patch),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? "تعذر تغيير الدور.");
+  if (!res.ok) throw new Error(data.message ?? "تعذر تحديث العضو.");
   return data;
 }
 

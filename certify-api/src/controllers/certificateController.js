@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
 import { config } from "../config/index.js";
-import { issueCertificate, PlanLimitError } from "../services/certificateIssuer.js";
+import { issueCertificate, PlanLimitError, MemberLimitError } from "../services/certificateIssuer.js";
 import { sendCertificateEmail } from "../services/certificateMailer.js";
 import { renderPdf } from "../services/certificateRenderer.js";
 import { pruneCertificateEvents, EVENT_RETENTION } from "../services/certificateEvents.js";
@@ -202,11 +202,11 @@ export async function createCertificate(req, res, next) {
       courseName: data.courseName || null,
       issueDate: data.issueDate || undefined,
       templateId: data.templateId || null,
-    });
+    }, true, { actingUserId: req.user?.id ?? null });
 
     return res.status(201).json(presentCertificate(cert));
   } catch (e) {
-    if (e instanceof PlanLimitError) {
+    if (e instanceof PlanLimitError || e instanceof MemberLimitError) {
       return res.status(e.statusCode).json({ message: e.message });
     }
     next(e);

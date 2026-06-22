@@ -197,8 +197,22 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
   (المالك فقط، لا يمسّ صفّ المالك) · `DELETE /api/members/:id` (owner/admin؛ يحذف العضوية وحساب
   المستخدم — العلاقات تتعاقب/SetNull؛ لا يُزال المالك). الواجهة: `lib/members.ts` + صفحة
   `dashboard/members` + بند تنقّل «أعضاء الفريق» (IconUsers).
-- **اختبارات** (`test/members.test.js`): الإنشاء وتفعيل البريد، فرض الحدّ، البريد المكرّر، منع
-  غير المدير، تغيير الدور للمالك فقط وحماية صفّ المالك، الحذف وحماية المالك، وعرض الصلاحية/الحدّ.
+- **حصص إصدار شهرية لكل عضو (`OrganizationMember.monthlyLimit`):** المالك يوزّع حصّة الأكاديمية
+  بين الأعضاء (أكاديمية=50: شبكات=30، تسويق=20). **الحقل إلزامي عند إنشاء العضو** (لا عضو بلا
+  حدّ)، ولا يتجاوز حصّة الأكاديمية. الإنفاذ المزدوج في `issueCertificate(…, {actingUserId})`:
+  `assertWithinPlanLimit` (الأكاديمية) **+** `assertWithinMemberLimit` (عدّ شهادات العضو هذا
+  الشهر عبر `Certificate.issuedById` ≥ الحدّ → `MemberLimitError` 402). يُملأ `issuedById` في
+  إصدار اللوحة (مفرد عبر `createCertificate`، وجماعي عبر `processBatchAsync(... , actingUserId)`)؛
+  ويبقى `null` لإصدار API (مستوى المنظمة) والمالك (بلا سقف فردي). `PATCH /members/:id` يحدّث
+  الدور و/أو الحدّ؛ `listMembers` يعرض `monthly_limit` + `used_this_month` (groupBy). الواجهة:
+  حقل الحدّ مطلوب في الإنشاء، والصفّ يعرض «المستخدَم/الحدّ» مع تحرير فوري.
+- **اختبارات** (`test/members.test.js` + `test/member-limit.test.js`): الإنشاء وتفعيل البريد، فرض
+  حدّ المقاعد، البريد المكرّر، منع غير المدير، تغيير الدور للمالك فقط وحماية صفّ المالك، الحذف
+  وحماية المالك، **إلزامية حدّ الإصدار ورفض تجاوز حصّة الأكاديمية**، وإنفاذ حدّ العضو (تحت/عند الحدّ،
+  المالك/الـAPI بلا قيد).
+
+> **تنبيه schema:** أُضيف `OrganizationMember.monthlyLimit` و`Certificate.issuedById`. شغّل
+> `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
 
 ## نظام الأمان (مُنفّذ بالكامل)
 

@@ -64,7 +64,7 @@ export async function createBatch(req, res) {
     });
 
     // Process certificates asynchronously (non-blocking response)
-    processBatchAsync(batch.id, rows, organization, defaultCourse, templateId);
+    processBatchAsync(batch.id, rows, organization, defaultCourse, templateId, issueCertificate, req.user.id);
 
     return res.status(202).json({
       message: "جارٍ معالجة الدفعة…",
@@ -239,7 +239,7 @@ function parseCsvBuffer(buffer) {
 
 // `issue` is injectable so the aggregation logic can be unit-tested without
 // launching headless Chrome; production callers use the real issueCertificate.
-export async function processBatchAsync(batchId, rows, organization, defaultCourse, templateId, issue = issueCertificate) {
+export async function processBatchAsync(batchId, rows, organization, defaultCourse, templateId, issue = issueCertificate, actingUserId = null) {
   let successCount = 0;
   let failedCount = 0;
 
@@ -253,7 +253,8 @@ export async function processBatchAsync(batchId, rows, organization, defaultCour
           templateId: templateId || undefined,
           batchId,
         },
-        true // render PDF for each
+        true, // render PDF for each
+        { actingUserId } // count against the issuing member's monthly cap
       );
       successCount++;
     } catch (err) {

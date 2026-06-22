@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import {
-  listMembers, createMember, updateMemberRole, deleteMember,
+  listMembers, createMember, updateMember, deleteMember,
   ROLE_LABELS, type Member,
 } from "@/lib/members";
 import { IconUsers, IconTrash, IconCheck } from "@/components/icons";
@@ -28,6 +28,7 @@ export default function MembersPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"admin" | "member">("member");
+  const [monthlyLimit, setMonthlyLimit] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -57,8 +58,8 @@ export default function MembersPage() {
     setBusy(true);
     setError(null);
     try {
-      await createMember({ name, email, password, role });
-      setName(""); setEmail(""); setPassword(""); setRole("member");
+      await createMember({ name, email, password, role, monthlyLimit: Number(monthlyLimit) });
+      setName(""); setEmail(""); setPassword(""); setRole("member"); setMonthlyLimit("");
       await load();
       flash("تمت إضافة العضو.");
     } catch (e) {
@@ -70,10 +71,21 @@ export default function MembersPage() {
 
   async function onChangeRole(m: Member, next: "admin" | "member") {
     try {
-      await updateMemberRole(m.id, next);
+      await updateMember(m.id, { role: next });
       await load();
     } catch (e) {
       flash(e instanceof Error ? e.message : "تعذر تغيير الدور.");
+    }
+  }
+
+  async function onChangeLimit(m: Member, next: number) {
+    if (!Number.isFinite(next) || next < 1 || next === m.monthly_limit) return;
+    try {
+      await updateMember(m.id, { monthlyLimit: next });
+      await load();
+      flash("تم تحديث الحدّ.");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "تعذر تحديث الحدّ.");
     }
   }
 
@@ -124,7 +136,27 @@ export default function MembersPage() {
                 <p className="truncate font-bold text-ink">{m.name ?? "—"}</p>
                 <p className="truncate text-xs text-ink-muted">{m.email}</p>
               </div>
-              <span className="hidden text-xs text-ink-muted sm:block">انضم {fmt(m.joined_at)}</span>
+              {/* الاستخدام/الحدّ الشهري */}
+              {m.is_owner ? (
+                <span className="hidden text-xs text-ink-muted sm:block">بلا حدّ فردي</span>
+              ) : (
+                <span className="hidden text-xs text-ink-soft sm:block">
+                  هذا الشهر: <span className="font-bold text-ink">{m.used_this_month}</span>
+                  {" / "}
+                  {canManage ? (
+                    <input
+                      type="number"
+                      min={1}
+                      defaultValue={m.monthly_limit ?? 1}
+                      onBlur={(e) => onChangeLimit(m, Number(e.target.value))}
+                      className="w-16 rounded-md border border-line bg-white px-1.5 py-0.5 text-center text-xs font-bold"
+                      title="حدّ الإصدار الشهري"
+                    />
+                  ) : (
+                    <span className="font-bold text-ink">{m.monthly_limit}</span>
+                  )}
+                </span>
+              )}
               {canManage && !m.is_owner ? (
                 <select
                   value={m.role}
@@ -173,6 +205,9 @@ export default function MembersPage() {
                 <option value="member">عضو (إصدار الشهادات)</option>
                 <option value="admin">مدير (يدير الأعضاء أيضاً)</option>
               </select>
+              <input value={monthlyLimit} onChange={(e) => setMonthlyLimit(e.target.value)} type="number" min={1}
+                placeholder="حدّ الإصدار الشهري (مطلوب)" required
+                className="rounded-lg border border-line bg-white px-3 py-2 text-sm sm:col-span-2" />
               {error && <p className="text-sm font-bold text-red-600 sm:col-span-2">{error}</p>}
               <div className="sm:col-span-2">
                 <button type="submit" disabled={busy} className="btn-primary disabled:opacity-60">

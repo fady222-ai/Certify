@@ -143,6 +143,7 @@ model OrganizationMember {
   organizationId String   @map("organization_id")
   userId         String   @map("user_id")
   role           String   @default("member") // owner/admin/member
+  monthlyLimit   Int?     @map("monthly_limit") // per-member monthly issuance cap; null = no individual cap (owner)
   joinedAt       DateTime @default(now()) @map("joined_at")
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -209,6 +210,7 @@ model Certificate {
   expiryDate       DateTime? @map("expiry_date")
   customFields     String?   @map("custom_fields") // JSON string
   status           String    @default("active") // active/revoked/expired
+  issuedById       String?   @map("issued_by_id") // team member who issued it (null for API/legacy)
   verificationCode String    @unique @map("verification_code")
   verificationHash String    @map("verification_hash")
   pdfUrl           String?   @map("pdf_url")

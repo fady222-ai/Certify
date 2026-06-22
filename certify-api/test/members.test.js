@@ -53,6 +53,10 @@ function installFakePrisma() {
     },
   };
 
+  prisma.certificate = {
+    groupBy: async () => [], // per-member usage; empty in these tests
+  };
+
   prisma.$transaction = async (arg) =>
     typeof arg === "function" ? arg(prisma) : Promise.all(arg);
 }
@@ -66,7 +70,7 @@ function makeRes() {
   };
 }
 
-const ORG = { id: "org1", plan: { teamMembersLimit: 2 } };
+const ORG = { id: "org1", plan: { teamMembersLimit: 2, certificatesPerMonth: 1000 } };
 function ownerReq(body = {}) { return { organization: ORG, membershipRole: "owner", body, params: {} }; }
 const next = (e) => { if (e) throw e; };
 
@@ -80,28 +84,42 @@ beforeEach(() => {
 test("owner can create a member; account is pre-verified", async () => {
   const res = makeRes();
   await createMember(
-    { ...ownerReq({ name: "سعد", email: "saad@x.com", password: "password1", role: "member" }) },
+    { ...ownerReq({ name: "سعد", email: "saad@x.com", password: "password1", role: "member", monthlyLimit: 10 }) },
     res, next,
   );
   assert.equal(res.statusCode, 201);
   assert.equal(res.body.role, "member");
+  assert.equal(res.body.monthly_limit, 10);
   const created = users.find((u) => u.email === "saad@x.com");
   assert.equal(created.emailVerified, true);
 });
 
 test("enforces the plan team-member limit", async () => {
   // limit=2, owner takes 1 → one more allowed, then full.
-  await createMember(ownerReq({ name: "عضو أول", email: "a@x.com", password: "password1", role: "member" }), makeRes(), next);
+  await createMember(ownerReq({ name: "عضو أول", email: "a@x.com", password: "password1", role: "member", monthlyLimit: 10 }), makeRes(), next);
   const res = makeRes();
-  await createMember(ownerReq({ name: "عضو ثانٍ", email: "b@x.com", password: "password1", role: "member" }), res, next);
+  await createMember(ownerReq({ name: "عضو ثانٍ", email: "b@x.com", password: "password1", role: "member", monthlyLimit: 10 }), res, next);
   assert.equal(res.statusCode, 403);
   assert.match(res.body.message, /الحد الأقصى/);
 });
 
 test("rejects a duplicate email with 409", async () => {
   const res = makeRes();
-  await createMember(ownerReq({ name: "مكرر", email: "owner@x.com", password: "password1", role: "member" }), res, next);
+  await createMember(ownerReq({ name: "مكرر", email: "owner@x.com", password: "password1", role: "member", monthlyLimit: 10 }), res, next);
   assert.equal(res.statusCode, 409);
+});
+
+test("rejects creating a member without a monthly limit (422)", async () => {
+  const res = makeRes();
+  await createMember(ownerReq({ name: "بلا حدّ", email: "n@x.com", password: "password1", role: "member" }), res, next);
+  assert.equal(res.statusCode, 422);
+});
+
+test("rejects a member limit above the academy quota (422)", async () => {
+  const res = makeRes();
+  await createMember(ownerReq({ name: "كبير", email: "big@x.com", password: "password1", role: "member", monthlyLimit: 5000 }), res, next);
+  assert.equal(res.statusCode, 422);
+  assert.match(res.body.message, /حصّة الأكاديمية/);
 });
 
 test("a non-manager (member) cannot create members", async () => {
