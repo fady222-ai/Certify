@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IssueCertificateModal } from "@/components/IssueCertificateModal";
+import { OnboardingChecklist, type OnboardingStep } from "@/components/OnboardingChecklist";
 import { getToken, authedFetch } from "@/lib/auth";
+import { getOrganization, type Organization } from "@/lib/organization";
+import { listTemplates } from "@/lib/templates";
 import {
   IconBadge, IconUpload, IconPalette, IconArrow, IconCheck, IconQr, IconBolt,
 } from "@/components/icons";
@@ -29,18 +32,24 @@ export default function DashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [certs, setCerts] = useState<Certificate[]>([]);
+  const [org, setOrg] = useState<Organization | null>(null);
+  const [templateCount, setTemplateCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [statsRes, certsRes] = await Promise.all([
+      const [statsRes, certsRes, orgData, templates] = await Promise.all([
         authedFetch("me/stats"),
         authedFetch("certificates"),
+        getOrganization().catch(() => null),
+        listTemplates().catch(() => []),
       ]);
       setStats(await statsRes.json());
       const certsData = await certsRes.json();
       setCerts(certsData.data ?? []);
+      setOrg(orgData);
+      setTemplateCount(templates.length);
     } catch {
       router.push("/login");
     } finally {
@@ -70,6 +79,15 @@ export default function DashboardPage() {
     verify: "from-verify-50 to-verify-100 text-verify-600",
   };
 
+  const onboardingSteps: OnboardingStep[] = org
+    ? [
+        { key: "brand", label: "أضف شعار وألوان أكاديميتك", desc: "تظهر على كل شهادة وفي صفحة التحقق.", done: !!org.logo_url, href: "/dashboard/settings", cta: "الإعدادات" },
+        { key: "template", label: "أنشئ قالب شهادة", desc: "صمّم قالبك أو خصّص قالباً جاهزاً.", done: templateCount > 0, href: "/dashboard/templates", cta: "القوالب" },
+        { key: "default", label: "عيّن القالب الافتراضي", desc: "يُستخدم تلقائياً عند كل إصدار.", done: !!org.default_template_id, href: "/dashboard/templates", cta: "تعيين" },
+        { key: "issue", label: "أصدر أول شهادة", desc: "جرّب الإصدار الفردي لمتدرّب.", done: (stats?.issued_total ?? 0) > 0, onClick: () => setModalOpen(true), cta: "إصدار" },
+      ]
+    : [];
+
   return (
     <>
       <IssueCertificateModal open={modalOpen} onClose={() => setModalOpen(false)} onIssued={load} />
@@ -79,6 +97,9 @@ export default function DashboardPage() {
           <h1 className="font-display text-2xl font-black text-ink">نظرة عامة</h1>
           <p className="mt-1 text-sm text-ink-soft">ملخص نشاط منظمتك على المنصة.</p>
         </div>
+
+        {/* دليل الإعداد (يختفي تلقائياً عند اكتماله) */}
+        {!loading && org && <OnboardingChecklist steps={onboardingSteps} />}
 
         {/* بطاقات الإحصاء */}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

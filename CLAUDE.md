@@ -399,6 +399,11 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
   `/api/plans` عبر `listPlans`. (مغطّاة باختبار `billing.test.ts`؛ ونموذج حالات الأدمن
   بـ`admin.test.ts`.) **قيد dev:** بلا أي بوّابة مهيّأة لا يمكن تجربة الترقية المدفوعة
   من الواجهة (يُهيّأ مفتاح بوّابة واحد لتجربتها).
+- **دليل أوّل استخدام (onboarding):** لوحة النظرة العامة (`dashboard/page.tsx`) تعرض
+  `OnboardingChecklist` (`components/OnboardingChecklist.tsx`) — قائمة تحقّق بأربع خطوات
+  مشتقّة من بيانات حقيقية: شعار/ألوان (`org.logo_url`) · إنشاء قالب (`listTemplates().length`)
+  · تعيين القالب الافتراضي (`org.default_template_id`) · إصدار أول شهادة (`stats.issued_total`).
+  شريط تقدّم + إبراز الخطوة التالية؛ **يختفي تلقائياً عند اكتمال الخطوات** (لا حالة مخزّنة).
 - **ترقيم صفحات الشهادات:** `GET /api/certificates` يقبل `page`/`pageSize`
   (افتراضي 50، سقف 100) ويُعيد `{ data, total, page, pageSize }`؛ الواجهة
   (`dashboard/certificates`) تعرض أزرار السابق/التالي.
