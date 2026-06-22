@@ -67,4 +67,16 @@ describe("objectToElement", () => {
   it("returns null for unsupported object types", () => {
     expect(objectToElement(mockObj({ type: "circle" }))).toBeNull();
   });
+
+  it("preserves a content role on a tagged text element", () => {
+    const el = objectToElement(
+      mockObj({ type: "textbox", text: "شهادة حضور", role: "title", fontSize: 56, fontWeight: 800, fill: "#000", textAlign: "center" }),
+    );
+    expect(el).toMatchObject({ type: "text", role: "title", text: "شهادة حضور" });
+  });
+
+  it("omits role for a plain (untagged) text element", () => {
+    const el = objectToElement(mockObj({ type: "textbox", text: "نص", fontSize: 20, fontWeight: 400, fill: "#000", textAlign: "right" }));
+    expect(el).not.toHaveProperty("role");
+  });
 });

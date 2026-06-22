@@ -42,6 +42,7 @@ export function buildObject(fabric: FabricNS, el: DesignElement): FObj | Promise
     );
     t.set({ editable: el.type === "text" });
     (t as FObj).variableKey = el.type === "variable" ? el.variableKey : undefined;
+    (t as FObj).role = el.role; // preserve content role (title/body) across edits
     lockVerticalScale(t);
     return t;
   }
@@ -92,10 +93,10 @@ export function objectToElement(obj: FObj): DesignElement | null {
     return { type: "qr", left, top, width: w };
   }
   if (obj.variableKey) {
-    return { type: "variable", variableKey: obj.variableKey, left, top, width: w, fontSize: Math.round(obj.fontSize), fontWeight: obj.fontWeight, fill: obj.fill, textAlign: obj.textAlign, angle };
+    return { type: "variable", variableKey: obj.variableKey, left, top, width: w, fontSize: Math.round(obj.fontSize), fontWeight: obj.fontWeight, fill: obj.fill, textAlign: obj.textAlign, angle, ...(obj.role ? { role: obj.role } : {}) };
   }
   if (obj.type === "textbox") {
-    return { type: "text", text: obj.text, left, top, width: w, fontSize: Math.round(obj.fontSize), fontWeight: obj.fontWeight, fill: obj.fill, textAlign: obj.textAlign, angle };
+    return { type: "text", text: obj.text, left, top, width: w, fontSize: Math.round(obj.fontSize), fontWeight: obj.fontWeight, fill: obj.fill, textAlign: obj.textAlign, angle, ...(obj.role ? { role: obj.role } : {}) };
   }
   if (obj.type === "image") {
     return { type: "image", left, top, width: w, height: h, src: obj.getSrc?.() ?? obj._element?.src, angle };

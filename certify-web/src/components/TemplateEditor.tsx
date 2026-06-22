@@ -27,6 +27,18 @@ import {
 } from "./templateEditor/canvas";
 import { Panel, ToolBtn, NumberRow, ColorRow } from "./templateEditor/controls";
 
+// Certificate types for the guided "محتوى الشهادة" dropdown. "" = plain «شهادة».
+const CERT_TYPES = [
+  { value: "", label: "شهادة (بدون نوع)" },
+  { value: "إتمام", label: "شهادة إتمام" },
+  { value: "حضور", label: "شهادة حضور" },
+  { value: "تقدير", label: "شهادة تقدير" },
+  { value: "مشاركة", label: "شهادة مشاركة" },
+  { value: "تدريب", label: "شهادة تدريب" },
+  { value: "شكر", label: "شهادة شكر" },
+  { value: "نجاح", label: "شهادة نجاح" },
+];
+
 export function TemplateEditor({ templateId }: { templateId?: string }) {
   const router = useRouter();
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
@@ -217,6 +229,32 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
     paintBgImage(null);
   }
 
+  // ---- Certificate content (role-tagged title/body in guided templates) ----
+  function findRole(role: string): FObj | null {
+    const canvas = canvasRef.current;
+    return canvas?.getObjects().find((o: FObj) => o.role === role) ?? null;
+  }
+  const titleObj = findRole("title");
+  const bodyObj = findRole("body");
+  // Current certificate type = whatever follows "شهادة " in the title.
+  const certType = (() => {
+    const t = (titleObj?.text ?? "").trim();
+    return t.startsWith("شهادة") ? t.slice("شهادة".length).trim() : "";
+  })();
+
+  function setCertType(type: string) {
+    if (!titleObj) return;
+    titleObj.set({ text: type ? `شهادة ${type}` : "شهادة" });
+    canvasRef.current?.renderAll();
+    rerender();
+  }
+  function setBodyText(text: string) {
+    if (!bodyObj) return;
+    bodyObj.set({ text });
+    canvasRef.current?.renderAll();
+    rerender();
+  }
+
   // ---- Serialize canvas → design_data ----
   function serialize(): DesignData {
     const canvas = canvasRef.current;
@@ -278,6 +316,37 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
       <div className="mx-auto flex max-w-7xl gap-5 p-5">
         {/* Tools */}
         <aside className="w-56 shrink-0 space-y-4">
+          {/* Guided content controls — only for templates with a role-tagged title. */}
+          {titleObj && (
+            <Panel title="محتوى الشهادة">
+              <div>
+                <p className="mb-1 text-xs font-bold text-ink-muted">نوع الشهادة</p>
+                <select
+                  value={certType}
+                  onChange={(e) => setCertType(e.target.value)}
+                  className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm font-bold"
+                >
+                  {CERT_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-[11px] text-ink-muted">العنوان: «{certType ? `شهادة ${certType}` : "شهادة"}»</p>
+              </div>
+              {bodyObj && (
+                <div className="mt-3">
+                  <p className="mb-1 text-xs font-bold text-ink-muted">نص الشهادة</p>
+                  <textarea
+                    value={bodyObj.text ?? ""}
+                    onChange={(e) => setBodyText(e.target.value)}
+                    rows={3}
+                    className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-xs leading-relaxed"
+                    placeholder="تتشرّف أكاديمية … بمنح هذه الشهادة …"
+                  />
+                </div>
+              )}
+            </Panel>
+          )}
+
           <Panel title="إضافة عناصر">
             <ToolBtn icon={IconBadge} label="نص" onClick={addText} />
             <div className="rounded-xl border border-line bg-white p-2">

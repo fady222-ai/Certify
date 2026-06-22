@@ -285,6 +285,28 @@ const designs = [
     { type: "qr", left: 359, top: 700, width: 76 },
     { type: "variable", variableKey: "verification_code", left: 297, top: 800, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
   ]),
+
+  // 21) guided — logo top · title (role) · academy sentence (role) · footer (qr center, date/signature)
+  page("#ffffff", [
+    { type: "rect", left: 34, top: 34, width: 1055, height: 726, fill: "transparent", stroke: "#e5e7eb", strokeWidth: 2 },
+    // logo injected at theme.logoBox (top center) at render time
+    { type: "text", role: "title", left: 161, top: 176, width: 801, text: "شهادة", fontSize: 58, fontWeight: 800, fill: NAVY, textAlign: "center", fontFamily: "Cairo" },
+    { type: "line", left: 481, top: 256, width: 160, stroke: GOLD, strokeWidth: 2 },
+    { type: "text", role: "body", left: 211, top: 288, width: 701, text: "تتشرّف أكاديميتكم بمنح هذه الشهادة تقديراً للجهود المتميّزة والإنجاز المستحَق", fontSize: 21, fontWeight: 500, fill: MUTE, textAlign: "center", lineHeight: 1.7, fontFamily: "Cairo" },
+    { type: "variable", variableKey: "recipient_name", left: 161, top: 388, width: 801, fontSize: 46, fontWeight: 800, fill: GOLD, textAlign: "center", fontFamily: "Cairo" },
+    { type: "line", left: 361, top: 466, width: 400, stroke: "#e5e7eb", strokeWidth: 1 },
+    { type: "variable", variableKey: "course_name", left: 161, top: 492, width: 801, fontSize: 26, fontWeight: 700, fill: INK, textAlign: "center", fontFamily: "Cairo" },
+    // footer: QR centered
+    { type: "qr", left: 525, top: 596, width: 72 },
+    { type: "variable", variableKey: "verification_code", left: 461, top: 676, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
+    // footer right: date
+    { type: "line", left: 753, top: 662, width: 240, stroke: NAVY, strokeWidth: 1 },
+    { type: "variable", variableKey: "issue_date", left: 753, top: 670, width: 240, fontSize: 16, fontWeight: 700, fill: NAVY, textAlign: "center" },
+    { type: "text", left: 753, top: 696, width: 240, text: "التاريخ", fontSize: 12, fontWeight: 500, fill: MUTE, textAlign: "center" },
+    // footer left: academy signature
+    { type: "line", left: 130, top: 662, width: 240, stroke: NAVY, strokeWidth: 1 },
+    { type: "text", left: 130, top: 670, width: 240, text: "توقيع الأكاديمية", fontSize: 14, fontWeight: 700, fill: NAVY, textAlign: "center" },
+  ]),
 ];
 
 // Per-design theme metadata for the lightweight customizer: the two identity
@@ -311,6 +333,7 @@ const THEMES = [
   { accent: "#1e3a5f", accent2: "#0e7490", logoBox: lb(519, 52, 86, 86) },   // 18 security
   { accent: GOLD, accent2: "#0f172a", logoBox: lb(511, 72, 100, 64) },       // 19 footer band
   { accent: "#4338ca", accent2: "#6366f1", logoBox: lb(352, 152, 90, 90) },  // 20 portrait modern
+  { accent: GOLD, accent2: NAVY, logoBox: lb(511, 48, 100, 92) },            // 21 guided (logo top)
 ];
 
 export const presetTemplates = designs.map((design, i) => ({
