@@ -1,5 +1,5 @@
 import { prisma } from "../db/prisma.js";
-import { verifyToken } from "../services/authService.js";
+import { verifyToken, primaryOrg, orgRole } from "../services/authService.js";
 
 /**
  * Requires a valid Bearer token. Loads the user and their primary organization
@@ -24,11 +24,8 @@ export async function requireAuth(req, res, next) {
       return res.status(401).json({ message: "انتهت الجلسة. يرجى تسجيل الدخول مجدداً." });
     }
 
-    const organization = await prisma.organization.findFirst({
-      where: { ownerId: user.id },
-      include: { plan: true },
-      orderBy: { createdAt: "asc" },
-    });
+    // Resolve the org the user owns OR is a member of (team members own no academy).
+    const organization = await primaryOrg(user.id);
 
     if (organization?.suspendedAt) {
       return res.status(403).json({ message: "هذا الحساب موقوف. تواصل مع الدعم." });
@@ -36,6 +33,7 @@ export async function requireAuth(req, res, next) {
 
     req.user = user;
     req.organization = organization;
+    req.membershipRole = await orgRole(organization, user.id);
     next();
   } catch {
     return res.status(401).json({ message: "الجلسة منتهية أو غير صالحة." });

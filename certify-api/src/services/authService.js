@@ -460,10 +460,34 @@ export async function resetPassword({ token, newPassword }) {
   ]);
 }
 
+/**
+ * Resolve the organization a user belongs to. Owned org takes priority
+ * (back-compat); otherwise the org the user is a member of. This lets
+ * owner-created team members (who own no academy) reach their org's dashboard.
+ */
 export async function primaryOrg(userId) {
-  return prisma.organization.findFirst({
+  const owned = await prisma.organization.findFirst({
     where: { ownerId: userId },
     include: { plan: true },
     orderBy: { createdAt: "asc" },
   });
+  if (owned) return owned;
+
+  const membership = await prisma.organizationMember.findFirst({
+    where: { userId },
+    include: { organization: { include: { plan: true } } },
+    orderBy: { joinedAt: "asc" },
+  });
+  return membership?.organization ?? null;
+}
+
+/** The user's role within an organization: "owner" if they own it, else their membership role. */
+export async function orgRole(organization, userId) {
+  if (!organization) return null;
+  if (organization.ownerId === userId) return "owner";
+  const m = await prisma.organizationMember.findFirst({
+    where: { organizationId: organization.id, userId },
+    select: { role: true },
+  });
+  return m?.role ?? null;
 }

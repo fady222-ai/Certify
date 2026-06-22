@@ -84,8 +84,15 @@ import {
   adminReplyTicket,
   adminCloseTicket,
 } from "../controllers/supportController.js";
+import {
+  listMembers,
+  createMember,
+  updateMemberRole,
+  deleteMember,
+} from "../controllers/memberController.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
+import { requireOwner } from "../middleware/requireOrgRole.js";
 import { uploadFile } from "../middleware/upload.js";
 import { uploadImage } from "../middleware/uploadImage.js";
 
@@ -147,16 +154,22 @@ apiRouter.post("/templates/background", requireAuth, (req, res, next) => {
   });
 }, uploadTemplateBackground);
 
-// Billing
+// Team members (owner/admin manage; enforced in the controller)
+apiRouter.get("/members", requireAuth, listMembers);
+apiRouter.post("/members", requireAuth, createMember);
+apiRouter.patch("/members/:id", requireAuth, updateMemberRole);
+apiRouter.delete("/members/:id", requireAuth, deleteMember);
+
+// Billing — mutations are owner-only (team members must not change the plan).
 apiRouter.get("/billing", requireAuth, getBilling);
-apiRouter.post("/billing/checkout", requireAuth, createCheckout);
+apiRouter.post("/billing/checkout", requireAuth, requireOwner, createCheckout);
 apiRouter.get("/billing/callback", handleCallback);
 apiRouter.post("/billing/webhook", ...captureRawBody, handleTapWebhook);
 apiRouter.post("/billing/stripe/webhook", ...captureRawBody, handleStripeWebhook);
 apiRouter.get("/billing/paymob/callback", handlePaymobCallback);
 apiRouter.post("/billing/paymob/webhook", handlePaymobWebhook);
-apiRouter.post("/billing/cancel", requireAuth, cancelSubscription);
-apiRouter.post("/billing/plan", requireAuth, changePlan);
+apiRouter.post("/billing/cancel", requireAuth, requireOwner, cancelSubscription);
+apiRouter.post("/billing/plan", requireAuth, requireOwner, changePlan);
 
 apiRouter.get("/organization", requireAuth, getOrganization);
 apiRouter.patch("/organization", requireAuth, updateOrganization);

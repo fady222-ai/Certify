@@ -48,6 +48,11 @@ function installFakePrisma({ user = {}, org = null, vToken = null } = {}) {
     },
   };
 
+  // primaryOrg falls back to a membership lookup when the user owns no org.
+  prisma.organizationMember = {
+    findFirst: async () => null,
+  };
+
   prisma.verificationToken = {
     findFirst: async () => vToken,
     update: async ({ where, data }) => {
