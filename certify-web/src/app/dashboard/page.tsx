@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { IssueCertificateModal } from "@/components/IssueCertificateModal";
 import { OnboardingChecklist, type OnboardingStep } from "@/components/OnboardingChecklist";
+import { AnalyticsPanel } from "@/components/AnalyticsPanel";
 import { getToken, authedFetch } from "@/lib/auth";
 import { getOrganization, type Organization } from "@/lib/organization";
 import { listTemplates } from "@/lib/templates";
+import { getAnalytics, type Analytics } from "@/lib/certificates";
 import {
   IconBadge, IconUpload, IconPalette, IconArrow, IconCheck, IconQr, IconBolt,
 } from "@/components/icons";
@@ -34,22 +36,25 @@ export default function DashboardPage() {
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [org, setOrg] = useState<Organization | null>(null);
   const [templateCount, setTemplateCount] = useState(0);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [statsRes, certsRes, orgData, templates] = await Promise.all([
+      const [statsRes, certsRes, orgData, templates, analyticsData] = await Promise.all([
         authedFetch("me/stats"),
         authedFetch("certificates"),
         getOrganization().catch(() => null),
         listTemplates().catch(() => []),
+        getAnalytics().catch(() => null),
       ]);
       setStats(await statsRes.json());
       const certsData = await certsRes.json();
       setCerts(certsData.data ?? []);
       setOrg(orgData);
       setTemplateCount(templates.length);
+      setAnalytics(analyticsData);
     } catch {
       router.push("/login");
     } finally {
@@ -120,6 +125,11 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* التحليلات (تظهر بعد إصدار أول شهادة) */}
+        {!loading && analytics && (stats?.issued_total ?? 0) > 0 && (
+          <AnalyticsPanel data={analytics} />
+        )}
 
         {/* إجراءات سريعة */}
         <div className="grid gap-5 lg:grid-cols-3">

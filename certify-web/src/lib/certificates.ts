@@ -64,6 +64,32 @@ export async function resendCertificateEmail(id: string) {
   return data as { message: string; transport: string };
 }
 
+/** Download all certificates as a CSV file (authed → blob → browser download). */
+export async function exportCertificatesCsv(): Promise<void> {
+  const res = await authedFetch("certificates/export");
+  if (!res.ok) throw new Error("تعذر تصدير الشهادات.");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "certificates.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export type Analytics = {
+  monthly: { month: string; count: number }[];
+  top_courses: { course: string; count: number }[];
+};
+
+export async function getAnalytics(): Promise<Analytics> {
+  const res = await authedFetch("me/analytics");
+  if (!res.ok) throw new Error("تعذر تحميل التحليلات.");
+  return res.json();
+}
+
 const EVENT_LABELS: Record<string, string> = {
   issued: "تم الإصدار",
   opened: "فتحت صفحة التحقق",

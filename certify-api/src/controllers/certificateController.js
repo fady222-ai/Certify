@@ -269,6 +269,77 @@ export async function resendCertificateEmail(req, res) {
   return res.json({ message: "تم إرسال البريد.", transport: result.transport });
 }
 
+const STATUS_AR = { active: "نشطة", revoked: "ملغاة", expired: "منتهية" };
+
+/** Escape one CSV field (RFC 4180): quote if it holds a comma/quote/newline. */
+function csvField(v) {
+  const s = v == null ? "" : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+/** GET /api/certificates/export — download all certificates as CSV. */
+export async function exportCertificates(req, res) {
+  if (!req.organization) return res.status(404).json({ message: "غير موجود." });
+
+  const certs = await prisma.certificate.findMany({
+    where: { organizationId: req.organization.id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const header = ["الاسم", "البريد", "الدورة", "تاريخ الإصدار", "الحالة", "رمز التحقق", "تاريخ الإنشاء"];
+  const lines = [header.map(csvField).join(",")];
+  for (const c of certs) {
+    lines.push([
+      c.recipientName,
+      c.recipientEmail ?? "",
+      c.courseName ?? "",
+      c.issueDate ? new Date(c.issueDate).toISOString().slice(0, 10) : "",
+      STATUS_AR[c.status] ?? c.status,
+      c.verificationCode,
+      new Date(c.createdAt).toISOString().slice(0, 10),
+    ].map(csvField).join(","));
+  }
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", 'attachment; filename="certificates.csv"');
+  // UTF-8 BOM so Excel opens Arabic correctly.
+  res.send("﻿" + lines.join("\r\n"));
+}
+
+/** GET /api/me/analytics — issuance trend (last 6 months) + top courses. */
+export async function dashboardAnalytics(req, res) {
+  if (!req.organization) return res.json({ monthly: [], top_courses: [] });
+  const orgId = req.organization.id;
+
+  const [usage, topCourses] = await Promise.all([
+    prisma.certificateUsage.findMany({ where: { organizationId: orgId } }),
+    prisma.certificate.groupBy({
+      by: ["courseName"],
+      where: { organizationId: orgId },
+      _count: { _all: true },
+      orderBy: { _count: { courseName: "desc" } },
+      take: 5,
+    }),
+  ]);
+
+  // Continuous last-6-months series (fill gaps with 0) from the usage counters.
+  const byMonth = new Map(usage.map((u) => [u.month, u.certificatesIssued]));
+  const monthly = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    monthly.push({ month: key, count: byMonth.get(key) ?? 0 });
+  }
+
+  const top_courses = topCourses.map((t) => ({
+    course: t.courseName ?? "—",
+    count: t._count._all,
+  }));
+
+  res.json({ monthly, top_courses });
+}
+
 /** GET /api/me/stats — dashboard summary for the current organization. */
 export async function dashboardStats(req, res) {
   if (!req.organization) {

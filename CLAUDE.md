@@ -399,6 +399,12 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
   `/api/plans` عبر `listPlans`. (مغطّاة باختبار `billing.test.ts`؛ ونموذج حالات الأدمن
   بـ`admin.test.ts`.) **قيد dev:** بلا أي بوّابة مهيّأة لا يمكن تجربة الترقية المدفوعة
   من الواجهة (يُهيّأ مفتاح بوّابة واحد لتجربتها).
+- **تحليلات + تصدير CSV:** `GET /api/me/analytics` يُرجِع سلسلة الإصدار لآخر 6 أشهر (من جدول
+  `CertificateUsage` مع ملء الفجوات بصفر) + أعلى 5 دورات (`groupBy courseName`)؛ تعرضها
+  `components/AnalyticsPanel.tsx` (رسوم أعمدة بـdivs بلا مكتبة) في لوحة النظرة العامة بعد إصدار
+  أول شهادة. `GET /api/certificates/export` (مُسجَّل **قبل** `/certificates/:id`) يُنزِّل كل
+  شهادات المنظمة CSV (مع BOM لـExcel العربي، تهريب RFC 4180)؛ الواجهة `exportCertificatesCsv`
+  تجلب blob عبر `authedFetch` وتُطلق التنزيل (زر «تصدير CSV» في صفحة إدارة الشهادات).
 - **دليل أوّل استخدام (onboarding):** لوحة النظرة العامة (`dashboard/page.tsx`) تعرض
   `OnboardingChecklist` (`components/OnboardingChecklist.tsx`) — قائمة تحقّق بأربع خطوات
   مشتقّة من بيانات حقيقية: شعار/ألوان (`org.logo_url`) · إنشاء قالب (`listTemplates().length`)

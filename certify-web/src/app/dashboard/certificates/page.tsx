@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getToken, authedFetch } from "@/lib/auth";
-import { revokeCertificate, reactivateCertificate, deleteCertificate } from "@/lib/certificates";
+import { revokeCertificate, reactivateCertificate, deleteCertificate, exportCertificatesCsv } from "@/lib/certificates";
 import { RevokeCertificateModal } from "@/components/RevokeCertificateModal";
 import { DeleteCertificateModal } from "@/components/DeleteCertificateModal";
 import {
@@ -43,6 +43,7 @@ export default function CertificatesPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [resending, setResending] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -139,9 +140,24 @@ export default function CertificatesPage() {
 
   return (
       <main className="mx-auto max-w-5xl space-y-6 p-6">
-        <div>
-          <h1 className="font-display text-2xl font-black text-ink">إدارة الشهادات</h1>
-          <p className="mt-1 text-sm text-ink-soft">ابحث عن الشهادات الصادرة وتحقق منها أو ألغها.</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl font-black text-ink">إدارة الشهادات</h1>
+            <p className="mt-1 text-sm text-ink-soft">ابحث عن الشهادات الصادرة وتحقق منها أو ألغها.</p>
+          </div>
+          <button
+            onClick={async () => {
+              setExporting(true);
+              try { await exportCertificatesCsv(); }
+              catch (e) { setToast(e instanceof Error ? e.message : "تعذر التصدير."); setTimeout(() => setToast(null), 3000); }
+              finally { setExporting(false); }
+            }}
+            disabled={exporting || total === 0}
+            className="btn-ghost disabled:opacity-50"
+            title="تصدير كل الشهادات إلى ملف CSV"
+          >
+            <IconDownload className="h-4 w-4" /> {exporting ? "جار التصدير…" : "تصدير CSV"}
+          </button>
         </div>
 
         {toast && (

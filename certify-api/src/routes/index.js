@@ -24,6 +24,8 @@ import {
   deleteCertificate,
   resendCertificateEmail,
   dashboardStats,
+  dashboardAnalytics,
+  exportCertificates,
 } from "../controllers/certificateController.js";
 import {
   listTemplates,
@@ -134,7 +136,10 @@ apiRouter.post("/auth/mfa/setup", requireAuth, mfaSetupHandler);
 apiRouter.post("/auth/mfa/enable", requireAuth, mfaEnableHandler);
 apiRouter.post("/auth/mfa/disable", requireAuth, mfaDisableHandler);
 apiRouter.get("/me/stats", requireAuth, dashboardStats);
+apiRouter.get("/me/analytics", requireAuth, dashboardAnalytics);
 apiRouter.get("/certificates", requireAuth, listCertificates);
+// Must precede "/certificates/:id" so "export" isn't captured as an id.
+apiRouter.get("/certificates/export", requireAuth, exportCertificates);
 apiRouter.post("/certificates", requireAuth, createCertificate);
 apiRouter.get("/certificates/:id", requireAuth, getCertificate);
 apiRouter.post("/certificates/:id/revoke", requireAuth, revokeCertificate);
