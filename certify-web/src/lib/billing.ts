@@ -13,6 +13,7 @@ export type Plan = {
   templates_limit: number | null;
   team_members_limit: number;
   has_bulk_issuance: boolean;
+  has_api: boolean;
 };
 
 export type Gateway = "stripe" | "tap" | "paymob";

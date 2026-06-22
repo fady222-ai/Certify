@@ -155,6 +155,31 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
   `numberingSystem:"latn"`) لعرض أرقام غربية مع نصّ عربي؛ مُطبّقة عبر صفحات الأدمن/الفوترة/
   الدعم/الدفعات (بدل `ar-SA` الذي يُظهر أرقاماً عربية).
 
+## API عام + مفاتيح API (للتكامل البرمجي)
+
+REST API عام بإصدار `/api/v1` يتيح لأنظمة المنظمة إصدار/قراءة الشهادات برمجياً، بنمط
+Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi`).
+- **المفتاح:** `cfy_live_<عشوائي base64url>` يُولَّد في `services/apiKeyService.js`؛ يُعرَض **مرّة
+  واحدة** في ردّ الإنشاء فقط. التخزين: `keyHash` SHA-256 (فريد، بحث O(1)) + `keyEnc` مشفّر
+  AES-GCM (تدقيق) + `prefix`/`last4` لعرض مقنّع `maskApiKey` (`cfy_live_••••3a9f`). تسرّب DB وحده
+  لا يكشف المفتاح.
+- **النموذج:** `ApiKey` (organizationId Cascade · keyHash @unique · keyEnc · prefix · last4 ·
+  createdById SetNull · lastUsedAt · revokedAt). **تنبيه schema: شغّل `npx prisma db push`.**
+- **المصادقة:** `middleware/requireApiKey.js` — Bearer → hash → `findUnique`؛ 401 (مفقود/ملغى/خاطئ)،
+  403 (موقوف/`!hasApi`)؛ يضبط `req.organization`+`req.apiKey`، يُحدّث `lastUsedAt` best-effort. رسائل إنجليزية.
+- **الإدارة (المالك فقط، `requireOwner`):** `controllers/apiKeyController.js` —
+  `GET/POST/DELETE /api/api-keys` (الإنشاء يفرض `hasApi` ويُعيد الخام مرّة؛ الإلغاء = `revokedAt`).
+- **الـv1 (`controllers/apiV1Controller.js` تحت requireApiKey):** `POST /api/v1/certificates`
+  (يعيد استخدام `issueCertificate` → حدّ الباقة 402، القالب الافتراضي، PDF؛ يردّ `verify_url`) ·
+  `GET /api/v1/certificates[/:id]` (org-scoped، مرقّمة). sub-router `apiRouter.use("/v1", …)`.
+- **محدِّد المعدّل:** `app.use("/api/v1", …)` 300/دقيقة لكل مفتاح (مفتاحه hash توكن الـAuthorization، fallback IP).
+- **الواجهة:** `lib/apiKeys.ts` + صفحة `dashboard/developers` (قائمة مقنّعة + إنشاء بكشف لمرة
+  واحدة + نسخ + إلغاء + توثيق curl؛ بطاقة ترقية إن `!has_api`) + بند تنقّل «المطوّرون (API)» (IconKey).
+- **اختبارات** (`test/api-keys.test.js`): توليد/تجزئة/تقنيع، دورة التشفير، الإنشاء يكشف مرّة ويخزّن
+  المُجزّأ فقط، بوّابة `hasApi`، الإلغاء، و`requireApiKey` (صالح/مفقود/خاطئ/بلا API).
+- **علم `hasApi` عاد للكتالوج** (pro/business) و`presentPlan` ونوع الواجهة وبنود التسعير — صار
+  مبنيّاً فعلاً (بعكس `hasWhiteLabel` الذي يبقى محذوفاً حتى يُبنى).
+
 ## أعضاء الفريق (إنشاء بواسطة المالك)
 
 تتيح للمنظمة عدّة مستخدمين ضمن حدّ الباقة (`Plan.teamMembersLimit`: free=1 · pro=3 · business=10).
@@ -388,8 +413,8 @@ STRIPE_SETUP.md ← دليل إعداد مفاتيح Stripe
   منهما نصّ (`certsLabel`/`teamLabel`، صرف عربي صحيح). (كانت الأسعار مكرّرة ومختلفة — الهبوط
   أظهر $49/$99 خطأً.)
 - **الباقات تَعِد فقط بالمبنيّ فعلاً (تنظيف ما قبل الإطلاق):** أُزيل علَما `hasApi`/`hasWhiteLabel`
-  من الكتالوج (`config/plans.js`) ومن `presentPlan` ونوع الواجهة — كانا يُعرَضان دون تنفيذ
-  (وعود وهمية). يُعاد إضافتهما عند بناء الميزة فعلاً. **مقاعد الفريق** (`teamMembers`: 1/3/10)
+  من الكتالوج كوعود وهمية. **عاد `hasApi`** بعد بناء الـAPI فعلاً (راجع قسم «API عام + مفاتيح»)؛
+  يبقى `hasWhiteLabel` محذوفاً حتى يُبنى. **مقاعد الفريق** (`teamMembers`: 1/3/10)
   أصبحت ميزة حقيقية مُعلَنة في صفحات التسويق الثلاث (مشتقّة من المرجع، محروسة بالتطابق). وأُزيلت
   أوصاف مُبالَغة («تقارير/تحليلات متقدمة») لأن التحليلات أساسية حالياً.
 - **بوّابات الدفع في الواجهة:** `GatewayPicker` يعرض المتاح فقط؛ وقرار «نافذة أم دفع

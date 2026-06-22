@@ -97,3 +97,6 @@ export const IconX = (p: IconProps) => (
 export const IconCopy = (p: IconProps) => (
   <svg {...base(p)}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h8" /></svg>
 );
+export const IconKey = (p: IconProps) => (
+  <svg {...base(p)}><circle cx="7.5" cy="15.5" r="4.5" /><path d="m10.5 12.5 8-8M16 7l2 2M19 4l2 2" /></svg>
+);

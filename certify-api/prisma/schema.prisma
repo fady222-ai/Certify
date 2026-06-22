@@ -34,6 +34,7 @@ model User {
   verificationTokens  VerificationToken[]
   passwordResetTokens PasswordResetToken[]
   supportTickets      SupportTicket[]
+  apiKeys             ApiKey[]
 
   @@map("users")
 }
@@ -112,8 +113,29 @@ model Organization {
   usage          CertificateUsage[]
   subscriptions  Subscription[]
   supportTickets SupportTicket[]
+  apiKeys        ApiKey[]
 
   @@map("organizations")
+}
+
+model ApiKey {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  name           String
+  keyHash        String    @unique @map("key_hash") // SHA-256 of the raw key
+  keyEnc         String    @map("key_enc")           // AES-256-GCM(raw) for auditing
+  prefix         String    // display prefix, e.g. "cfy_live"
+  last4          String    // last 4 chars of the raw key for display
+  createdById    String?   @map("created_by_id")
+  lastUsedAt     DateTime? @map("last_used_at")
+  revokedAt      DateTime? @map("revoked_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, revokedAt])
+  @@map("api_keys")
 }
 
 model OrganizationMember {

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import crypto from "node:crypto";
 import path from "node:path";
 import { config } from "./config/index.js";
 import { apiRouter } from "./routes/index.js";
@@ -116,6 +117,22 @@ app.use("/api/verify", rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "محاولات كثيرة جداً. يرجى المحاولة بعد قليل." },
+}));
+
+// Public developer API (/api/v1) — keyed per API key (hash of the Bearer token)
+// so one org's quota can't be exhausted by another, falling back to IP.
+app.use("/api/v1", rateLimit({
+  windowMs: 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const h = req.get("authorization") ?? "";
+    return h.startsWith("Bearer ")
+      ? crypto.createHash("sha256").update(h.slice(7)).digest("hex")
+      : req.ip;
+  },
+  message: { error: "rate_limited", message: "Rate limit exceeded (300 requests/minute)." },
 }));
 
 // Public, unauthenticated support endpoints (guest ticket create + token access).

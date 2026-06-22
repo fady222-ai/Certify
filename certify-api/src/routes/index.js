@@ -92,9 +92,16 @@ import {
   updateMemberRole,
   deleteMember,
 } from "../controllers/memberController.js";
+import { listApiKeys, createApiKey, revokeApiKey } from "../controllers/apiKeyController.js";
+import {
+  apiIssueCertificate,
+  apiListCertificates,
+  apiGetCertificate,
+} from "../controllers/apiV1Controller.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
 import { requireOwner } from "../middleware/requireOrgRole.js";
+import { requireApiKey } from "../middleware/requireApiKey.js";
 import { uploadFile } from "../middleware/upload.js";
 import { uploadImage } from "../middleware/uploadImage.js";
 
@@ -158,6 +165,18 @@ apiRouter.post("/templates/background", requireAuth, (req, res, next) => {
     next();
   });
 }, uploadTemplateBackground);
+
+// API keys (owner only — sensitive credential like billing)
+apiRouter.get("/api-keys", requireAuth, requireOwner, listApiKeys);
+apiRouter.post("/api-keys", requireAuth, requireOwner, createApiKey);
+apiRouter.delete("/api-keys/:id", requireAuth, requireOwner, revokeApiKey);
+
+// --- Public developer API (v1) — authenticated by an API key ---
+const apiV1Router = Router();
+apiV1Router.post("/certificates", requireApiKey, apiIssueCertificate);
+apiV1Router.get("/certificates", requireApiKey, apiListCertificates);
+apiV1Router.get("/certificates/:id", requireApiKey, apiGetCertificate);
+apiRouter.use("/v1", apiV1Router);
 
 // Team members (owner/admin manage; enforced in the controller)
 apiRouter.get("/members", requireAuth, listMembers);
