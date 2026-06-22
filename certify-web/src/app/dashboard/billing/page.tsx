@@ -97,6 +97,7 @@ function BillingContent() {
         showToast(res.message ?? "تم التحديث.", "ok");
         const fresh = await getBilling();
         setBilling(fresh);
+        window.dispatchEvent(new Event("certify:profile")); // refresh sidebar plan card
       }
     } catch (e) {
       showToast(e instanceof Error ? e.message : "حدث خطأ.", "err");
@@ -113,6 +114,7 @@ function BillingContent() {
       showToast(res.message, "ok");
       const fresh = await getBilling();
       setBilling(fresh);
+      window.dispatchEvent(new Event("certify:profile")); // refresh sidebar plan card
     } catch (e) {
       showToast(e instanceof Error ? e.message : "حدث خطأ.", "err");
     } finally {

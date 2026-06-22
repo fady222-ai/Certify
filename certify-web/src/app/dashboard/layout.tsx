@@ -5,9 +5,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { IssueCertificateModal } from "@/components/IssueCertificateModal";
-import { getToken, getStoredUser, logout, type AuthUser } from "@/lib/auth";
+import { getToken, getStoredUser, logout, refreshProfile, type AuthUser } from "@/lib/auth";
 import {
-  IconBadge, IconUpload, IconPalette, IconChart, IconBolt as IconBoltNav, IconSettings, IconMail, IconUsers, IconKey,
+  IconBadge, IconUpload, IconPalette, IconChart, IconBolt as IconBoltNav, IconSettings, IconMail, IconUsers, IconKey, IconChevron,
 } from "@/components/icons";
 
 const navSections = [
@@ -39,15 +39,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
+  // Collapsed state per titled nav section (keyed by title).
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!getToken()) {
       router.replace("/login");
       return;
     }
-    setProfile(getStoredUser());
+    setProfile(getStoredUser()); // instant paint from cache
     setChecked(true);
   }, [router]);
+
+  // Keep the profile (and the plan card) fresh from the server: on mount and on
+  // every navigation — so the sidebar reflects a plan upgrade, not the stale
+  // login snapshot.
+  useEffect(() => {
+    if (!getToken()) return;
+    refreshProfile().then((p) => p && setProfile(p)).catch(() => {});
+  }, [pathname]);
+
+  // Immediate refresh when another page signals a profile change (e.g. plan upgrade).
+  useEffect(() => {
+    const onProfile = () => refreshProfile().then((p) => p && setProfile(p)).catch(() => {});
+    window.addEventListener("certify:profile", onProfile);
+    return () => window.removeEventListener("certify:profile", onProfile);
+  }, []);
 
   // Close the mobile drawer on route change.
   useEffect(() => { setNavOpen(false); }, [pathname]);
@@ -67,32 +84,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push("/");
   }
 
+  const renderLink = (n: { label: string; icon: typeof IconBadge; href: string }) => {
+    const active =
+      n.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(n.href);
+    return (
+      <Link key={n.href} href={n.href}
+        className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
+          active ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
+            : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"}`}>
+        <n.icon className="h-5 w-5" />
+        {n.label}
+      </Link>
+    );
+  };
+
   const navItems = (
     <>
-      {navSections.map((section, si) => (
-        <div key={si} className={si > 0 ? "mt-5 border-t pt-4" : ""}>
-          {section.title && (
-            <p className="mb-1.5 px-3.5 text-[11px] font-extrabold uppercase tracking-wide text-ink-muted">
+      {navSections.map((section, si) => {
+        if (!section.title) {
+          return <div key={si} className="space-y-1">{section.items.map(renderLink)}</div>;
+        }
+        // Titled sections are collapsible; auto-open when a child route is active.
+        const title = section.title;
+        const hasActive = section.items.some((n) => pathname.startsWith(n.href));
+        const open = hasActive || !collapsed[title];
+        return (
+          <div key={si} className="mt-5 border-t pt-3">
+            <button
+              type="button"
+              onClick={() => setCollapsed((c) => ({ ...c, [title]: !c[title] }))}
+              className="flex w-full items-center justify-between rounded-xl px-3.5 py-2 text-[11px] font-extrabold uppercase tracking-wide text-ink-muted hover:text-ink-soft"
+              aria-expanded={open}
+            >
               {section.title}
-            </p>
-          )}
-          <div className="space-y-1">
-            {section.items.map((n) => {
-              const active =
-                n.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(n.href);
-              return (
-                <Link key={n.href} href={n.href}
-                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold transition ${
-                    active ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
-                      : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"}`}>
-                  <n.icon className="h-5 w-5" />
-                  {n.label}
-                </Link>
-              );
-            })}
+              <IconChevron className={`h-4 w-4 transition-transform ${open ? "" : "-rotate-90"}`} />
+            </button>
+            {open && <div className="mt-1 space-y-1">{section.items.map(renderLink)}</div>}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 

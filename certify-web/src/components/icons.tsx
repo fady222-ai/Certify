@@ -100,3 +100,6 @@ export const IconCopy = (p: IconProps) => (
 export const IconKey = (p: IconProps) => (
   <svg {...base(p)}><circle cx="7.5" cy="15.5" r="4.5" /><path d="m10.5 12.5 8-8M16 7l2 2M19 4l2 2" /></svg>
 );
+export const IconChevron = (p: IconProps) => (
+  <svg {...base(p)}><path d="m6 9 6 6 6-6" /></svg>
+);
