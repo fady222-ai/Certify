@@ -234,6 +234,57 @@ const designs = [
     ...centeredCore({ title: INK, name: "#6d28d9", course: INK, line: "#8b5cf6", sub: MUTE }),
     ...footerCenter({ label: INK }),
   ]),
+
+  // 17) art-deco — emerald keyline + deco corners + monogram
+  page("#ffffff", [
+    { type: "rect", left: 30, top: 30, width: 1063, height: 734, fill: "transparent", stroke: "#0f766e", strokeWidth: 2 },
+    ...["TL", "TR", "BL", "BR"].map((o) => ({
+      type: "ornament", name: "artDecoCorner", color: "#0f766e", orientation: o,
+      left: o[1] === "R" ? 963 : 20, top: o[0] === "B" ? 634 : 20, width: 160, height: 160,
+    })),
+    { type: "ornament", name: "monogram", color: "#0f766e", left: 519, top: 54, width: 84, height: 84 },
+    ...centeredCore({ title: "#0f766e", name: GOLD, course: INK, line: "#0f766e" }),
+    ...footerCenter({ label: "#0f766e" }),
+  ]),
+  // 18) security — guilloche emblem + slate double keyline
+  page("#fbfcfe", [
+    { type: "rect", left: 28, top: 28, width: 1067, height: 738, fill: "transparent", stroke: "#1e3a5f", strokeWidth: 3 },
+    { type: "rect", left: 40, top: 40, width: 1043, height: 714, fill: "transparent", stroke: SILVER, strokeWidth: 1 },
+    { type: "ornament", name: "guilloche", color: "#1e3a5f", left: 519, top: 52, width: 86, height: 86 },
+    ...centeredCore({ title: "#1e3a5f", name: "#0e7490", course: INK, line: "#0e7490" }),
+    ...footerCenter({ label: "#1e3a5f" }),
+  ]),
+  // 19) footer band — sober graphite band + gold name
+  page("#ffffff", [
+    { type: "rect", left: 0, top: 0, width: 1123, height: 8, fill: "#0f172a" },
+    { type: "rect", left: 0, top: 678, width: 1123, height: 116, gradient: { from: "#334155", to: "#0f172a", angle: 120 } },
+    ...centeredCore({ title: INK, name: GOLD, course: INK, line: GOLD, sub: MUTE }),
+    { type: "rect", left: 521, top: 598, width: 84, height: 84, fill: "#ffffff", rx: 8 },
+    { type: "qr", left: 528, top: 605, width: 70 },
+    { type: "variable", variableKey: "org_name", left: 90, top: 712, width: 300, fontSize: 16, fontWeight: 700, fill: "#ffffff", textAlign: "center" },
+    { type: "text", left: 90, top: 738, width: 300, text: "الجهة المانحة", fontSize: 12, fontWeight: 500, fill: "#cbd5e1", textAlign: "center" },
+    { type: "variable", variableKey: "issue_date", left: 733, top: 712, width: 300, fontSize: 16, fontWeight: 700, fill: "#ffffff", textAlign: "center" },
+    { type: "text", left: 733, top: 738, width: 300, text: "التاريخ", fontSize: 12, fontWeight: 500, fill: "#cbd5e1", textAlign: "center" },
+    { type: "variable", variableKey: "verification_code", left: 461, top: 752, width: 200, fontSize: 10, fontWeight: 600, fill: "#94a3b8", textAlign: "center" },
+  ]),
+  // 20) portrait modern — indigo top bar
+  pageP("#ffffff", [
+    { type: "rect", left: 0, top: 0, width: 794, height: 120, gradient: { from: "#4338ca", to: "#6366f1", angle: 120 } },
+    { type: "text", left: 47, top: 36, width: 700, text: "شهادة", fontSize: 46, fontWeight: 800, fill: "#ffffff", textAlign: "center", fontFamily: "Cairo" },
+    { type: "ornament", name: "sealGold", left: 352, top: 152, width: 90, height: 90 },
+    { type: "text", left: 47, top: 300, width: 700, text: "تُمنح هذه الشهادة إلى", fontSize: 18, fontWeight: 500, fill: MUTE, textAlign: "center" },
+    { type: "variable", variableKey: "recipient_name", left: 27, top: 340, width: 740, fontSize: 40, fontWeight: 800, fill: "#4338ca", textAlign: "center", fontFamily: "Cairo" },
+    { type: "line", left: 247, top: 420, width: 300, stroke: "#6366f1", strokeWidth: 1 },
+    { type: "variable", variableKey: "course_name", left: 47, top: 450, width: 700, fontSize: 24, fontWeight: 700, fill: INK, textAlign: "center", fontFamily: "Cairo" },
+    { type: "line", left: 120, top: 840, width: 220, stroke: "#4338ca", strokeWidth: 1 },
+    { type: "variable", variableKey: "org_name", left: 120, top: 848, width: 220, fontSize: 14, fontWeight: 700, fill: "#4338ca", textAlign: "center" },
+    { type: "text", left: 120, top: 872, width: 220, text: "الجهة المانحة", fontSize: 11, fontWeight: 500, fill: MUTE, textAlign: "center" },
+    { type: "line", left: 454, top: 840, width: 220, stroke: "#4338ca", strokeWidth: 1 },
+    { type: "variable", variableKey: "issue_date", left: 454, top: 848, width: 220, fontSize: 14, fontWeight: 700, fill: "#4338ca", textAlign: "center" },
+    { type: "text", left: 454, top: 872, width: 220, text: "التاريخ", fontSize: 11, fontWeight: 500, fill: MUTE, textAlign: "center" },
+    { type: "qr", left: 359, top: 700, width: 76 },
+    { type: "variable", variableKey: "verification_code", left: 297, top: 800, width: 200, fontSize: 11, fontWeight: 600, fill: MUTE, textAlign: "center" },
+  ]),
 ];
 
 // Per-design theme metadata for the lightweight customizer: the two identity
@@ -256,6 +307,10 @@ const THEMES = [
   { accent: "#a5b4fc", accent2: "#4338ca", logoBox: lb(965, 40, 86, 86) },   // 14 dark indigo
   { accent: "#047857", accent2: "#0d9488", logoBox: lb(893, 80, 130, 130) }, // 15 emerald panel
   { accent: "#6d28d9", accent2: "#8b5cf6", logoBox: lb(150, 104, 90, 80) },  // 16 gradient card
+  { accent: "#0f766e", accent2: GOLD, logoBox: lb(519, 54, 84, 84) },        // 17 art deco
+  { accent: "#1e3a5f", accent2: "#0e7490", logoBox: lb(519, 52, 86, 86) },   // 18 security
+  { accent: GOLD, accent2: "#0f172a", logoBox: lb(511, 72, 100, 64) },       // 19 footer band
+  { accent: "#4338ca", accent2: "#6366f1", logoBox: lb(352, 152, 90, 90) },  // 20 portrait modern
 ];
 
 export const presetTemplates = designs.map((design, i) => ({
