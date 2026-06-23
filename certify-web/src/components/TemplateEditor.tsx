@@ -229,28 +229,46 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
     paintBgImage(null);
   }
 
-  // ---- Certificate content (role-tagged title/body in guided templates) ----
-  function findRole(role: string): FObj | null {
-    const canvas = canvasRef.current;
-    return canvas?.getObjects().find((o: FObj) => o.role === role) ?? null;
+  // ---- Certificate content controls (work on ANY template) ----
+  // Title = a role:"title" element, or any text starting with «شهادة».
+  function findTitle(): FObj | null {
+    const objs = canvasRef.current?.getObjects() ?? [];
+    return (
+      objs.find((o: FObj) => o.role === "title") ??
+      objs.find((o: FObj) => o.type === "textbox" && typeof o.text === "string" && o.text.trim().startsWith("شهادة")) ??
+      null
+    );
   }
-  const titleObj = findRole("title");
-  const bodyObj = findRole("body");
-  // Current certificate type = whatever follows "شهادة " in the title.
+  function findBody(): FObj | null {
+    return canvasRef.current?.getObjects().find((o: FObj) => o.role === "body") ?? null;
+  }
+  const titleObj = findTitle();
+  const bodyObj = findBody();
   const certType = (() => {
     const t = (titleObj?.text ?? "").trim();
     return t.startsWith("شهادة") ? t.slice("شهادة".length).trim() : "";
   })();
 
   function setCertType(type: string) {
-    if (!titleObj) return;
-    titleObj.set({ text: type ? `شهادة ${type}` : "شهادة" });
-    canvasRef.current?.renderAll();
-    rerender();
+    const text = type ? `شهادة ${type}` : "شهادة";
+    const t = findTitle();
+    if (t) {
+      t.set({ text });
+      (t as FObj).role = "title"; // tag so the choice persists on save
+      canvasRef.current?.renderAll();
+      rerender();
+    } else {
+      // No title yet → create one at the top.
+      add({ type: "text", role: "title", left: centerX(801), top: 150, width: 801, text, fontSize: 56, fontWeight: 800, fill: "#111827", textAlign: "center" });
+    }
+  }
+  function addBody() {
+    add({ type: "text", role: "body", left: centerX(701), top: 250, width: 701, text: "تتشرّف أكاديميتكم بمنح هذه الشهادة …", fontSize: 21, fontWeight: 500, fill: "#6b7280", textAlign: "center" });
   }
   function setBodyText(text: string) {
-    if (!bodyObj) return;
-    bodyObj.set({ text });
+    const b = findBody();
+    if (!b) return;
+    b.set({ text });
     canvasRef.current?.renderAll();
     rerender();
   }
@@ -316,36 +334,38 @@ export function TemplateEditor({ templateId }: { templateId?: string }) {
       <div className="mx-auto flex max-w-7xl gap-5 p-5">
         {/* Tools */}
         <aside className="w-56 shrink-0 space-y-4">
-          {/* Guided content controls — only for templates with a role-tagged title. */}
-          {titleObj && (
-            <Panel title="محتوى الشهادة">
-              <div>
-                <p className="mb-1 text-xs font-bold text-ink-muted">نوع الشهادة</p>
-                <select
-                  value={certType}
-                  onChange={(e) => setCertType(e.target.value)}
-                  className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm font-bold"
-                >
-                  {CERT_TYPES.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-                <p className="mt-1.5 text-[11px] text-ink-muted">العنوان: «{certType ? `شهادة ${certType}` : "شهادة"}»</p>
-              </div>
-              {bodyObj && (
-                <div className="mt-3">
-                  <p className="mb-1 text-xs font-bold text-ink-muted">نص الشهادة</p>
-                  <textarea
-                    value={bodyObj.text ?? ""}
-                    onChange={(e) => setBodyText(e.target.value)}
-                    rows={3}
-                    className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-xs leading-relaxed"
-                    placeholder="تتشرّف أكاديمية … بمنح هذه الشهادة …"
-                  />
-                </div>
+          {/* Certificate content controls — available for every template. */}
+          <Panel title="محتوى الشهادة">
+            <div>
+              <p className="mb-1 text-xs font-bold text-ink-muted">نوع الشهادة</p>
+              <select
+                value={certType}
+                onChange={(e) => setCertType(e.target.value)}
+                className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-sm font-bold"
+              >
+                {CERT_TYPES.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+              <p className="mt-1.5 text-[11px] text-ink-muted">العنوان: «{certType ? `شهادة ${certType}` : "شهادة"}»</p>
+            </div>
+            <div className="mt-3">
+              <p className="mb-1 text-xs font-bold text-ink-muted">نص الشهادة</p>
+              {bodyObj ? (
+                <textarea
+                  value={bodyObj.text ?? ""}
+                  onChange={(e) => setBodyText(e.target.value)}
+                  rows={3}
+                  className="w-full rounded-lg border border-line bg-white px-2 py-1.5 text-xs leading-relaxed"
+                  placeholder="تتشرّف أكاديمية … بمنح هذه الشهادة …"
+                />
+              ) : (
+                <button onClick={addBody} className="btn-ghost w-full justify-start text-xs">
+                  + إضافة جملة الأكاديمية
+                </button>
               )}
-            </Panel>
-          )}
+            </div>
+          </Panel>
 
           <Panel title="إضافة عناصر">
             <ToolBtn icon={IconBadge} label="نص" onClick={addText} />
