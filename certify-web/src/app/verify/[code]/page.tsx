@@ -1,13 +1,17 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { API_URL, verifyCertificate } from "@/lib/api";
 import { CertificateActions } from "@/components/CertificateActions";
+import { getDict, normalizeLocale, LOCALE_COOKIE, type Dict } from "@/lib/i18n";
 import {
   IconCheck, IconShield, IconBadge, IconArrow, IconBan, IconClock,
 } from "@/components/icons";
 import type { VerificationResult } from "@/lib/api";
+
+type VDict = Dict["verify"];
 
 type Params = { params: Promise<{ code: string }> };
 
@@ -58,6 +62,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function VerifyPage({ params }: Params) {
   const { code } = await params;
   const result = await verifyCertificate(code);
+  const d = getDict(normalizeLocale((await cookies()).get(LOCALE_COOKIE)?.value)).verify;
 
   const state = verifyState(result);
   const verified = result.found && state === "verified";
@@ -65,6 +70,8 @@ export default async function VerifyPage({ params }: Params) {
   // academy only, as if it were their own verification page.
   const whiteLabel = !!result.white_label;
   const orgName = result.certificate?.organization.name ?? null;
+
+  const badge = !result.found ? d.notFoundBadge : (d as VDict)[`${state}Badge` as const];
 
   return (
     <>
@@ -74,61 +81,47 @@ export default async function VerifyPage({ params }: Params) {
         <div className="relative mx-auto max-w-3xl px-5 py-14 lg:py-20">
           {/* شريط الحالة */}
           <div className="mx-auto mb-8 text-center">
-            {!result.found ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-5 py-2 text-sm font-extrabold text-red-600 ring-1 ring-red-100">
-                <IconShield className="h-5 w-5" />
-                الشهادة غير موجودة
-              </span>
-            ) : state === "verified" ? (
+            {state === "verified" && result.found ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-verify-50 px-5 py-2 text-sm font-extrabold text-verify-700 ring-1 ring-verify-100">
                 <span className="grid h-6 w-6 place-items-center rounded-full bg-verify-500 text-white">
                   <IconCheck className="h-4 w-4" />
                 </span>
-                شهادة موثقة وصحيحة
+                {badge}
               </span>
-            ) : state === "revoked" ? (
-              <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-5 py-2 text-sm font-extrabold text-red-600 ring-1 ring-red-100">
-                <IconBan className="h-5 w-5" />
-                هذه الشهادة ملغاة
-              </span>
-            ) : state === "expired" ? (
+            ) : state === "expired" && result.found ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-5 py-2 text-sm font-extrabold text-amber-700 ring-1 ring-amber-100">
                 <IconClock className="h-5 w-5" />
-                انتهت صلاحية هذه الشهادة
+                {badge}
               </span>
-            ) : state === "tampered" ? (
+            ) : state === "revoked" && result.found ? (
               <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-5 py-2 text-sm font-extrabold text-red-600 ring-1 ring-red-100">
-                <IconShield className="h-5 w-5" />
-                تحذير: بصمة الشهادة غير متطابقة
+                <IconBan className="h-5 w-5" />
+                {badge}
               </span>
             ) : (
               <span className="inline-flex items-center gap-2 rounded-full bg-red-50 px-5 py-2 text-sm font-extrabold text-red-600 ring-1 ring-red-100">
                 <IconShield className="h-5 w-5" />
-                تعذر التحقق من صحة الشهادة
+                {badge}
               </span>
             )}
           </div>
 
           {result.found && result.certificate ? (
-            <CertificateCard result={result} verified={!!verified} state={state} />
+            <CertificateCard result={result} verified={!!verified} state={state} d={d} />
           ) : (
             <div className="card mx-auto max-w-md p-10 text-center">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-red-50 text-red-500">
                 <IconShield className="h-8 w-8" />
               </div>
-              <h1 className="mt-5 font-display text-2xl font-black text-ink">
-                لم نعثر على هذه الشهادة
-              </h1>
-              <p className="mt-3 text-sm text-ink-soft">
-                {result.message ?? "تأكد من صحة رمز التحقق ثم حاول مرة أخرى."}
-              </p>
+              <h1 className="mt-5 font-display text-2xl font-black text-ink">{d.notFoundTitle}</h1>
+              <p className="mt-3 text-sm text-ink-soft">{result.message ?? d.notFoundHint}</p>
               <p className="mt-4 inline-block rounded-lg bg-surface-2 px-3 py-1.5 font-mono text-xs text-ink-muted">
                 {code}
               </p>
               <div className="mt-7">
                 <Link href="/" className="btn-ghost">
                   <IconArrow className="h-4 w-4" />
-                  العودة للرئيسية
+                  {d.backHome}
                 </Link>
               </div>
             </div>
@@ -138,7 +131,7 @@ export default async function VerifyPage({ params }: Params) {
       </main>
       {whiteLabel ? (
         <footer className="border-t bg-surface-2/60 py-6 text-center text-xs text-ink-muted">
-          © {new Date().getFullYear()} {orgName ?? ""} · صفحة التحقّق الرسمية
+          © {new Date().getFullYear()} {orgName ?? ""} · {d.officialFooter}
         </footer>
       ) : (
         <SiteFooter />
@@ -151,58 +144,26 @@ function CertificateCard({
   result,
   verified,
   state,
+  d,
 }: {
   result: Awaited<ReturnType<typeof verifyCertificate>>;
   verified: boolean;
   state: VerifyState;
+  d: VDict;
 }) {
   const c = result.certificate!;
   const org = c.organization;
   const accent = org.primary_color || "#4f46e5";
 
-  // Status box: one coherent message per state (no contradictory green/red).
-  const statusBox = {
-    verified: {
-      tone: "bg-verify-50 ring-verify-100",
-      iconBg: "bg-verify-500",
-      icon: IconShield,
-      title: "لم يتم العثور على أي تلاعب",
-      titleColor: "text-verify-700",
-      body: "بيانات الشهادة مطابقة للبصمة الرقمية المسجلة وقت الإصدار.",
-    },
-    revoked: {
-      tone: "bg-red-50 ring-red-100",
-      iconBg: "bg-red-500",
-      icon: IconBan,
-      title: "هذه الشهادة ملغاة",
-      titleColor: "text-red-700",
-      body: "ألغت جهة الإصدار هذه الشهادة فلم تعد سارية.",
-    },
-    expired: {
-      tone: "bg-amber-50 ring-amber-100",
-      iconBg: "bg-amber-500",
-      icon: IconClock,
-      title: "انتهت صلاحية هذه الشهادة",
-      titleColor: "text-amber-700",
-      body: "تجاوزت الشهادة تاريخ انتهاء صلاحيتها المحدد وقت الإصدار.",
-    },
-    tampered: {
-      tone: "bg-red-50 ring-red-100",
-      iconBg: "bg-red-500",
-      icon: IconShield,
-      title: "تحذير: بصمة الشهادة غير متطابقة",
-      titleColor: "text-red-700",
-      body: "قد تكون بيانات هذه الشهادة عدلت بعد إصدارها.",
-    },
-    invalid: {
-      tone: "bg-red-50 ring-red-100",
-      iconBg: "bg-red-500",
-      icon: IconShield,
-      title: "تعذر التحقق من صحة الشهادة",
-      titleColor: "text-red-700",
-      body: "هذه الشهادة ليست سارية حاليا.",
-    },
+  // Visual tone per state; the title/body text comes from the dictionary.
+  const visual = {
+    verified: { tone: "bg-verify-50 ring-verify-100", iconBg: "bg-verify-500", icon: IconShield, titleColor: "text-verify-700" },
+    revoked: { tone: "bg-red-50 ring-red-100", iconBg: "bg-red-500", icon: IconBan, titleColor: "text-red-700" },
+    expired: { tone: "bg-amber-50 ring-amber-100", iconBg: "bg-amber-500", icon: IconClock, titleColor: "text-amber-700" },
+    tampered: { tone: "bg-red-50 ring-red-100", iconBg: "bg-red-500", icon: IconShield, titleColor: "text-red-700" },
+    invalid: { tone: "bg-red-50 ring-red-100", iconBg: "bg-red-500", icon: IconShield, titleColor: "text-red-700" },
   }[state];
+  const statusBox = { ...visual, ...d.status[state] };
   const StatusIcon = statusBox.icon;
 
   return (
@@ -218,15 +179,15 @@ function CertificateCard({
               <IconBadge className="h-6 w-6" />
             </span>
             <div>
-              <p className="text-xs font-bold opacity-80">جهة الإصدار</p>
+              <p className="text-xs font-bold opacity-80">{d.issuer}</p>
               <p className="font-display text-lg font-extrabold">
-                {org.name ?? "منصة الشهادات"}
+                {org.name ?? d.platformFallback}
               </p>
             </div>
           </div>
           {verified && (
             <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold">
-              <IconCheck className="h-4 w-4" /> موثقة
+              <IconCheck className="h-4 w-4" /> {d.verifiedChip}
             </span>
           )}
         </div>
@@ -234,11 +195,11 @@ function CertificateCard({
 
       {/* جسم البطاقة */}
       <div className="px-8 py-8">
-        <Field label="اسم المتدرب" value={c.recipient_name} big />
-        {c.course_name && <Field label="الدورة" value={c.course_name} />}
+        <Field label={d.recipient} value={c.recipient_name} big />
+        {c.course_name && <Field label={d.course} value={c.course_name} />}
         <div className="grid grid-cols-2 gap-4">
-          {c.issue_date_label && <Field label="تاريخ الإصدار" value={c.issue_date_label} />}
-          <Field label="رمز التحقق" value={c.verification_code} mono />
+          {c.issue_date_label && <Field label={d.issueDate} value={c.issue_date_label} />}
+          <Field label={d.code} value={c.verification_code} mono />
         </div>
 
         {/* حالة الشهادة */}
@@ -257,16 +218,14 @@ function CertificateCard({
           <div className="mt-6 flex items-center gap-4 rounded-xl bg-surface-2/60 p-4">
             <img
               src={`${API_URL}/api/verify/${encodeURIComponent(c.verification_code)}/qr.png`}
-              alt="رمز التحقق السريع"
+              alt={d.scanAlt}
               width={96}
               height={96}
               className="h-24 w-24 shrink-0 rounded-lg bg-white p-1.5 ring-1 ring-black/5"
             />
             <div>
-              <p className="text-sm font-extrabold text-ink">امسح للتحقق الفوري</p>
-              <p className="mt-1 text-xs text-ink-soft">
-                وجّه كاميرا هاتفك إلى الرمز لفتح صفحة التحقق الرسمية من هذه الشهادة.
-              </p>
+              <p className="text-sm font-extrabold text-ink">{d.scanTitle}</p>
+              <p className="mt-1 text-xs text-ink-soft">{d.scanDesc}</p>
             </div>
           </div>
         )}
