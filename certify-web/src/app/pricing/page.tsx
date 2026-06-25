@@ -7,17 +7,42 @@ import { createCheckout, listPlans, resolveGatewayChoice, type Gateway } from "@
 import { GatewayPicker } from "@/components/GatewayPicker";
 import { getToken } from "@/lib/auth";
 import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
-
-// Prices/names come from the canonical pricing module; only marketing copy
-// (feature bullets, CTA, highlight) is defined here.
-const PLANS = [
-  { ...PLAN_PRICING.free, features: [PLAN_PRICING.free.teamLabel, "قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجانا", highlight: false },
-  { ...PLAN_PRICING.pro, features: [`حتى ${PLAN_PRICING.pro.teamLabel}`, "كل ميزات Free", "إصدار جماعي", "API للمطوّرين", "تكامل لينكدإن", "تتبع مشاهدات الشهادات"], cta: "ابدأ الآن", highlight: true },
-  { ...PLAN_PRICING.business, features: [`حتى ${PLAN_PRICING.business.teamLabel}`, "كل ميزات Pro", "علامة بيضاء (إخفاء Certify)", "شهادات بشعار وألوان أكاديميتك", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
-];
+import { useT } from "@/components/LocaleProvider";
 
 export default function PricingPage() {
   const router = useRouter();
+  const t = useT();
+
+  // Localized seat label (single user vs. up to N team members).
+  const seats = (n: number) =>
+    n <= 1 ? t("landing.seatsFree") : t("landing.seatsUpTo", { n });
+  const certs = (n: number) => t("landing.certsLabel", { n });
+
+  // Prices/names come from the canonical pricing module; marketing copy
+  // (feature bullets, CTA, highlight) is localized here.
+  const PLANS = [
+    {
+      ...PLAN_PRICING.free,
+      certsLabel: certs(PLAN_PRICING.free.certsPerMonth),
+      features: [seats(PLAN_PRICING.free.teamMembers), t("landing.feats.editor"), t("pricing.bullets.oneTemplate"), t("landing.feats.publicVerify"), t("pricing.bullets.pdfDownload"), t("pricing.bullets.qr")],
+      cta: t("landing.ctaFree"),
+      highlight: false,
+    },
+    {
+      ...PLAN_PRICING.pro,
+      certsLabel: certs(PLAN_PRICING.pro.certsPerMonth),
+      features: [seats(PLAN_PRICING.pro.teamMembers), t("landing.feats.allFree"), t("landing.feats.bulkExcel"), t("landing.feats.api"), t("landing.feats.linkedin"), t("landing.feats.trackViews")],
+      cta: t("landing.ctaNow"),
+      highlight: true,
+    },
+    {
+      ...PLAN_PRICING.business,
+      certsLabel: certs(PLAN_PRICING.business.certsPerMonth),
+      features: [seats(PLAN_PRICING.business.teamMembers), t("landing.feats.allPro"), t("landing.feats.whiteLabel"), t("landing.feats.brandedCerts"), t("pricing.bullets.customSupport")],
+      cta: t("landing.ctaNow"),
+      highlight: false,
+    },
+  ];
   const [interval, setInterval] = useState<"monthly" | "annual">("monthly");
   const [pending, setPending] = useState<{ slug: string; interval: "monthly" | "annual" } | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
@@ -37,7 +62,7 @@ export default function PricingPage() {
     if (slug === "free") return doCheckout(slug, interval, "stripe");
     const choice = resolveGatewayChoice(gateways);
     if (choice.kind === "none") {
-      return setError("الدفع غير متاح حاليا — تواصل مع مدير المنصة.");
+      return setError(t("pricing.payUnavailableError"));
     }
     if (choice.kind === "direct") return doCheckout(slug, interval, choice.gateway);
     setPending({ slug, interval });
@@ -55,7 +80,7 @@ export default function PricingPage() {
         router.push("/dashboard/billing?success=1");
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "حدث خطأ.");
+      setError(e instanceof Error ? e.message : t("common.genericError"));
       setLoading(null);
     }
   }
@@ -63,16 +88,16 @@ export default function PricingPage() {
   const annualSaving = ANNUAL_SAVING_PCT;
 
   return (
-    <div className="min-h-screen bg-surface-2/40" dir="rtl">
+    <div className="min-h-screen bg-surface-2/40">
       {/* Navbar */}
       <header className="glass sticky top-0 z-30 border-b border-line px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-xl font-bold text-brand-600">Certify</Link>
           <div className="flex items-center gap-4">
             <Link href="/login" className="text-sm text-ink-soft hover:text-brand-600 transition-colors">
-              تسجيل الدخول
+              {t("pricing.login")}
             </Link>
-            <Link href="/register" className="btn-primary text-sm px-4 py-2">ابدأ مجانا</Link>
+            <Link href="/register" className="btn-primary text-sm px-4 py-2">{t("pricing.startFree")}</Link>
           </div>
         </div>
       </header>
@@ -80,8 +105,8 @@ export default function PricingPage() {
       <main className="max-w-6xl mx-auto px-4 py-16 space-y-12">
         {/* Hero */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold text-ink">الأسعار</h1>
-          <p className="text-lg text-ink-soft">اختر الباقة المناسبة لنشاطك — جميع الأسعار بالدولار الأمريكي</p>
+          <h1 className="text-4xl font-bold text-ink">{t("pricing.title")}</h1>
+          <p className="text-lg text-ink-soft">{t("pricing.subtitle")}</p>
         </div>
 
         {/* Interval Toggle */}
@@ -93,7 +118,7 @@ export default function PricingPage() {
                 interval === "monthly" ? "bg-brand-600 text-white shadow-sm" : "text-ink-soft hover:text-ink"
               }`}
             >
-              شهري
+              {t("pricing.monthly")}
             </button>
             <button
               onClick={() => setInterval("annual")}
@@ -101,11 +126,11 @@ export default function PricingPage() {
                 interval === "annual" ? "bg-brand-600 text-white shadow-sm" : "text-ink-soft hover:text-ink"
               }`}
             >
-              سنوي
+              {t("pricing.annual")}
               <span className={`text-xs px-1.5 py-0.5 rounded-md font-bold ${
                 interval === "annual" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-700"
               }`}>
-                وفر {annualSaving}%
+                {t("pricing.save", { n: annualSaving })}
               </span>
             </button>
           </div>
@@ -135,7 +160,7 @@ export default function PricingPage() {
                 {plan.highlight && (
                   <div className="text-center mb-4">
                     <span className="inline-block bg-brand-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      الأكثر شيوعا
+                      {t("pricing.popular")}
                     </span>
                   </div>
                 )}
@@ -145,19 +170,19 @@ export default function PricingPage() {
 
                 <div className="mb-6">
                   {price === 0 ? (
-                    <p className="text-3xl font-bold text-ink">مجاني</p>
+                    <p className="text-3xl font-bold text-ink">{t("pricing.free")}</p>
                   ) : (
                     <>
                       <p className="text-3xl font-bold text-ink">
                         <span className="text-base font-normal text-ink-muted">$</span>
                         {price}
                         <span className="text-sm font-normal text-ink-muted">
-                          {interval === "annual" ? "/سنة" : "/شهر"}
+                          {interval === "annual" ? t("pricing.perYear") : t("pricing.perMonth")}
                         </span>
                       </p>
                       {monthlyEquiv && (
                         <p className="text-xs text-emerald-600 mt-1">
-                          ${monthlyEquiv} / شهر فقط
+                          {t("pricing.monthlyEquiv", { p: monthlyEquiv })}
                         </p>
                       )}
                     </>
@@ -186,10 +211,10 @@ export default function PricingPage() {
                             : "bg-surface-2 hover:bg-surface-2/80 text-ink border border-line"
                         }`}
                       >
-                        {loading === plan.slug ? "جار التحميل…" : paidBlocked ? "الدفع غير متاح حاليا" : plan.cta}
+                        {loading === plan.slug ? t("pricing.loading") : paidBlocked ? t("pricing.payUnavailable") : plan.cta}
                       </button>
                       {paidBlocked && (
-                        <p className="mt-2 text-center text-xs text-ink-muted">تواصل مع مدير المنصة لتفعيل الدفع.</p>
+                        <p className="mt-2 text-center text-xs text-ink-muted">{t("pricing.payUnavailableHint")}</p>
                       )}
                     </>
                   );
@@ -201,7 +226,7 @@ export default function PricingPage() {
 
         {/* Payment methods */}
         <div className="text-center space-y-3">
-          <p className="text-sm text-ink-muted font-medium">وسائل الدفع المقبولة</p>
+          <p className="text-sm text-ink-muted font-medium">{t("pricing.paymentMethodsTitle")}</p>
           <div className="flex justify-center flex-wrap gap-3">
             {["مدى", "فيزا", "ماستركارد", "Apple Pay", "STC Pay", "Benefit", "American Express"].map((m) => (
               <span key={m} className="bg-white border border-line rounded-lg px-3 py-1.5 text-xs font-medium text-ink-soft shadow-sm">
@@ -209,16 +234,16 @@ export default function PricingPage() {
               </span>
             ))}
           </div>
-          <p className="text-xs text-ink-muted">جميع المدفوعات آمنة ومشفرة — Stripe أو Tap Payments</p>
+          <p className="text-xs text-ink-muted">{t("pricing.paymentMethodsNote")}</p>
         </div>
 
         {/* FAQ */}
         <div className="max-w-2xl mx-auto space-y-4">
-          <h2 className="text-xl font-bold text-ink text-center">أسئلة شائعة</h2>
+          <h2 className="text-xl font-bold text-ink text-center">{t("pricing.faqTitle")}</h2>
           {[
-            { q: "هل يتجدد الاشتراك تلقائيا؟", a: "نعم، يتجدد الاشتراك تلقائيا كل شهر أو سنة. يمكنك الإلغاء في أي وقت وستبقى على باقتك حتى نهاية الدورة الحالية." },
-            { q: "ما الفرق بين Stripe وTap؟", a: "Stripe: دفع عالمي بالبطاقات الائتمانية. Tap: مخصص للسوق الخليجي ويدعم مدى، STC Pay، وApple Pay. كلاهما يقبل الدفع بالدولار." },
-            { q: "هل يمكنني الترقية أو التخفيض؟", a: "نعم في أي وقت. التخفيض يطبق فورا والترقية تفعل فور إتمام الدفع." },
+            { q: t("pricing.faq.renewQ"), a: t("pricing.faq.renewA") },
+            { q: t("pricing.faq.gatewaysQ"), a: t("pricing.faq.gatewaysA") },
+            { q: t("pricing.faq.changeQ"), a: t("pricing.faq.changeA") },
           ].map(({ q, a }) => (
             <div key={q} className="bg-white border border-line rounded-2xl p-5 shadow-sm">
               <p className="font-bold text-ink mb-2">{q}</p>
