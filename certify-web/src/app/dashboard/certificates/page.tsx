@@ -7,6 +7,7 @@ import { getToken, authedFetch } from "@/lib/auth";
 import { revokeCertificate, reactivateCertificate, deleteCertificate, exportCertificatesCsv } from "@/lib/certificates";
 import { RevokeCertificateModal } from "@/components/RevokeCertificateModal";
 import { DeleteCertificateModal } from "@/components/DeleteCertificateModal";
+import { useT } from "@/components/LocaleProvider";
 import {
   IconBadge, IconCheck, IconSearch, IconBan, IconDownload, IconMail, IconShield, IconTrash,
 } from "@/components/icons";
@@ -22,14 +23,14 @@ type Certificate = {
   issue_date: string | null;
 };
 
-const FILTERS = [
-  { key: "", label: "الكل" },
-  { key: "active", label: "نشطة" },
-  { key: "revoked", label: "ملغاة" },
-];
-
 export default function CertificatesPage() {
   const router = useRouter();
+  const t = useT();
+  const FILTERS = [
+    { key: "", label: t("cert.filterAll") },
+    { key: "active", label: t("cert.filterActive") },
+    { key: "revoked", label: t("cert.filterRevoked") },
+  ];
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -81,9 +82,9 @@ export default function CertificatesPage() {
     try {
       const res = await authedFetch(`certificates/${id}/resend-email`, { method: "POST" });
       const data = await res.json();
-      setToast(res.ok ? data.message : data.message ?? "تعذر الإرسال.");
+      setToast(res.ok ? data.message : data.message ?? t("cert.resendFailed"));
     } catch {
-      setToast("تعذر الإرسال.");
+      setToast(t("cert.resendFailed"));
     } finally {
       setResending(null);
       setTimeout(() => setToast(null), 3000);
@@ -99,7 +100,7 @@ export default function CertificatesPage() {
       setRevokeTarget(null);
       load();
     } catch (e) {
-      setToast(e instanceof Error ? e.message : "تعذر الإلغاء.");
+      setToast(e instanceof Error ? e.message : t("cert.revokeFailed"));
       setTimeout(() => setToast(null), 3000);
     } finally {
       setRevoking(null);
@@ -111,10 +112,10 @@ export default function CertificatesPage() {
     setToast(null);
     try {
       await reactivateCertificate(id);
-      setToast("تمت إعادة تفعيل الشهادة.");
+      setToast(t("cert.reactivated"));
       load();
     } catch (e) {
-      setToast(e instanceof Error ? e.message : "تعذرت إعادة التفعيل.");
+      setToast(e instanceof Error ? e.message : t("cert.reactivateFailed"));
     } finally {
       setReactivating(null);
       setTimeout(() => setToast(null), 3000);
@@ -128,10 +129,10 @@ export default function CertificatesPage() {
     try {
       await deleteCertificate(deleteTarget.id);
       setDeleteTarget(null);
-      setToast("تم حذف الشهادة.");
+      setToast(t("cert.deleted"));
       load();
     } catch (e) {
-      setToast(e instanceof Error ? e.message : "تعذر الحذف.");
+      setToast(e instanceof Error ? e.message : t("cert.deleteFailed"));
     } finally {
       setDeleting(false);
       setTimeout(() => setToast(null), 3000);
@@ -142,21 +143,21 @@ export default function CertificatesPage() {
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="font-display text-2xl font-black text-ink">إدارة الشهادات</h1>
-            <p className="mt-1 text-sm text-ink-soft">ابحث عن الشهادات الصادرة وتحقق منها أو ألغها.</p>
+            <h1 className="font-display text-2xl font-black text-ink">{t("cert.listTitle")}</h1>
+            <p className="mt-1 text-sm text-ink-soft">{t("cert.listSubtitle")}</p>
           </div>
           <button
             onClick={async () => {
               setExporting(true);
               try { await exportCertificatesCsv(); }
-              catch (e) { setToast(e instanceof Error ? e.message : "تعذر التصدير."); setTimeout(() => setToast(null), 3000); }
+              catch (e) { setToast(e instanceof Error ? e.message : t("cert.exportFailed")); setTimeout(() => setToast(null), 3000); }
               finally { setExporting(false); }
             }}
             disabled={exporting || total === 0}
             className="btn-ghost disabled:opacity-50"
-            title="تصدير كل الشهادات إلى ملف CSV"
+            title={t("cert.exportTitle")}
           >
-            <IconDownload className="h-4 w-4" /> {exporting ? "جار التصدير…" : "تصدير CSV"}
+            <IconDownload className="h-4 w-4" /> {exporting ? t("cert.exporting") : t("cert.exportCsv")}
           </button>
         </div>
 
@@ -169,12 +170,12 @@ export default function CertificatesPage() {
         {/* Search + filter */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <IconSearch className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+            <IconSearch className="absolute end-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
             <input
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="ابحث بالاسم، البريد، الدورة، أو رمز التحقق…"
-              className="input pr-11"
+              placeholder={t("cert.searchPh")}
+              className="input pe-11"
             />
           </div>
           <div className="flex gap-1.5 rounded-xl bg-white p-1 ring-1 ring-surface-3">
@@ -192,14 +193,14 @@ export default function CertificatesPage() {
         {/* List */}
         <div className="card overflow-hidden">
           {loading ? (
-            <p className="px-6 py-12 text-center text-sm text-ink-muted">جار التحميل…</p>
+            <p className="px-6 py-12 text-center text-sm text-ink-muted">{t("cert.loading")}</p>
           ) : certs.length === 0 ? (
             <div className="px-6 py-12 text-center">
               <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-brand-50 text-brand-600">
                 <IconBadge className="h-7 w-7" />
               </div>
               <p className="mt-4 text-sm text-ink-soft">
-                {search || status ? "لا توجد نتائج مطابقة." : "لم تصدر أي شهادة بعد."}
+                {search || status ? t("cert.noResults") : t("cert.noneYet")}
               </p>
             </div>
           ) : (
@@ -208,10 +209,10 @@ export default function CertificatesPage() {
                 <div key={c.id} className="flex items-center gap-3 px-6 py-4 transition hover:bg-surface-2/60">
                   {/* وسم الحالة — أقصى اليمين */}
                   {c.status === "revoked" ? (
-                    <span className="shrink-0 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">ملغاة</span>
+                    <span className="shrink-0 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">{t("cert.statusRevoked")}</span>
                   ) : (
                     <span className="flex shrink-0 items-center gap-1 rounded-full bg-verify-50 px-3 py-1 text-xs font-bold text-verify-700">
-                      <IconCheck className="h-3.5 w-3.5" /> نشطة
+                      <IconCheck className="h-3.5 w-3.5" /> {t("cert.statusActive")}
                     </span>
                   )}
                   <Link href={`/dashboard/certificates/${c.id}`} className="flex min-w-0 flex-1 items-center gap-3">
@@ -223,7 +224,7 @@ export default function CertificatesPage() {
                     <div className="min-w-0">
                       <p className="truncate font-bold text-ink hover:text-brand-700">{c.recipient_name}</p>
                       <p className="truncate text-xs text-ink-muted">
-                        {c.course_name ?? "—"} · <span className="font-mono">{c.verification_code}</span>
+                        {c.course_name ?? t("cert.dash")} · <span className="font-mono">{c.verification_code}</span>
                       </p>
                     </div>
                   </Link>
@@ -231,33 +232,33 @@ export default function CertificatesPage() {
                   <div className="flex shrink-0 items-center gap-1.5">
                     {c.pdf_url && (
                       <a href={c.pdf_url} target="_blank" rel="noreferrer"
-                        className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700" title="تحميل PDF">
+                        className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700" title={t("cert.titleDownloadPdf")}>
                         <IconDownload className="h-4 w-4" />
                       </a>
                     )}
                     {c.recipient_email && c.status !== "revoked" && (
                       <button onClick={() => resend(c.id)} disabled={resending === c.id}
-                        className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700 disabled:opacity-50" title="إعادة إرسال البريد">
+                        className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700 disabled:opacity-50" title={t("cert.titleResendEmail")}>
                         <IconMail className="h-4 w-4" />
                       </button>
                     )}
                     <Link href={`/verify/${c.verification_code}`} target="_blank"
-                      className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700" title="صفحة التحقق">
+                      className="rounded-lg p-2 text-ink-soft hover:bg-surface-2 hover:text-brand-700" title={t("cert.titleVerifyPage")}>
                       <IconShield className="h-4 w-4" />
                     </Link>
                     {c.status === "revoked" ? (
                       <button onClick={() => reactivate(c.id)} disabled={reactivating === c.id}
-                        className="rounded-lg p-2 text-verify-600 hover:bg-verify-50 disabled:opacity-50" title="إعادة تفعيل الشهادة">
+                        className="rounded-lg p-2 text-verify-600 hover:bg-verify-50 disabled:opacity-50" title={t("cert.titleReactivate")}>
                         <IconCheck className="h-4 w-4" />
                       </button>
                     ) : (
                       <button onClick={() => setRevokeTarget(c.id)} disabled={revoking === c.id}
-                        className="rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50" title="إلغاء الشهادة">
+                        className="rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50" title={t("cert.titleRevoke")}>
                         <IconBan className="h-4 w-4" />
                       </button>
                     )}
                     <button onClick={() => setDeleteTarget({ id: c.id, name: c.recipient_name })}
-                      className="ms-2 rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600" title="حذف نهائي">
+                      className="ms-2 rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600" title={t("cert.titleDelete")}>
                       <IconTrash className="h-4 w-4" />
                     </button>
                   </div>
@@ -271,20 +272,20 @@ export default function CertificatesPage() {
         {total > PAGE_SIZE && (
           <div className="flex items-center justify-between gap-4 text-sm">
             <span className="text-ink-muted">
-              صفحة {page} من {Math.ceil(total / PAGE_SIZE)} · {total} شهادة
+              {t("cert.pageOf", { page, pages: Math.ceil(total / PAGE_SIZE), total })}
             </span>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1 || loading}
                 className="rounded-lg px-4 py-2 font-bold text-ink-soft ring-1 ring-surface-3 transition hover:bg-surface-2 disabled:opacity-40">
-                السابق
+                {t("cert.prev")}
               </button>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page >= Math.ceil(total / PAGE_SIZE) || loading}
                 className="rounded-lg px-4 py-2 font-bold text-ink-soft ring-1 ring-surface-3 transition hover:bg-surface-2 disabled:opacity-40">
-                التالي
+                {t("cert.next")}
               </button>
             </div>
           </div>

@@ -6,10 +6,11 @@ import { useParams, useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import {
   getCertificate, revokeCertificate, reactivateCertificate, deleteCertificate,
-  resendCertificateEmail, eventLabel, type CertificateDetail,
+  resendCertificateEmail, type CertificateDetail,
 } from "@/lib/certificates";
 import { RevokeCertificateModal } from "@/components/RevokeCertificateModal";
 import { DeleteCertificateModal } from "@/components/DeleteCertificateModal";
+import { useI18n } from "@/components/LocaleProvider";
 import {
   IconCheck, IconArrow, IconQr, IconMail, IconBan, IconTrash,
   IconDownload, IconLinkedin, IconClock, IconWhatsapp,
@@ -18,6 +19,7 @@ import { whatsappShareUrl, shareText } from "@/lib/share";
 
 export default function CertificateDetailPage() {
   const router = useRouter();
+  const { t, locale } = useI18n();
   const { id } = useParams<{ id: string }>();
   const [cert, setCert] = useState<CertificateDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,7 +54,7 @@ export default function CertificateDetailPage() {
       const r = await resendCertificateEmail(id);
       flash(r.message);
     } catch (e) {
-      flash(e instanceof Error ? e.message : "تعذر الإرسال.");
+      flash(e instanceof Error ? e.message : t("cert.resendFailed"));
     } finally {
       setBusy(false);
     }
@@ -64,9 +66,9 @@ export default function CertificateDetailPage() {
       await revokeCertificate(id, reason);
       setRevokeOpen(false);
       await load();
-      flash("تم إلغاء الشهادة.");
+      flash(t("cert.revoked"));
     } catch (e) {
-      flash(e instanceof Error ? e.message : "تعذر الإلغاء.");
+      flash(e instanceof Error ? e.message : t("cert.revokeFailed"));
     } finally {
       setBusy(false);
     }
@@ -77,9 +79,9 @@ export default function CertificateDetailPage() {
     try {
       await reactivateCertificate(id);
       await load();
-      flash("تمت إعادة تفعيل الشهادة.");
+      flash(t("cert.reactivated"));
     } catch (e) {
-      flash(e instanceof Error ? e.message : "تعذرت إعادة التفعيل.");
+      flash(e instanceof Error ? e.message : t("cert.reactivateFailed"));
     } finally {
       setBusy(false);
     }
@@ -91,22 +93,22 @@ export default function CertificateDetailPage() {
       await deleteCertificate(id);
       router.push("/dashboard/certificates");
     } catch (e) {
-      flash(e instanceof Error ? e.message : "تعذر الحذف.");
+      flash(e instanceof Error ? e.message : t("cert.deleteFailed"));
       setBusy(false);
     }
   }
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-sm text-ink-muted">جار التحميل…</div>;
+    return <div className="flex min-h-screen items-center justify-center text-sm text-ink-muted">{t("cert.loading")}</div>;
   }
   if (!cert) return null;
 
   const revoked = cert.status === "revoked";
   const metrics = [
-    { label: "مرات الفتح", value: cert.opened_count, icon: IconQr, tone: "brand" },
-    { label: "التحميلات", value: cert.downloaded_count, icon: IconDownload, tone: "verify" },
-    { label: "المشاركات", value: cert.shared_count, icon: IconArrow, tone: "gold" },
-    { label: "لينكدإن", value: cert.linkedin_added ? "نعم" : "لا", icon: IconLinkedin, tone: "brand" },
+    { label: t("cert.metricOpens"), value: cert.opened_count, icon: IconQr, tone: "brand" },
+    { label: t("cert.metricDownloads"), value: cert.downloaded_count, icon: IconDownload, tone: "verify" },
+    { label: t("cert.metricShares"), value: cert.shared_count, icon: IconArrow, tone: "gold" },
+    { label: t("cert.metricLinkedin"), value: cert.linkedin_added ? t("cert.yes") : t("cert.no"), icon: IconLinkedin, tone: "brand" },
   ];
   const toneMap: Record<string, string> = {
     brand: "from-brand-50 to-brand-100 text-brand-600",
@@ -117,7 +119,7 @@ export default function CertificateDetailPage() {
   return (
       <main className="mx-auto max-w-4xl space-y-6 p-6">
         <Link href="/dashboard/certificates" className="inline-flex items-center gap-1 text-sm font-bold text-ink-soft hover:text-brand-700">
-          ← رجوع للشهادات
+          ← {t("cert.back")}
         </Link>
 
         {toast && (
@@ -141,17 +143,17 @@ export default function CertificateDetailPage() {
                 </span>
                 <div className="min-w-0">
                   <h1 className="font-display text-2xl font-black">{cert.recipient_name}</h1>
-                  <p className="mt-0.5 text-sm opacity-80">{cert.course_name ?? "—"}</p>
+                  <p className="mt-0.5 text-sm opacity-80">{cert.course_name ?? t("cert.dash")}</p>
                 </div>
               </div>
               <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-sm font-bold">
                 {revoked ? (
                   <>
-                    <IconBan className="h-4 w-4" /> ملغاة
+                    <IconBan className="h-4 w-4" /> {t("cert.statusRevoked")}
                   </>
                 ) : (
                   <>
-                    <IconCheck className="h-4 w-4" /> نشطة
+                    <IconCheck className="h-4 w-4" /> {t("cert.statusActive")}
                   </>
                 )}
               </span>
@@ -162,27 +164,27 @@ export default function CertificateDetailPage() {
           <div className="p-6">
             {revoked && cert.revoked_reason && (
               <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600 ring-1 ring-red-100">
-                سبب الإلغاء: {cert.revoked_reason}
+                {t("cert.revokeReason")} {cert.revoked_reason}
               </p>
             )}
 
             {/* Meta tiles */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Meta label="رمز التحقق" value={cert.verification_code} mono />
-              <Meta label="تاريخ الإصدار" value={cert.issue_date ?? "—"} />
-              <Meta label="البريد" value={cert.recipient_email ?? "—"} />
-              <Meta label="القالب" value={cert.template?.name ?? "الافتراضي"} />
+              <Meta label={t("cert.metaVerifyCode")} value={cert.verification_code} mono />
+              <Meta label={t("cert.metaIssueDate")} value={cert.issue_date ?? t("cert.dash")} />
+              <Meta label={t("cert.metaEmail")} value={cert.recipient_email ?? t("cert.dash")} />
+              <Meta label={t("cert.metaTemplate")} value={cert.template?.name ?? t("cert.defaultTemplate")} />
             </div>
 
             {/* Primary & share actions */}
             <div className="mt-6 flex flex-wrap gap-3">
               {cert.pdf_url && (
                 <a href={cert.pdf_url} target="_blank" rel="noreferrer" className="btn-primary">
-                  <IconDownload className="h-4 w-4" /> تحميل PDF
+                  <IconDownload className="h-4 w-4" /> {t("cert.downloadPdf")}
                 </a>
               )}
               <Link href={`/verify/${cert.verification_code}`} target="_blank" className="btn-ghost">
-                <IconQr className="h-4 w-4" /> صفحة التحقق
+                <IconQr className="h-4 w-4" /> {t("cert.verifyPage")}
               </Link>
               {!revoked && (
                 <a
@@ -198,33 +200,33 @@ export default function CertificateDetailPage() {
                   rel="noreferrer"
                   className="btn-ghost"
                 >
-                  <IconWhatsapp className="h-4 w-4 text-[#25d366]" /> إرسال عبر واتساب
+                  <IconWhatsapp className="h-4 w-4 text-[#25d366]" /> {t("cert.sendWhatsapp")}
                 </a>
               )}
               {cert.recipient_email && !revoked && (
                 <button onClick={onResend} disabled={busy} className="btn-ghost disabled:opacity-60">
-                  <IconMail className="h-4 w-4" /> إعادة إرسال البريد
+                  <IconMail className="h-4 w-4" /> {t("cert.resendEmail")}
                 </button>
               )}
             </div>
 
             {/* Sensitive actions — visually separated */}
             <div className="mt-5 flex flex-wrap items-center gap-3 border-t pt-5">
-              <span className="text-xs font-bold text-ink-muted">إجراءات حسّاسة</span>
+              <span className="text-xs font-bold text-ink-muted">{t("cert.sensitiveActions")}</span>
               {revoked ? (
                 <button onClick={onReactivate} disabled={busy}
                   className="btn inline-flex items-center gap-2 border border-verify-200 bg-verify-50 text-verify-700 hover:bg-verify-100 disabled:opacity-60">
-                  <IconCheck className="h-4 w-4" /> إعادة تفعيل الشهادة
+                  <IconCheck className="h-4 w-4" /> {t("cert.reactivateCert")}
                 </button>
               ) : (
                 <button onClick={() => setRevokeOpen(true)} disabled={busy}
                   className="btn inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
-                  <IconBan className="h-4 w-4" /> إلغاء الشهادة
+                  <IconBan className="h-4 w-4" /> {t("cert.revokeCert")}
                 </button>
               )}
               <button onClick={() => setDeleteOpen(true)} disabled={busy}
                 className="btn ms-auto inline-flex items-center gap-2 border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-60">
-                <IconTrash className="h-4 w-4" /> حذف نهائي
+                <IconTrash className="h-4 w-4" /> {t("cert.deletePermanent")}
               </button>
             </div>
           </div>
@@ -232,7 +234,7 @@ export default function CertificateDetailPage() {
 
         {/* Engagement metrics */}
         <div>
-          <h2 className="mb-3 font-display text-lg font-extrabold text-ink">مؤشرات التفاعل</h2>
+          <h2 className="mb-3 font-display text-lg font-extrabold text-ink">{t("cert.engagementMetrics")}</h2>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {metrics.map((m) => (
               <div key={m.label} className="card p-5">
@@ -253,11 +255,11 @@ export default function CertificateDetailPage() {
         {/* Event timeline */}
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between border-b px-6 py-4">
-            <h2 className="font-display text-lg font-extrabold text-ink">سجل النشاط</h2>
-            <span className="text-xs text-ink-muted">آخر 5 أحداث</span>
+            <h2 className="font-display text-lg font-extrabold text-ink">{t("cert.activityLog")}</h2>
+            <span className="text-xs text-ink-muted">{t("cert.last5")}</span>
           </div>
           {cert.events.length === 0 ? (
-            <p className="px-6 py-10 text-center text-sm text-ink-muted">لا يوجد نشاط بعد.</p>
+            <p className="px-6 py-10 text-center text-sm text-ink-muted">{t("cert.noActivity")}</p>
           ) : (
             <ul className="px-6 py-2">
               {cert.events.map((e, i) => {
@@ -273,9 +275,9 @@ export default function CertificateDetailPage() {
                       {!last && <span className="w-px flex-1 bg-border" />}
                     </div>
                     <div className={`min-w-0 flex-1 ${last ? "pb-2" : "pb-5"} pt-1`}>
-                      <p className="text-sm font-bold text-ink">{eventLabel(e.type)}</p>
+                      <p className="text-sm font-bold text-ink">{t(`cert.events.${e.type}`)}</p>
                       <p className="mt-0.5 text-xs text-ink-muted">
-                        {new Date(e.at).toLocaleString("ar", { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" })}
+                        {new Date(e.at).toLocaleString(locale, { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" })}
                       </p>
                     </div>
                   </li>

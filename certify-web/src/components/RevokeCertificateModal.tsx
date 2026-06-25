@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/components/LocaleProvider";
 import { IconBan } from "./icons";
 
 export function RevokeCertificateModal({
@@ -14,6 +15,7 @@ export function RevokeCertificateModal({
   onConfirm: (reason: string) => void;
   busy: boolean;
 }) {
+  const t = useT();
   const [reason, setReason] = useState("");
 
   if (!open) return null;
@@ -32,22 +34,21 @@ export function RevokeCertificateModal({
             <IconBan className="h-6 w-6" />
           </span>
           <div>
-            <h2 className="font-display text-lg font-black text-ink">إلغاء الشهادة</h2>
-            <p className="text-xs text-ink-muted">سيتوقف التحقق منها فورا</p>
+            <h2 className="font-display text-lg font-black text-ink">{t("cert.revokeModal.title")}</h2>
+            <p className="text-xs text-ink-muted">{t("cert.revokeModal.subtitle")}</p>
           </div>
         </div>
 
         <div className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm leading-relaxed text-amber-700 ring-1 ring-amber-100">
-          عند الإلغاء سيتوقف التحقق من الشهادة ويحذف ملف الـPDF. يمكنك إعادة تفعيلها لاحقا
-          فيعاد توليد الملف.
+          {t("cert.revokeModal.warning")}
         </div>
 
         <label className="mt-5 block">
-          <span className="mb-1.5 block text-sm font-bold text-ink">سبب الإلغاء (اختياري)</span>
+          <span className="mb-1.5 block text-sm font-bold text-ink">{t("cert.revokeModal.reasonLabel")}</span>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="مثال: صدرت بخطأ في الاسم"
+            placeholder={t("cert.revokeModal.reasonPh")}
             maxLength={500}
             className="input min-h-24"
           />
@@ -55,7 +56,7 @@ export function RevokeCertificateModal({
 
         <div className="mt-6 flex gap-3">
           <button type="button" onClick={close} disabled={busy} className="btn-ghost flex-1">
-            تراجع
+            {t("cert.revokeModal.cancel")}
           </button>
           <button
             type="button"
@@ -63,7 +64,7 @@ export function RevokeCertificateModal({
             disabled={busy}
             className="btn-primary flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60"
           >
-            {busy ? "جار الإلغاء…" : "تأكيد الإلغاء"}
+            {busy ? t("cert.revokeModal.revoking") : t("cert.revokeModal.confirm")}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/components/LocaleProvider";
 import { IconTrash } from "./icons";
 
 export function DeleteCertificateModal({
@@ -16,6 +17,7 @@ export function DeleteCertificateModal({
   onConfirm: () => void;
   busy: boolean;
 }) {
+  const t = useT();
   const [typed, setTyped] = useState("");
 
   if (!open) return null;
@@ -36,18 +38,18 @@ export function DeleteCertificateModal({
             <IconTrash className="h-6 w-6" />
           </span>
           <div>
-            <h2 className="font-display text-lg font-black text-ink">حذف الشهادة نهائياً</h2>
-            <p className="text-xs text-ink-muted">لا يمكن التراجع عن هذا الإجراء</p>
+            <h2 className="font-display text-lg font-black text-ink">{t("cert.deleteModal.title")}</h2>
+            <p className="text-xs text-ink-muted">{t("cert.deleteModal.subtitle")}</p>
           </div>
         </div>
 
         <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-700 ring-1 ring-red-100">
-          سيُحذف سجلّ الشهادة وملفّها نهائياً ويتوقّف التحقق منها — لا يمكن استرجاعها بعد ذلك.
+          {t("cert.deleteModal.warning")}
         </div>
 
         <label className="mt-5 block">
           <span className="mb-1.5 block text-sm font-bold text-ink">
-            اكتب اسم المتدرّب للتأكيد: <span className="font-extrabold text-ink">{recipientName}</span>
+            {t("cert.deleteModal.typeNameLabel")} <span className="font-extrabold text-ink">{recipientName}</span>
           </span>
           <input
             value={typed}
@@ -59,7 +61,7 @@ export function DeleteCertificateModal({
 
         <div className="mt-6 flex gap-3">
           <button type="button" onClick={close} disabled={busy} className="btn-ghost flex-1">
-            تراجع
+            {t("cert.deleteModal.cancel")}
           </button>
           <button
             type="button"
@@ -67,7 +69,7 @@ export function DeleteCertificateModal({
             disabled={busy || !matches}
             className="btn-primary flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60"
           >
-            {busy ? "جار الحذف…" : "حذف نهائي"}
+            {busy ? t("cert.deleteModal.deleting") : t("cert.deleteModal.confirm")}
           </button>
         </div>
       </div>
