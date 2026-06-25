@@ -83,3 +83,51 @@ export function injectLogo(design: DesignData | null, logoUrl?: string | null): 
   ];
   return clone;
 }
+
+// ── Certificate content (title type + academy sentence) ──────────────────────
+// The title is a role:"title" element, or any text starting with «شهادة». The
+// body (academy sentence) is a role:"body" element. Used by the customizer.
+function titleIndex(els: DesignElement[]): number {
+  let i = els.findIndex((e) => e.role === "title");
+  if (i < 0) i = els.findIndex((e) => e.type === "text" && typeof e.text === "string" && e.text.trim().startsWith("شهادة"));
+  return i;
+}
+function bodyIndex(els: DesignElement[]): number {
+  return els.findIndex((e) => e.role === "body");
+}
+
+/** Current certificate type = whatever follows «شهادة » in the title. */
+export function readCertType(design: DesignData | null): string {
+  const els = design?.elements ?? [];
+  const i = titleIndex(els);
+  if (i < 0) return "";
+  const t = (els[i].text ?? "").trim();
+  return t.startsWith("شهادة") ? t.slice("شهادة".length).trim() : "";
+}
+
+export function hasBody(design: DesignData | null): boolean {
+  return bodyIndex(design?.elements ?? []) >= 0;
+}
+
+export function readBody(design: DesignData | null): string {
+  const els = design?.elements ?? [];
+  const i = bodyIndex(els);
+  return i < 0 ? "" : els[i].text ?? "";
+}
+
+/** Apply the chosen certificate type (title) and academy sentence (body). */
+export function applyContent(
+  design: DesignData,
+  opts: { certType: string; bodyText: string },
+): DesignData {
+  const clone: DesignData = JSON.parse(JSON.stringify(design));
+  const els = clone.elements ?? [];
+  const ti = titleIndex(els);
+  if (ti >= 0) {
+    els[ti].text = opts.certType ? `شهادة ${opts.certType}` : "شهادة";
+    els[ti].role = "title";
+  }
+  const bi = bodyIndex(els);
+  if (bi >= 0) els[bi].text = opts.bodyText;
+  return clone;
+}

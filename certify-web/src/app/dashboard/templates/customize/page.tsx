@@ -12,12 +12,24 @@ import {
   type DesignData,
 } from "@/lib/templates";
 import { getOrganization } from "@/lib/organization";
-import { applyTheme, injectLogo, getTheme, type Theme } from "@/lib/customize";
+import { applyTheme, injectLogo, getTheme, readCertType, readBody, hasBody, applyContent, type Theme } from "@/lib/customize";
 import { DesignPreview } from "@/components/DesignPreview";
 import { IconPalette, IconArrow } from "@/components/icons";
 
 type Pos = "right" | "center" | "left";
 const MARGIN = 60;
+
+// Certificate types for the content dropdown. "" = plain «شهادة».
+const CERT_TYPES = [
+  { value: "", label: "شهادة (بدون نوع)" },
+  { value: "إتمام", label: "شهادة إتمام" },
+  { value: "حضور", label: "شهادة حضور" },
+  { value: "تقدير", label: "شهادة تقدير" },
+  { value: "مشاركة", label: "شهادة مشاركة" },
+  { value: "تدريب", label: "شهادة تدريب" },
+  { value: "شكر", label: "شهادة شكر" },
+  { value: "نجاح", label: "شهادة نجاح" },
+];
 
 // Constrained horizontal anchors (keeps the template's vertical + size).
 function posToBox(theme: Theme, width: number, pos: Pos) {
@@ -53,6 +65,9 @@ function Customizer() {
   const [accent, setAccent] = useState("#000000");
   const [accent2, setAccent2] = useState("#000000");
   const [pos, setPos] = useState<Pos>("center");
+  const [certType, setCertType] = useState("");
+  const [bodyText, setBodyText] = useState("");
+  const [showBody, setShowBody] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -69,6 +84,9 @@ function Customizer() {
         setPos(boxToPos(th, t.design_data.width || 1123));
         setName(baseId ? `${t.name} — مخصص` : t.name);
         setLogoUrl(org?.logo_url ?? null);
+        setCertType(readCertType(t.design_data));
+        setBodyText(readBody(t.design_data));
+        setShowBody(hasBody(t.design_data));
       })
       .catch(() => setError("تعذر تحميل القالب."))
       .finally(() => setLoading(false));
@@ -80,10 +98,11 @@ function Customizer() {
   // Recolor + apply the chosen logo position into the design's theme.
   const themedDesign = useMemo<DesignData | null>(() => {
     if (!base?.design_data || !theme) return null;
-    const d = applyTheme(base.design_data, theme, { accent, accent2 });
+    let d = applyTheme(base.design_data, theme, { accent, accent2 });
+    d = applyContent(d, { certType, bodyText }); // title type + academy sentence
     (d as unknown as { theme: Theme }).theme = { ...theme, accent, accent2, logoBox: posToBox(theme, width, pos) };
     return d;
-  }, [base, theme, accent, accent2, pos, width]);
+  }, [base, theme, accent, accent2, pos, width, certType, bodyText]);
 
   // Preview = themed design + org logo at the (chosen) slot.
   const previewDesign = useMemo(() => injectLogo(themedDesign, logoUrl), [themedDesign, logoUrl]);
@@ -160,6 +179,24 @@ function Customizer() {
               </span>
             </label>
           </div>
+
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-bold text-ink">نوع الشهادة</span>
+            <select value={certType} onChange={(e) => setCertType(e.target.value)} className="input">
+              {CERT_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+            <span className="mt-1 block text-[11px] text-ink-muted">العنوان: «{certType ? `شهادة ${certType}` : "شهادة"}»</span>
+          </label>
+
+          {showBody && (
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-bold text-ink">نص الشهادة</span>
+              <textarea value={bodyText} onChange={(e) => setBodyText(e.target.value)} rows={3}
+                className="input leading-relaxed" placeholder="تتشرّف أكاديمية … بمنح هذه الشهادة …" />
+            </label>
+          )}
 
           {logoUrl && (
             <div>
