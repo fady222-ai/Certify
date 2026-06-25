@@ -10,6 +10,7 @@ import { getToken, authedFetch } from "@/lib/auth";
 import { getOrganization, type Organization } from "@/lib/organization";
 import { listTemplates } from "@/lib/templates";
 import { getAnalytics, type Analytics } from "@/lib/certificates";
+import { useT } from "@/components/LocaleProvider";
 import {
   IconBadge, IconUpload, IconPalette, IconArrow, IconCheck, IconQr, IconBolt,
 } from "@/components/icons";
@@ -32,6 +33,7 @@ type Certificate = {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const t = useT();
   const [stats, setStats] = useState<Stats | null>(null);
   const [certs, setCerts] = useState<Certificate[]>([]);
   const [org, setOrg] = useState<Organization | null>(null);
@@ -74,9 +76,9 @@ export default function DashboardPage() {
     stats?.limit != null ? Math.max(0, stats.limit - stats.issued_this_month) : null;
 
   const statCards = [
-    { label: "شهادات مصدرة", value: stats?.issued_total ?? 0, sub: "الإجمالي", icon: IconBadge, tone: "brand" },
-    { label: "مرات الفتح", value: stats?.opened_total ?? 0, sub: "إجمالي", icon: IconQr, tone: "gold" },
-    { label: "متبق في الباقة", value: remaining ?? "∞", sub: stats?.limit ? `من ${stats.limit} شهريا` : "غير محدود", icon: IconBolt, tone: "verify" },
+    { label: t("dash.statIssued"), value: stats?.issued_total ?? 0, sub: t("dash.statIssuedSub"), icon: IconBadge, tone: "brand" },
+    { label: t("dash.statOpened"), value: stats?.opened_total ?? 0, sub: t("dash.statOpenedSub"), icon: IconQr, tone: "gold" },
+    { label: t("dash.statRemaining"), value: remaining ?? "∞", sub: stats?.limit ? t("dash.statRemainingOf", { n: stats.limit }) : t("dash.statUnlimited"), icon: IconBolt, tone: "verify" },
   ];
   const toneMap: Record<string, string> = {
     brand: "from-brand-50 to-brand-100 text-brand-600",
@@ -86,10 +88,10 @@ export default function DashboardPage() {
 
   const onboardingSteps: OnboardingStep[] = org
     ? [
-        { key: "brand", label: "أضف شعار وألوان أكاديميتك", desc: "تظهر على كل شهادة وفي صفحة التحقق.", done: !!org.logo_url, href: "/dashboard/settings", cta: "الإعدادات" },
-        { key: "template", label: "أنشئ قالب شهادة", desc: "صمّم قالبك أو خصّص قالباً جاهزاً.", done: templateCount > 0, href: "/dashboard/templates", cta: "القوالب" },
-        { key: "default", label: "عيّن القالب الافتراضي", desc: "يُستخدم تلقائياً عند كل إصدار.", done: !!org.default_template_id, href: "/dashboard/templates", cta: "تعيين" },
-        { key: "issue", label: "أصدر أول شهادة", desc: "جرّب الإصدار الفردي لمتدرّب.", done: (stats?.issued_total ?? 0) > 0, onClick: () => setModalOpen(true), cta: "إصدار" },
+        { key: "brand", label: t("dash.stepBrandLabel"), desc: t("dash.stepBrandDesc"), done: !!org.logo_url, href: "/dashboard/settings", cta: t("dash.stepBrandCta") },
+        { key: "template", label: t("dash.stepTemplateLabel"), desc: t("dash.stepTemplateDesc"), done: templateCount > 0, href: "/dashboard/templates", cta: t("dash.stepTemplateCta") },
+        { key: "default", label: t("dash.stepDefaultLabel"), desc: t("dash.stepDefaultDesc"), done: !!org.default_template_id, href: "/dashboard/templates", cta: t("dash.stepDefaultCta") },
+        { key: "issue", label: t("dash.stepIssueLabel"), desc: t("dash.stepIssueDesc"), done: (stats?.issued_total ?? 0) > 0, onClick: () => setModalOpen(true), cta: t("dash.stepIssueCta") },
       ]
     : [];
 
@@ -99,8 +101,8 @@ export default function DashboardPage() {
 
       <main className="space-y-6 p-6">
         <div>
-          <h1 className="font-display text-2xl font-black text-ink">نظرة عامة</h1>
-          <p className="mt-1 text-sm text-ink-soft">ملخص نشاط منظمتك على المنصة.</p>
+          <h1 className="font-display text-2xl font-black text-ink">{t("dash.overviewTitle")}</h1>
+          <p className="mt-1 text-sm text-ink-soft">{t("dash.overviewSubtitle")}</p>
         </div>
 
         {/* دليل الإعداد (يختفي تلقائياً عند اكتماله) */}
@@ -133,25 +135,25 @@ export default function DashboardPage() {
 
         {/* إجراءات سريعة */}
         <div className="grid gap-5 lg:grid-cols-3">
-          <QuickAction icon={IconBadge} title="إصدار فردي" desc="أصدر شهادة واحدة لمتدرب." onClick={() => setModalOpen(true)} />
-          <QuickAction icon={IconUpload} title="إصدار جماعي" desc="ارفع ملف Excel بمئات الأسماء." onClick={() => router.push("/dashboard/bulk")} />
-          <QuickAction icon={IconPalette} title="تصميم قالب" desc="صمم قالبا بألوان منظمتك." onClick={() => router.push("/dashboard/templates")} />
+          <QuickAction icon={IconBadge} title={t("dash.quickSingleT")} desc={t("dash.quickSingleD")} onClick={() => setModalOpen(true)} />
+          <QuickAction icon={IconUpload} title={t("dash.quickBulkT")} desc={t("dash.quickBulkD")} onClick={() => router.push("/dashboard/bulk")} />
+          <QuickAction icon={IconPalette} title={t("dash.quickDesignT")} desc={t("dash.quickDesignD")} onClick={() => router.push("/dashboard/templates")} />
         </div>
 
         {/* أحدث الشهادات */}
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between border-b px-6 py-4">
-            <h2 className="font-display text-lg font-extrabold text-ink">أحدث الشهادات</h2>
-            <span className="text-xs text-ink-muted">{certs.length} شهادة</span>
+            <h2 className="font-display text-lg font-extrabold text-ink">{t("dash.latestTitle")}</h2>
+            <span className="text-xs text-ink-muted">{t("dash.countCerts", { n: certs.length })}</span>
           </div>
 
           {loading ? (
-            <div className="px-6 py-12 text-center text-sm text-ink-muted">جار التحميل…</div>
+            <div className="px-6 py-12 text-center text-sm text-ink-muted">{t("dash.loading")}</div>
           ) : certs.length === 0 ? (
             <div className="px-6 py-12 text-center">
-              <p className="text-sm text-ink-soft">لم تصدر أي شهادة بعد.</p>
+              <p className="text-sm text-ink-soft">{t("dash.noneYet")}</p>
               <button onClick={() => setModalOpen(true)} className="btn-primary mt-4">
-                <IconBadge className="h-4 w-4" /> أصدر أول شهادة
+                <IconBadge className="h-4 w-4" /> {t("dash.issueFirst")}
               </button>
             </div>
           ) : (
@@ -164,16 +166,16 @@ export default function DashboardPage() {
                     </span>
                     <div>
                       <p className="font-bold text-ink">{r.recipient_name}</p>
-                      <p className="text-xs text-ink-muted">{r.course_name ?? "—"}</p>
+                      <p className="text-xs text-ink-muted">{r.course_name ?? t("dash.dash")}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="hidden font-mono text-xs text-ink-muted sm:inline">{r.verification_code}</span>
                     <span className="flex items-center gap-1.5 rounded-full bg-verify-50 px-3 py-1 text-xs font-bold text-verify-700">
-                      <IconCheck className="h-3.5 w-3.5" /> نشطة
+                      <IconCheck className="h-3.5 w-3.5" /> {t("dash.active")}
                     </span>
                     <Link href={`/verify/${r.verification_code}`} target="_blank" className="text-sm font-bold text-brand-700 hover:underline">
-                      تحقق <IconArrow className="inline h-3.5 w-3.5" />
+                      {t("dash.verify")} <IconArrow className="inline h-3.5 w-3.5" />
                     </Link>
                   </div>
                 </div>
@@ -192,7 +194,7 @@ function QuickAction({
   icon: typeof IconBadge; title: string; desc: string; onClick?: () => void;
 }) {
   return (
-    <button type="button" onClick={onClick} className="card card-lift group p-6 text-right">
+    <button type="button" onClick={onClick} className="card card-lift group p-6 text-start">
       <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 text-brand-600 transition group-hover:from-brand-600 group-hover:to-brand-700 group-hover:text-white">
         <Icon className="h-6 w-6" />
       </span>

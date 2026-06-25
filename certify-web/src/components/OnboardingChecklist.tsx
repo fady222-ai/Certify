@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { IconCheck, IconArrow } from "@/components/icons";
+import { useT } from "@/components/LocaleProvider";
 
 export type OnboardingStep = {
   key: string;
@@ -19,6 +20,7 @@ export type OnboardingStep = {
  * so it self-hides once the org is fully set up.
  */
 export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
+  const t = useT();
   const done = steps.filter((s) => s.done).length;
   if (done === steps.length) return null; // fully set up → nothing to show
 
@@ -29,8 +31,8 @@ export function OnboardingChecklist({ steps }: { steps: OnboardingStep[] }) {
     <div className="card overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b px-6 py-4">
         <div>
-          <h2 className="font-display text-lg font-extrabold text-ink">لنبدأ بإعداد أكاديميتك</h2>
-          <p className="mt-0.5 text-sm text-ink-soft">أكمل الخطوات لإصدار شهاداتك الأولى.</p>
+          <h2 className="font-display text-lg font-extrabold text-ink">{t("dash.onboardTitle")}</h2>
+          <p className="mt-0.5 text-sm text-ink-soft">{t("dash.onboardSubtitle")}</p>
         </div>
         <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-bold text-brand-700">
           {done} / {steps.length}

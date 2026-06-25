@@ -1,14 +1,16 @@
 "use client";
 
 import type { Analytics } from "@/lib/certificates";
+import { useI18n } from "@/components/LocaleProvider";
 
-function monthLabel(key: string): string {
+function monthLabel(key: string, locale: string): string {
   const [y, m] = key.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("ar", { month: "short", numberingSystem: "latn" });
+  return new Date(y, m - 1, 1).toLocaleDateString(locale, { month: "short", numberingSystem: "latn" });
 }
 
 /** Lightweight, dependency-free analytics: monthly issuance bars + top courses. */
 export function AnalyticsPanel({ data }: { data: Analytics }) {
+  const { t, locale } = useI18n();
   const maxMonthly = Math.max(1, ...data.monthly.map((m) => m.count));
   const totalSixMonths = data.monthly.reduce((s, m) => s + m.count, 0);
   const maxCourse = Math.max(1, ...data.top_courses.map((c) => c.count));
@@ -18,8 +20,8 @@ export function AnalyticsPanel({ data }: { data: Analytics }) {
       {/* Monthly issuance */}
       <div className="card p-6">
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-extrabold text-ink">الإصدار خلال 6 أشهر</h2>
-          <span className="text-xs text-ink-muted">{totalSixMonths} شهادة</span>
+          <h2 className="font-display text-lg font-extrabold text-ink">{t("dash.analyticsMonthly")}</h2>
+          <span className="text-xs text-ink-muted">{t("dash.countCerts", { n: totalSixMonths })}</span>
         </div>
         <div className="mt-6 flex h-40 items-end justify-between gap-2">
           {data.monthly.map((m) => (
@@ -28,9 +30,9 @@ export function AnalyticsPanel({ data }: { data: Analytics }) {
               <div
                 className="w-full rounded-t-lg bg-gradient-to-t from-brand-600 to-brand-400 transition-all"
                 style={{ height: `${Math.max(4, (m.count / maxMonthly) * 120)}px` }}
-                title={`${m.count} شهادة`}
+                title={t("dash.countCerts", { n: m.count })}
               />
-              <span className="text-[11px] text-ink-muted">{monthLabel(m.month)}</span>
+              <span className="text-[11px] text-ink-muted">{monthLabel(m.month, locale)}</span>
             </div>
           ))}
         </div>
@@ -38,9 +40,9 @@ export function AnalyticsPanel({ data }: { data: Analytics }) {
 
       {/* Top courses */}
       <div className="card p-6">
-        <h2 className="font-display text-lg font-extrabold text-ink">أعلى الدورات إصداراً</h2>
+        <h2 className="font-display text-lg font-extrabold text-ink">{t("dash.analyticsTopCourses")}</h2>
         {data.top_courses.length === 0 ? (
-          <p className="mt-6 text-center text-sm text-ink-muted">لا توجد بيانات بعد.</p>
+          <p className="mt-6 text-center text-sm text-ink-muted">{t("dash.analyticsNoData")}</p>
         ) : (
           <ul className="mt-5 space-y-3">
             {data.top_courses.map((c, i) => (
