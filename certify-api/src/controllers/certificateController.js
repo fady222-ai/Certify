@@ -271,9 +271,15 @@ export async function resendCertificateEmail(req, res) {
 
 const STATUS_AR = { active: "نشطة", revoked: "ملغاة", expired: "منتهية" };
 
-/** Escape one CSV field (RFC 4180): quote if it holds a comma/quote/newline. */
-function csvField(v) {
-  const s = v == null ? "" : String(v);
+/**
+ * Escape one CSV field (RFC 4180) AND neutralize spreadsheet formula injection:
+ * Excel/Sheets execute a cell that starts with = + - @ (or a tab/CR), so a
+ * recipient name like `=HYPERLINK(...)` would run on the owner's machine. We
+ * prefix such values with a single quote, then apply normal CSV quoting.
+ */
+export function csvField(v) {
+  let s = v == null ? "" : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

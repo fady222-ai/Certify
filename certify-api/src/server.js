@@ -129,7 +129,7 @@ app.use("/api/v1", rateLimit({
   keyGenerator: (req) => {
     const h = req.get("authorization") ?? "";
     return h.startsWith("Bearer ")
-      ? crypto.createHash("sha256").update(h.slice(7)).digest("hex")
+      ? crypto.createHash("sha256").update(h.slice(7).trim()).digest("hex")
       : req.ip;
   },
   message: { error: "rate_limited", message: "Rate limit exceeded (300 requests/minute)." },

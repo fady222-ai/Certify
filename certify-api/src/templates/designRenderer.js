@@ -149,7 +149,7 @@ function safeImageSrc(src) {
       return "";
     }
   }
-  if (/^[./]/.test(s) && !s.includes(":")) return s; // relative path on our origin
+  if (/^[./]/.test(s) && !s.includes(":")) return s.includes("..") ? "" : s; // relative path on our origin (no traversal)
   return ""; // unknown scheme (javascript:, file:, etc.) — reject
 }
 
