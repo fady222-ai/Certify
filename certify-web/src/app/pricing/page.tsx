@@ -13,7 +13,7 @@ import { PLAN_PRICING, ANNUAL_SAVING_PCT } from "@/lib/pricing";
 const PLANS = [
   { ...PLAN_PRICING.free, features: [PLAN_PRICING.free.teamLabel, "قالب واحد", "صفحة تحقق عامة", "تحميل PDF", "رمز QR"], cta: "ابدأ مجانا", highlight: false },
   { ...PLAN_PRICING.pro, features: [`حتى ${PLAN_PRICING.pro.teamLabel}`, "كل ميزات Free", "إصدار جماعي", "API للمطوّرين", "تكامل لينكدإن", "تتبع مشاهدات الشهادات"], cta: "ابدأ الآن", highlight: true },
-  { ...PLAN_PRICING.business, features: [`حتى ${PLAN_PRICING.business.teamLabel}`, "كل ميزات Pro", "شهادات بشعار وألوان أكاديميتك", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
+  { ...PLAN_PRICING.business, features: [`حتى ${PLAN_PRICING.business.teamLabel}`, "كل ميزات Pro", "علامة بيضاء (إخفاء Certify)", "شهادات بشعار وألوان أكاديميتك", "دعم مخصص"], cta: "ابدأ الآن", highlight: false },
 ];
 
 export default function PricingPage() {

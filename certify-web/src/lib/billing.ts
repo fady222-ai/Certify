@@ -14,6 +14,7 @@ export type Plan = {
   team_members_limit: number;
   has_bulk_issuance: boolean;
   has_api: boolean;
+  has_white_label: boolean;
 };
 
 export type Gateway = "stripe" | "tap" | "paymob";

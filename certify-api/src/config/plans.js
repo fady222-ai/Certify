@@ -5,11 +5,10 @@
 // `certify-web/src/lib/pricing.ts`; `test/plan-pricing-sync.test.js` asserts the
 // two never drift apart. Change a price or quota here and the seed + the guard
 // test keep everything else honest.
-// Note: `hasWhiteLabel` stays dropped pre-launch — advertised but not built yet;
-// re-add it (and build the feature) when real. `hasApi` is implemented (public
-// /api/v1 + API keys) so it's promised again on the paid plans.
+// Note: `hasApi` is implemented (public /api/v1 + API keys). `hasWhiteLabel`
+// (brand-hiding on the public verification page) is gated to Business.
 export const PLANS = [
   { slug: "free",     name: "Free",     priceMonthly: 0,  priceYearly: 0,   certificatesPerMonth: 10,    teamMembersLimit: 1,  hasBulkIssuance: false },
   { slug: "pro",      name: "Pro",      priceMonthly: 29, priceYearly: 290, certificatesPerMonth: 2000,  teamMembersLimit: 3,  hasBulkIssuance: true, hasApi: true },
-  { slug: "business", name: "Business", priceMonthly: 79, priceYearly: 790, certificatesPerMonth: 10000, teamMembersLimit: 10, hasBulkIssuance: true, hasApi: true },
+  { slug: "business", name: "Business", priceMonthly: 79, priceYearly: 790, certificatesPerMonth: 10000, teamMembersLimit: 10, hasBulkIssuance: true, hasApi: true, hasWhiteLabel: true },
 ];

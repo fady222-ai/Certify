@@ -7,6 +7,7 @@ export type VerificationResult = {
   integrity?: boolean;
   status?: string;
   message?: string;
+  white_label?: boolean;
   certificate?: {
     recipient_name: string;
     course_name: string | null;

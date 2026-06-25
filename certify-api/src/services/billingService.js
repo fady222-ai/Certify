@@ -20,6 +20,7 @@ export function presentPlan(p) {
     team_members_limit: p.teamMembersLimit,
     has_bulk_issuance: p.hasBulkIssuance,
     has_api: p.hasApi,
+    has_white_label: p.hasWhiteLabel,
   };
 }
 

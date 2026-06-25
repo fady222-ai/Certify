@@ -28,7 +28,7 @@ export async function showVerification(req, res) {
 
   const cert = await prisma.certificate.findUnique({
     where: { verificationCode: code },
-    include: { organization: true },
+    include: { organization: { include: { plan: true } } },
   });
 
   if (!cert) {
@@ -62,6 +62,8 @@ export async function showVerification(req, res) {
     valid: isValid(cert),
     integrity,
     status: cert.status,
+    // White-label (Business plan): the public page hides Certify branding.
+    white_label: !!org?.plan?.hasWhiteLabel,
     certificate: {
       recipient_name: cert.recipientName,
       course_name: cert.courseName,

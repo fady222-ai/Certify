@@ -214,6 +214,19 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
 > **تنبيه schema:** أُضيف `OrganizationMember.monthlyLimit` و`Certificate.issuedById`. شغّل
 > `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
 
+## العلامة البيضاء (White-label — إخفاء علامة Certify)
+
+ميزة باقة **Business** (`hasWhiteLabel`): صفحة التحقّق العامة تُخفي كل علامات Certify (الهيدر/
+الفوتر بـ«سرتفاي» وأزرار الدخول/التسجيل) فتظهر باسم الأكاديمية فقط — كأنها صفحتها.
+- **المصدر:** علم `hasWhiteLabel` في `config/plans.js` (business=true) مكشوف عبر `presentPlan`
+  (`has_white_label`). `showVerification` يحمّل `organization.plan` ويُرجع `white_label:
+  !!org.plan?.hasWhiteLabel` (قيمة مشتقّة خادمياً — غير قابلة للتلاعب من العميل).
+- **الواجهة:** `verify/[code]/page.tsx` يُخفي `SiteHeader`/`SiteFooter` عند `white_label` ويعرض
+  فوتراً محايداً (اسم الأكاديمية + «صفحة التحقّق الرسمية»). إيميل الشهادة **مُبرّأ أصلاً** (يعرض اسم
+  المنظمة فقط، بلا ذكر Certify). بنود التسعير الثلاثة تُعلن «علامة بيضاء (إخفاء Certify)» لـBusiness.
+- **القرار/النطاق:** أُنجز **إخفاء العلامة فقط** (لا نطاق تحقّق مخصّص `verify.academy.com` — يحتاج
+  DNS + TLS تلقائي لكل نطاق، يُؤجَّل حتى الطلب). `verifyDomain` يبقى غير مستخدم.
+
 ## نظام الأمان (مُنفّذ بالكامل)
 
 تأمين شامل لمرحلة التسجيل/المصادقة:

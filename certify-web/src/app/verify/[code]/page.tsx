@@ -61,10 +61,14 @@ export default async function VerifyPage({ params }: Params) {
 
   const state = verifyState(result);
   const verified = result.found && state === "verified";
+  // White-label (Business): hide all Certify chrome — the page shows the issuing
+  // academy only, as if it were their own verification page.
+  const whiteLabel = !!result.white_label;
+  const orgName = result.certificate?.organization.name ?? null;
 
   return (
     <>
-      <SiteHeader />
+      {!whiteLabel && <SiteHeader />}
       <main className="mesh-bg flex-1">
         <div className="absolute inset-0 dot-grid opacity-50" />
         <div className="relative mx-auto max-w-3xl px-5 py-14 lg:py-20">
@@ -132,7 +136,13 @@ export default async function VerifyPage({ params }: Params) {
 
         </div>
       </main>
-      <SiteFooter />
+      {whiteLabel ? (
+        <footer className="border-t bg-surface-2/60 py-6 text-center text-xs text-ink-muted">
+          © {new Date().getFullYear()} {orgName ?? ""} · صفحة التحقّق الرسمية
+        </footer>
+      ) : (
+        <SiteFooter />
+      )}
     </>
   );
 }
