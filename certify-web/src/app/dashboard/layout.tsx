@@ -7,7 +7,7 @@ import { Logo } from "@/components/Logo";
 import { IssueCertificateModal } from "@/components/IssueCertificateModal";
 import { getToken, getStoredUser, logout, refreshProfile, type AuthUser } from "@/lib/auth";
 import {
-  IconBadge, IconUpload, IconPalette, IconChart, IconBolt as IconBoltNav, IconSettings, IconMail, IconUsers, IconKey, IconChevron,
+  IconBadge, IconUpload, IconPalette, IconChart, IconBolt as IconBoltNav, IconSettings, IconUsers, IconKey, IconChevron, IconHeadset,
 } from "@/components/icons";
 
 const navSections = [
@@ -19,7 +19,6 @@ const navSections = [
       { label: "القوالب", icon: IconPalette, href: "/dashboard/templates" },
       { label: "الإصدار الجماعي", icon: IconUpload, href: "/dashboard/bulk" },
       { label: "الباقة والفوترة", icon: IconBoltNav, href: "/dashboard/billing" },
-      { label: "الدعم الفني", icon: IconMail, href: "/dashboard/support" },
     ],
   },
   {
@@ -31,6 +30,9 @@ const navSections = [
     ],
   },
 ];
+
+// Support sits on its own at the bottom of the sidebar (headset icon).
+const supportItem = { label: "الدعم الفني", icon: IconHeadset, href: "/dashboard/support" };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -123,6 +125,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         );
       })}
+      {/* Support — pinned at the very bottom of the sidebar. */}
+      <div className="mt-5 border-t pt-3">{renderLink(supportItem)}</div>
     </>
   );
 

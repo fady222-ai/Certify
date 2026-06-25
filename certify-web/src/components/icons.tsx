@@ -103,3 +103,6 @@ export const IconKey = (p: IconProps) => (
 export const IconChevron = (p: IconProps) => (
   <svg {...base(p)}><path d="m6 9 6 6 6-6" /></svg>
 );
+export const IconHeadset = (p: IconProps) => (
+  <svg {...base(p)}><path d="M4 13v-1a8 8 0 0 1 16 0v1" /><rect x="2.5" y="13" width="4" height="6.5" rx="1.6" /><rect x="17.5" y="13" width="4" height="6.5" rx="1.6" /><path d="M20 19.5a4 4 0 0 1-4 4h-2.5" /></svg>
+);
