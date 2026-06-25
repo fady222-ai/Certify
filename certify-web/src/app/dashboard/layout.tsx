@@ -6,33 +6,36 @@ import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { IssueCertificateModal } from "@/components/IssueCertificateModal";
 import { getToken, getStoredUser, logout, refreshProfile, type AuthUser } from "@/lib/auth";
+import { useT } from "@/components/LocaleProvider";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import {
   IconBadge, IconUpload, IconPalette, IconChart, IconBolt as IconBoltNav, IconSettings, IconUsers, IconKey, IconChevron, IconHeadset,
 } from "@/components/icons";
 
+// nav labels are i18n keys (resolved via t()).
 const navSections = [
   {
     title: null,
     items: [
-      { label: "نظرة عامة", icon: IconChart, href: "/dashboard" },
-      { label: "الشهادات", icon: IconBadge, href: "/dashboard/certificates" },
-      { label: "القوالب", icon: IconPalette, href: "/dashboard/templates" },
-      { label: "الإصدار الجماعي", icon: IconUpload, href: "/dashboard/bulk" },
-      { label: "الباقة والفوترة", icon: IconBoltNav, href: "/dashboard/billing" },
+      { key: "nav.overview", icon: IconChart, href: "/dashboard" },
+      { key: "nav.certificates", icon: IconBadge, href: "/dashboard/certificates" },
+      { key: "nav.templates", icon: IconPalette, href: "/dashboard/templates" },
+      { key: "nav.bulk", icon: IconUpload, href: "/dashboard/bulk" },
+      { key: "nav.billing", icon: IconBoltNav, href: "/dashboard/billing" },
     ],
   },
   {
-    title: "الإعدادات",
+    title: "nav.settingsGroup",
     items: [
-      { label: "أعضاء الفريق", icon: IconUsers, href: "/dashboard/members" },
-      { label: "المطوّرون (API)", icon: IconKey, href: "/dashboard/developers" },
-      { label: "هوية الأكاديمية", icon: IconSettings, href: "/dashboard/settings" },
+      { key: "nav.members", icon: IconUsers, href: "/dashboard/members" },
+      { key: "nav.developers", icon: IconKey, href: "/dashboard/developers" },
+      { key: "nav.identity", icon: IconSettings, href: "/dashboard/settings" },
     ],
   },
 ];
 
 // Support sits on its own at the bottom of the sidebar (headset icon).
-const supportItem = { label: "الدعم الفني", icon: IconHeadset, href: "/dashboard/support" };
+const supportItem = { key: "nav.support", icon: IconHeadset, href: "/dashboard/support" };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -71,6 +74,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Close the mobile drawer on route change.
   useEffect(() => { setNavOpen(false); }, [pathname]);
 
+  const t = useT();
+
   if (!checked) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface-2/40">
@@ -86,7 +91,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.push("/");
   }
 
-  const renderLink = (n: { label: string; icon: typeof IconBadge; href: string }) => {
+  const renderLink = (n: { key: string; icon: typeof IconBadge; href: string }) => {
     const active =
       n.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(n.href);
     return (
@@ -95,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           active ? "bg-brand-600 text-white shadow-[0_8px_20px_rgba(79,70,229,0.25)]"
             : "text-ink-soft hover:bg-surface-2 hover:text-brand-700"}`}>
         <n.icon className="h-5 w-5" />
-        {n.label}
+        {t(n.key)}
       </Link>
     );
   };
@@ -118,7 +123,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="flex w-full items-center justify-between rounded-xl px-3.5 py-2 text-[11px] font-extrabold uppercase tracking-wide text-ink-muted hover:text-ink-soft"
               aria-expanded={open}
             >
-              {section.title}
+              {t(section.title)}
               <IconChevron className={`h-4 w-4 transition-transform ${open ? "" : "-rotate-90"}`} />
             </button>
             {open && <div className="mt-1 space-y-1">{section.items.map(renderLink)}</div>}
@@ -133,21 +138,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const planCard = (
     <>
       <div className="m-3 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white">
-        <p className="text-sm font-extrabold">{org?.plan?.name ?? "باقة مجانية"}</p>
+        <p className="text-sm font-extrabold">{org?.plan?.name ?? t("dashboard.freePlan")}</p>
         <p className="mt-1 text-xs text-brand-100">
           {org?.plan?.certificates_per_month != null
-            ? `${org.plan.certificates_per_month} شهادة شهريا`
-            : "إصدار غير محدود"}
+            ? t("dashboard.certsPerMonth", { n: org.plan.certificates_per_month })
+            : t("dashboard.unlimited")}
         </p>
         <Link href="/dashboard/billing" className="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-white/15 px-3 py-2 text-xs font-bold hover:bg-white/25">
-          ترقية الباقة
+          {t("dashboard.upgrade")}
         </Link>
       </div>
     </>
   );
 
   return (
-    <div className="flex min-h-screen bg-surface-2/40" dir="rtl">
+    <div className="flex min-h-screen bg-surface-2/40">
       <IssueCertificateModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -216,18 +221,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <p className="max-w-[180px] truncate text-sm font-extrabold text-ink" title={org.name}>
                     {org.name}
                   </p>
-                  <p className="text-[11px] font-bold text-ink-muted">لوحة التحكم</p>
+                  <p className="text-[11px] font-bold text-ink-muted">{t("dashboard.panel")}</p>
                 </div>
               </div>
             )}
           </div>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher className="hidden sm:inline-flex" />
             <button className="btn-primary" type="button" onClick={() => setModalOpen(true)}>
               <IconBadge className="h-4 w-4" />
-              <span className="hidden sm:inline">إصدار شهادة جديدة</span>
-              <span className="sm:hidden">إصدار</span>
+              <span className="hidden sm:inline">{t("dashboard.issueNew")}</span>
+              <span className="sm:hidden">{t("dashboard.issue")}</span>
             </button>
-            <button className="btn-ghost" type="button" onClick={onLogout}>خروج</button>
+            <button className="btn-ghost" type="button" onClick={onLogout}>{t("dashboard.logout")}</button>
           </div>
         </header>
         <div className="flex-1">{children}</div>

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Cairo, Tajawal } from "next/font/google";
+import { cookies } from "next/headers";
+import { LocaleProvider } from "@/components/LocaleProvider";
+import { normalizeLocale, dirFor, LOCALE_COOKIE } from "@/lib/i18n";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -42,18 +45,22 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Locale comes from a cookie (set by the language switcher); default Arabic.
+  const locale = normalizeLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   return (
     <html
-      lang="ar"
-      dir="rtl"
+      lang={locale}
+      dir={dirFor(locale)}
       className={`${cairo.variable} ${tajawal.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+      </body>
     </html>
   );
 }

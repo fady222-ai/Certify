@@ -1,0 +1,57 @@
+import type { Dict } from "./index";
+
+// English mirror of ar.ts (shape enforced by the Dict type).
+export const en: Dict = {
+  dir: "ltr",
+  langName: "English",
+  switchTo: "العربية",
+  header: {
+    features: "Features",
+    how: "How it works",
+    pricing: "Pricing",
+    verifyCert: "Verify a certificate",
+    login: "Sign in",
+    startFree: "Start free",
+  },
+  footer: {
+    tagline:
+      "An Arabic platform for issuing professional, verifiable digital certificates — issue hundreds with one click and give your trainees a credential they can share on LinkedIn.",
+    product: "Product",
+    features: "Features",
+    pricing: "Pricing",
+    help: "Help center",
+    contact: "Contact / Support",
+    verify: "Verify a certificate",
+    account: "Account",
+    loginLink: "Sign in",
+    register: "Create account",
+    legal: "Legal",
+    terms: "Terms of use",
+    privacy: "Privacy policy",
+    refund: "Refund policy",
+    rights: "All rights reserved",
+    madeWith: "Made with love for the Arab market",
+  },
+  nav: {
+    overview: "Overview",
+    certificates: "Certificates",
+    templates: "Templates",
+    bulk: "Bulk issuance",
+    billing: "Plan & billing",
+    support: "Support",
+    settingsGroup: "Settings",
+    members: "Team members",
+    developers: "Developers (API)",
+    identity: "Academy identity",
+  },
+  dashboard: {
+    freePlan: "Free plan",
+    certsPerMonth: "{n} certificates / month",
+    unlimited: "Unlimited issuance",
+    upgrade: "Upgrade plan",
+    issueNew: "Issue a new certificate",
+    issue: "Issue",
+    logout: "Sign out",
+    panel: "Dashboard",
+  },
+};

@@ -214,6 +214,23 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
 > **تنبيه schema:** أُضيف `OrganizationMember.monthlyLimit` و`Certificate.issuedById`. شغّل
 > `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
 
+## التدويل i18n (عربي/إنجليزي + RTL/LTR) — قيد التنفيذ المرحلي
+
+بنية i18n قائمة على **كوكي + Root Layout ديناميكي + Context عميل** (بلا إعادة هيكلة المسارات
+لـ`app/[lang]` — غير عملي لتطبيق توجّهه لغة واحدة افتراضية مع مبدّل):
+- **المصدر:** `lib/i18n/` — `ar.ts` (مصدر الحقيقة للشكل) + `en.ts` (مرآة بنوع `Dict`) +
+  `index.ts` (`getDict`/`normalizeLocale`/`dirFor`/`fmt` للـ`{placeholder}` + `LOCALE_COOKIE`).
+  **لا `as const`** على `ar` (وإلا لزم أن تطابق `en` النصوص حرفياً).
+- **التبديل:** `components/LocaleProvider.tsx` (Context: `locale`/`dict`/`t(key, vars?)`/`setLocale`؛
+  `t` يحلّ مسار النقطة `nav.overview`). `setLocale` يكتب الكوكي + يضبط `document.documentElement
+  .lang/dir` + `router.refresh()`. `app/layout.tsx` (async) يقرأ الكوكي عبر `cookies()` ويضبط
+  `<html lang dir>` ويلفّ بالموفّر. `components/LanguageSwitcher.tsx` يبدّل ar↔en.
+- **المنجز (المرحلة 1):** البنية + المبدّل + تبديل RTL/LTR + ترجمة **القشرة العامة**: `SiteHeader`/
+  `SiteFooter` + تنقّل لوحة التحكم وبطاقة الباقة وأزرار الهيدر. (أُزيل `dir="rtl"` المثبّت من
+  `dashboard/layout` والجذر — صار من `<html>`.)
+- **المتبقّي (مراحل تالية):** أجسام صفحات لوحة التحكم، صفحات auth/marketing، الأدمن، الإيميلات،
+  ورسائل الخلفية. تُضاف مفاتيحها تدريجياً إلى `ar.ts`/`en.ts` وتُستبدل النصوص بـ`t(...)`.
+
 ## العلامة البيضاء (White-label — إخفاء علامة Certify)
 
 ميزة باقة **Business** (`hasWhiteLabel`): صفحة التحقّق العامة تُخفي كل علامات Certify (الهيدر/
