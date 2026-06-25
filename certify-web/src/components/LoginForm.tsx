@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { login, verifyEmail, verifyMfa, resendOtp, getToken, getStoredUser } from "@/lib/auth";
+import { useT } from "@/components/LocaleProvider";
 import { IconMail, IconLock, IconArrow } from "./icons";
 
 export function LoginForm() {
   const router = useRouter();
+  const t = useT();
   const [step, setStep] = useState<"form" | "otp" | "mfa">("form");
   const [userId, setUserId] = useState<string | null>(null);
   const [mfaToken, setMfaToken] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function LoginForm() {
       }
       router.push(result.user?.is_admin ? "/admin" : "/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ ما.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
       setLoading(false);
     }
   }
@@ -64,7 +66,7 @@ export function LoginForm() {
       const profile = await verifyMfa(mfaToken!, mfaCode.trim());
       router.push(profile.user?.is_admin ? "/admin" : "/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ ما.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
       setLoading(false);
     }
   }
@@ -77,7 +79,7 @@ export function LoginForm() {
       await verifyEmail(userId!, otp.trim());
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ ما.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
       setLoading(false);
     }
   }
@@ -88,9 +90,9 @@ export function LoginForm() {
     setInfo(null);
     try {
       await resendOtp(userId);
-      setInfo("تم إرسال رمز جديد إلى بريدك الإلكتروني.");
+      setInfo(t("auth.otp.resent"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ ما.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     }
   }
 
@@ -106,7 +108,7 @@ export function LoginForm() {
     return (
       <form className="space-y-4" onSubmit={onMfaSubmit}>
         <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-700 ring-1 ring-blue-100">
-          أدخل الرمز من تطبيق المصادقة (أو أحد رموز الاحتياط).
+          {t("auth.mfa.banner")}
         </div>
 
         {error && (
@@ -116,7 +118,7 @@ export function LoginForm() {
         )}
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-bold text-ink">رمز التحقق</span>
+          <span className="mb-1.5 block text-sm font-bold text-ink">{t("auth.otp.code")}</span>
           <input
             type="text"
             inputMode="text"
@@ -133,12 +135,12 @@ export function LoginForm() {
         </label>
 
         <button type="submit" disabled={loading || mfaCode.trim().length < 6} className="btn-primary w-full disabled:opacity-60">
-          {loading ? "جار التحقق…" : "تأكيد"}
+          {loading ? t("auth.otp.verifying") : t("auth.mfa.confirm")}
           {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
         </button>
 
         <p className="text-center text-xs text-ink-muted">
-          فقدت جهازك؟ استخدم أحد رموز الاحتياط التي حفظتها عند التفعيل.
+          {t("auth.mfa.lostDevice")}
         </p>
       </form>
     );
@@ -148,7 +150,7 @@ export function LoginForm() {
     return (
       <form className="space-y-4" onSubmit={onOtpSubmit}>
         <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-700 ring-1 ring-blue-100">
-          بريدك الإلكتروني لم يفعل بعد. تم إرسال رمز تحقق جديد إلى بريدك المسجل.
+          {t("auth.otp.banner")}
         </div>
 
         {error && (
@@ -163,7 +165,7 @@ export function LoginForm() {
         )}
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-bold text-ink">رمز التحقق</span>
+          <span className="mb-1.5 block text-sm font-bold text-ink">{t("auth.otp.code")}</span>
           <input
             type="text"
             inputMode="numeric"
@@ -180,14 +182,14 @@ export function LoginForm() {
         </label>
 
         <button type="submit" disabled={loading || otp.length < 6} className="btn-primary w-full disabled:opacity-60">
-          {loading ? "جار التحقق…" : "تفعيل الحساب"}
+          {loading ? t("auth.otp.verifying") : t("auth.otp.activate")}
           {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
         </button>
 
         <p className="text-center text-xs text-ink-muted">
-          لم تستلم الرمز؟{" "}
+          {t("auth.otp.didntReceive")}{" "}
           <button type="button" onClick={onResend} className="font-bold text-brand-600 hover:underline">
-            أعد الإرسال
+            {t("auth.otp.resend")}
           </button>
         </p>
       </form>
@@ -203,43 +205,43 @@ export function LoginForm() {
       )}
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-bold text-ink">البريد الإلكتروني أو اسم الأكاديمية</span>
+        <span className="mb-1.5 block text-sm font-bold text-ink">{t("auth.login.identifier")}</span>
         <span className="relative block">
-          <IconMail className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+          <IconMail className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
           <input
             type="text"
             required
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
-            placeholder="you@example.com أو اسم أكاديميتك"
-            className="input pr-11"
+            placeholder={t("auth.login.identifierPh")}
+            className="input ps-11"
           />
         </span>
       </label>
 
       <label className="block">
         <span className="mb-1.5 flex items-center justify-between text-sm font-bold text-ink">
-          كلمة المرور
+          {t("auth.login.password")}
           <Link href="/forgot-password" className="text-xs font-bold text-brand-600 hover:underline">
-            نسيت كلمة المرور؟
+            {t("auth.login.forgot")}
           </Link>
         </span>
         <span className="relative block">
-          <IconLock className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+          <IconLock className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="input pr-11"
+            className="input ps-11"
             dir="ltr"
           />
         </span>
       </label>
 
       <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-        {loading ? "جار الدخول…" : "تسجيل الدخول"}
+        {loading ? t("auth.login.signingIn") : t("auth.login.signIn")}
         {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
       </button>
     </form>

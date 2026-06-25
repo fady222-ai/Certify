@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { register, verifyEmail, resendOtp, getToken, getStoredUser } from "@/lib/auth";
+import { useT } from "@/components/LocaleProvider";
 import { IconMail, IconLock, IconArrow, IconUsers, IconBadge } from "./icons";
 
 export function RegisterForm() {
   const router = useRouter();
+  const t = useT();
   const [step, setStep] = useState<"form" | "otp">("form");
   const [userId, setUserId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", organizationName: "", email: "", password: "" });
@@ -41,7 +43,7 @@ export function RegisterForm() {
       setUserId(result.userId);
       setStep("otp");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ ما.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     } finally {
       setLoading(false);
     }
@@ -55,7 +57,7 @@ export function RegisterForm() {
       await verifyEmail(userId!, otp.trim());
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ ما.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
       setLoading(false);
     }
   }
@@ -66,9 +68,9 @@ export function RegisterForm() {
     setInfo(null);
     try {
       await resendOtp(userId);
-      setInfo("تم إرسال رمز جديد إلى بريدك الإلكتروني.");
+      setInfo(t("auth.otp.resent"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ ما.");
+      setError(err instanceof Error ? err.message : t("common.genericError"));
     }
   }
 
@@ -84,8 +86,7 @@ export function RegisterForm() {
     return (
       <form className="space-y-4" onSubmit={onOtpSubmit}>
         <div className="rounded-xl bg-blue-50 px-4 py-3 text-sm text-blue-700 ring-1 ring-blue-100">
-          تم إرسال رمز تحقق مكون من ٦ أرقام إلى{" "}
-          <strong className="font-bold">{form.email}</strong>. أدخله أدناه.
+          {t("auth.register.otpSentTo", { email: form.email })}
         </div>
 
         {error && (
@@ -100,7 +101,7 @@ export function RegisterForm() {
         )}
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-bold text-ink">رمز التحقق</span>
+          <span className="mb-1.5 block text-sm font-bold text-ink">{t("auth.otp.code")}</span>
           <input
             type="text"
             inputMode="numeric"
@@ -117,18 +118,18 @@ export function RegisterForm() {
         </label>
 
         <button type="submit" disabled={loading || otp.length < 6} className="btn-primary w-full disabled:opacity-60">
-          {loading ? "جار التحقق…" : "تفعيل الحساب"}
+          {loading ? t("auth.otp.verifying") : t("auth.otp.activate")}
           {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
         </button>
 
         <p className="text-center text-xs text-ink-muted">
-          لم تستلم الرمز؟{" "}
+          {t("auth.otp.didntReceive")}{" "}
           <button type="button" onClick={onResend} className="font-bold text-brand-600 hover:underline">
-            أعد الإرسال
+            {t("auth.otp.resend")}
           </button>
           {" · "}
           <button type="button" onClick={() => { setStep("form"); setError(null); }} className="text-ink-muted hover:underline">
-            تعديل البريد
+            {t("auth.register.editEmail")}
           </button>
         </p>
       </form>
@@ -144,48 +145,48 @@ export function RegisterForm() {
       )}
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-bold text-ink">الاسم الكامل</span>
+        <span className="mb-1.5 block text-sm font-bold text-ink">{t("auth.register.name")}</span>
         <span className="relative block">
-          <IconUsers className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
-          <input type="text" required value={form.name} onChange={update("name")} placeholder="اسمك" className="input pr-11" />
+          <IconUsers className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+          <input type="text" required value={form.name} onChange={update("name")} placeholder={t("auth.register.namePh")} className="input ps-11" />
         </span>
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-bold text-ink">اسم المنظمة / الأكاديمية</span>
+        <span className="mb-1.5 block text-sm font-bold text-ink">{t("auth.register.org")}</span>
         <span className="relative block">
-          <IconBadge className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
-          <input type="text" required minLength={2} value={form.organizationName} onChange={update("organizationName")} placeholder="أكاديمية..." className="input pr-11" />
+          <IconBadge className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+          <input type="text" required minLength={2} value={form.organizationName} onChange={update("organizationName")} placeholder={t("auth.register.orgPh")} className="input ps-11" />
         </span>
         <p className="mt-1 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 ring-1 ring-amber-100">
-          ⚠️ مهم: اسم الأكاديمية يظهر على كل شهاداتك، ويجب أن يكون فريدا، ولا يمكن تغييره لاحقا — اختره بعناية.
+          {t("auth.register.orgWarning")}
         </p>
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-bold text-ink">البريد الإلكتروني</span>
+        <span className="mb-1.5 block text-sm font-bold text-ink">{t("auth.register.email")}</span>
         <span className="relative block">
-          <IconMail className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
-          <input type="email" required value={form.email} onChange={update("email")} placeholder="you@example.com" className="input pr-11" dir="ltr" />
+          <IconMail className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+          <input type="email" required value={form.email} onChange={update("email")} placeholder="you@example.com" className="input ps-11" dir="ltr" />
         </span>
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-bold text-ink">كلمة المرور</span>
+        <span className="mb-1.5 block text-sm font-bold text-ink">{t("auth.register.password")}</span>
         <span className="relative block">
-          <IconLock className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
-          <input type="password" required minLength={8} value={form.password} onChange={update("password")} placeholder="٨ أحرف على الأقل" className="input pr-11" dir="ltr" />
+          <IconLock className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+          <input type="password" required minLength={8} value={form.password} onChange={update("password")} placeholder={t("auth.register.passwordPh")} className="input ps-11" dir="ltr" />
         </span>
-        <p className="mt-1 text-xs text-ink-muted">٨ أحرف على الأقل.</p>
+        <p className="mt-1 text-xs text-ink-muted">{t("auth.register.passwordHint")}</p>
       </label>
 
       <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
-        {loading ? "جار الإنشاء…" : "إنشاء الحساب"}
+        {loading ? t("auth.register.creating") : t("auth.register.create")}
         {!loading && <IconArrow className="h-4 w-4 rotate-180" />}
       </button>
 
       <p className="text-center text-xs leading-relaxed text-ink-muted">
-        بإنشائك حسابا فأنت توافق على شروط الاستخدام وسياسة الخصوصية.
+        {t("auth.register.terms")}
       </p>
     </form>
   );
