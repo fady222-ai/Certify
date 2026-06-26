@@ -1,9 +1,21 @@
 // Shared helpers for bilingual (Arabic/English) transactional emails.
 // Recipient locale is threaded from User.locale (or the request locale at
-// registration). Anything other than "en" falls back to Arabic (the default).
+// registration). Anything other than "en" falls back to Arabic.
+//
+// Global override (product decision): all outgoing system emails are forced to
+// one language via EMAIL_LOCALE. Default "en" — every email (OTP, password
+// reset, billing, certificate, support) goes out in English regardless of the
+// recipient's stored locale. Set EMAIL_LOCALE=ar to force Arabic, or
+// EMAIL_LOCALE=auto to honor each recipient's own locale instead.
+/** Resolve the effective language for an email given the recipient's locale. */
+export function effLocale(locale) {
+  const forced = (process.env.EMAIL_LOCALE || "en").toLowerCase();
+  if (forced === "auto") return locale === "en" ? "en" : "ar";
+  return forced === "en" ? "en" : "ar";
+}
 
 export function isEn(locale) {
-  return locale === "en";
+  return effLocale(locale) === "en";
 }
 
 /** HTML-escape (shared by all template files). */
@@ -23,7 +35,7 @@ export const BRAND = "#4f46e5";
  * whole message reads correctly in either language.
  */
 export function shell(content, locale) {
-  const en = isEn(locale);
+  const en = isEn(locale); // applies the EMAIL_LOCALE override
   const sub = en ? "Digital certificate platform" : "منصة الشهادات الرقمية";
   const foot = en ? "Certify — digital certificate platform" : "Certify — منصة الشهادات الرقمية";
   return `<!DOCTYPE html>

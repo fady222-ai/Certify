@@ -234,9 +234,13 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
   (terms/privacy/refund عبر `LegalDoc` بخاصية `disclaimer`) + **المساعدة** (`/help`). كل النصوص في
   `ar.ts`/`en.ts`؛ التواريخ عبر `locale` بـ`numberingSystem:"latn"`؛ الفئات الفيزيائية صارت منطقية
   (`text-start`/`end-*`/`ps-*`) لتنقلب مع الاتجاه؛ أُزيل كل `dir="rtl"` المثبّت (الاتجاه من `<html>`).
-- **الإيميلات ثنائية اللغة (الخلفية):** كل قوالب البريد تقبل `locale` وتتفرّع (عربي افتراضي، إنجليزي
-  عند `"en"`، وأي قيمة أخرى ترجع للعربي). مساعد مشترك `services/email/emailI18n.js`
-  (`isEn`/`shell(content,locale)`/`btn`/`e`). **مصدر اللغة `User.locale`** (موجود، `@default("ar")`):
+- **الإيميلات ثنائية اللغة + تثبيت عام (الخلفية):** كل قوالب البريد تقبل `locale` وتتفرّع عربي/إنجليزي.
+  مساعد مشترك `services/email/emailI18n.js` (`effLocale`/`isEn`/`shell(content,locale)`/`btn`/`e`).
+  **قرار المنتج: تثبيت كل الإيميلات الصادرة على الإنجليزية** عبر متغيّر `EMAIL_LOCALE` (يُقرأ عند كل
+  استدعاء في `effLocale`): الافتراضي `"en"` يُجبر **كل** بريد (OTP/استعادة/فوترة/شهادة/دعم + إشعارات
+  الأدمن وإيصالات الزائر) على الإنجليزية بغضّ النظر عن `User.locale`. `EMAIL_LOCALE=ar` يُجبر العربية،
+  و`EMAIL_LOCALE=auto` يحترم لغة كل مستلِم (المنطق ثنائي اللغة الأصلي). جميع القوالب (شاملة admin/guest
+  في `supportTemplates`) صارت ثنائية فتتبع التثبيت. **مصدر اللغة `User.locale`** (موجود، `@default("ar")`):
   يُلتقط عند التسجيل (الواجهة ترسله من كوكي اللغة في `register`، والـschema يقبل `locale`)، ويُحدَّث
   فوراً عند تبديل اللغة لمستخدم مسجَّل عبر `POST /api/auth/locale` (`setLocaleHandler`→`updateLocale`)
   الذي يستدعيه `LocaleProvider.setLocale` بـ`saveLocale` (best-effort). التوجيه: OTP/استعادة كلمة
@@ -521,6 +525,8 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
 `DATABASE_URL`, `APP_KEY` (32+ حرف), `APP_URL`, `CERTIFY_VERIFY_BASE_URL`,
 `CORS_ALLOWED_ORIGINS`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `RESEND_API_KEY`,
 `EMAIL_FROM`, ومفاتيح `STRIPE_*` / `TAP_*` / `PAYMOB_*` (كلها اختيارية للبدء).
+`EMAIL_LOCALE` اختياري (افتراضي `en`): لغة كل الإيميلات الصادرة — `en` يُجبر الإنجليزية،
+`ar` يُجبر العربية، `auto` يحترم لغة كل مستلِم.
 `ERROR_WEBHOOK_URL` اختياري: عند ضبطه تُرسَل تنبيهات أخطاء الخادم (5xx + أخطاء
 غير ملتقطة) إلى webhook متوافق مع Slack/Discord (`{ text }`).
 

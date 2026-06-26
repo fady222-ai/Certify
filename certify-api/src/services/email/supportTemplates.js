@@ -1,6 +1,6 @@
-// Email templates for the support ticket system (bilingual where the recipient
-// is a known user). Admin-inbox notifications stay Arabic (the platform admin),
-// and guest notifications default to Arabic (guests have no stored locale).
+// Email templates for the support ticket system (bilingual). Language follows
+// the recipient's locale where known, but the global EMAIL_LOCALE override
+// (applied inside isEn/shell) wins — by default every email goes out in English.
 
 import { e, shell, btn, isEn } from "./emailI18n.js";
 
@@ -18,19 +18,31 @@ function subjectLine(label, subject) {
     <strong style="color:#374151;">${label}</strong> ${e(subject)}</p>`;
 }
 
-/** Sent to the admin inbox when ANY new ticket is opened (Arabic — platform admin). */
-export function newTicketAdminEmail({ subject, requesterName, requesterEmail, adminUrl }) {
-  const content = `
-    ${head("📨", "تذكرة دعم جديدة", `من ${requesterName || requesterEmail || "زائر"}`)}
+/** Sent to the admin inbox when ANY new ticket is opened. */
+export function newTicketAdminEmail({ subject, requesterName, requesterEmail, adminUrl, locale = "ar" }) {
+  const en = isEn(locale);
+  const who = requesterName || requesterEmail || (en ? "Guest" : "زائر");
+  const content = en
+    ? `
+    ${head("📨", "New support ticket", `From ${who}`)}
+    ${subjectLine("Subject:", subject)}
+    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
+      A new support ticket is waiting for your reply. Open the tickets dashboard to review and respond.
+    </p>
+    <div style="text-align:center;">${btn("Open tickets dashboard", adminUrl)}</div>`
+    : `
+    ${head("📨", "تذكرة دعم جديدة", `من ${who}`)}
     ${subjectLine("الموضوع:", subject)}
     <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
       وصلت تذكرة دعم جديدة وتنتظر ردّك. افتح لوحة التذاكر للاطّلاع والردّ.
     </p>
     <div style="text-align:center;">${btn("فتح لوحة التذاكر", adminUrl)}</div>`;
   return {
-    subject: `تذكرة دعم جديدة — ${subject}`,
-    html: shell(content, "ar"),
-    text: `تذكرة دعم جديدة من ${requesterName || requesterEmail}\nالموضوع: ${subject}\n${adminUrl}`,
+    subject: en ? `New support ticket — ${subject}` : `تذكرة دعم جديدة — ${subject}`,
+    html: shell(content, locale),
+    text: en
+      ? `New support ticket from ${requesterName || requesterEmail}\nSubject: ${subject}\n${adminUrl}`
+      : `تذكرة دعم جديدة من ${requesterName || requesterEmail}\nالموضوع: ${subject}\n${adminUrl}`,
   };
 }
 
@@ -67,10 +79,20 @@ export function ticketAckUserEmail({ userName, subject, dashboardUrl, locale = "
  * Acknowledgement to a guest, embedding the capability link to their thread.
  * Sent to an address the sender chose, so it deliberately contains NO
  * caller-supplied free text (no name/subject) — only a fixed notice + the link.
- * Defaults to Arabic (guests have no stored locale).
  */
-export function ticketAckGuestEmail({ portalUrl }) {
-  const content = `
+export function ticketAckGuestEmail({ portalUrl, locale = "ar" }) {
+  const en = isEn(locale);
+  const content = en
+    ? `
+    ${head("✅", "We received your message", "")}
+    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
+      Thanks for contacting Certify. Save the link below to follow your request, read the support team's reply, and respond — no account needed.
+    </p>
+    <div style="text-align:center;margin-bottom:20px;">${btn("Track my request", portalUrl)}</div>
+    <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0;word-break:break-all;">
+      Or copy the link: ${e(portalUrl)}
+    </p>`
+    : `
     ${head("✅", "استلمنا رسالتك", "")}
     <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
       شكراً لتواصلك مع Certify. احفظ الرابط التالي لمتابعة طلبك والاطّلاع على ردّ
@@ -81,9 +103,11 @@ export function ticketAckGuestEmail({ portalUrl }) {
       أو انسخ الرابط: ${e(portalUrl)}
     </p>`;
   return {
-    subject: "استلمنا رسالتك — Certify",
-    html: shell(content, "ar"),
-    text: `استلمنا رسالتك في Certify.\nمتابعة طلبك: ${portalUrl}`,
+    subject: en ? "We received your message — Certify" : "استلمنا رسالتك — Certify",
+    html: shell(content, locale),
+    text: en
+      ? `We received your message at Certify.\nTrack your request: ${portalUrl}`
+      : `استلمنا رسالتك في Certify.\nمتابعة طلبك: ${portalUrl}`,
   };
 }
 
@@ -114,9 +138,21 @@ export function adminReplyUserEmail({ userName, subject, dashboardUrl, locale = 
   };
 }
 
-/** Notifies a guest that the admin replied (Arabic — guests have no stored locale). */
-export function adminReplyGuestEmail({ guestName, subject, portalUrl }) {
-  const content = `
+/** Notifies a guest that the admin replied, embedding the capability link. */
+export function adminReplyGuestEmail({ guestName, subject, portalUrl, locale = "ar" }) {
+  const en = isEn(locale);
+  const content = en
+    ? `
+    ${head("💬", "New reply on your request", `Hi ${guestName} 👋`)}
+    ${subjectLine("Subject:", subject)}
+    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
+      The support team replied to your request. Open the link to read the reply and continue the conversation.
+    </p>
+    <div style="text-align:center;margin-bottom:20px;">${btn("View the reply", portalUrl)}</div>
+    <p style="font-size:12px;color:#9ca3af;text-align:center;margin:0;word-break:break-all;">
+      Or copy the link: ${e(portalUrl)}
+    </p>`
+    : `
     ${head("💬", "ردّ جديد على طلبك", `مرحباً ${guestName} 👋`)}
     ${subjectLine("الموضوع:", subject)}
     <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
@@ -127,24 +163,38 @@ export function adminReplyGuestEmail({ guestName, subject, portalUrl }) {
       أو انسخ الرابط: ${e(portalUrl)}
     </p>`;
   return {
-    subject: `ردّ جديد على طلبك — ${subject}`,
-    html: shell(content, "ar"),
-    text: `مرحباً ${guestName}،\nردّ فريق الدعم على طلبك: ${subject}\nعرض الردّ: ${portalUrl}`,
+    subject: en ? `New reply on your request — ${subject}` : `ردّ جديد على طلبك — ${subject}`,
+    html: shell(content, locale),
+    text: en
+      ? `Hi ${guestName},\nThe support team replied to your request: ${subject}\nView the reply: ${portalUrl}`
+      : `مرحباً ${guestName}،\nردّ فريق الدعم على طلبك: ${subject}\nعرض الردّ: ${portalUrl}`,
   };
 }
 
-/** Notifies the admin inbox that a customer (user or guest) replied (Arabic). */
-export function customerReplyAdminEmail({ subject, requesterName, adminUrl }) {
-  const content = `
-    ${head("💬", "ردّ جديد من العميل", `من ${requesterName || "زائر"}`)}
+/** Notifies the admin inbox that a customer (user or guest) replied. */
+export function customerReplyAdminEmail({ subject, requesterName, adminUrl, locale = "ar" }) {
+  const en = isEn(locale);
+  const who = requesterName || (en ? "Guest" : "زائر");
+  const content = en
+    ? `
+    ${head("💬", "New reply from the customer", `From ${who}`)}
+    ${subjectLine("Subject:", subject)}
+    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
+      The customer added a reply to their ticket. Open the tickets dashboard to follow the conversation.
+    </p>
+    <div style="text-align:center;">${btn("Open tickets dashboard", adminUrl)}</div>`
+    : `
+    ${head("💬", "ردّ جديد من العميل", `من ${who}`)}
     ${subjectLine("الموضوع:", subject)}
     <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
       أضاف العميل ردّاً على تذكرته. افتح لوحة التذاكر لمتابعة المحادثة.
     </p>
     <div style="text-align:center;">${btn("فتح لوحة التذاكر", adminUrl)}</div>`;
   return {
-    subject: `ردّ جديد من العميل — ${subject}`,
-    html: shell(content, "ar"),
-    text: `ردّ جديد من ${requesterName} على: ${subject}\n${adminUrl}`,
+    subject: en ? `New reply from the customer — ${subject}` : `ردّ جديد من العميل — ${subject}`,
+    html: shell(content, locale),
+    text: en
+      ? `New reply from ${requesterName} on: ${subject}\n${adminUrl}`
+      : `ردّ جديد من ${requesterName} على: ${subject}\n${adminUrl}`,
   };
 }
