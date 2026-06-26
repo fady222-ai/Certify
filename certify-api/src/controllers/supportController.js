@@ -112,7 +112,7 @@ export async function createTicket(req, res, next) {
       },
     });
 
-    notifyNewTicket({ ...ticket, user: { name: req.user.name, email: req.user.email } });
+    notifyNewTicket({ ...ticket, user: { name: req.user.name, email: req.user.email, locale: req.user.locale } });
     return res.status(201).json(presentTicket(ticket));
   } catch (e) {
     next(e);
@@ -180,7 +180,7 @@ export async function replyTicket(req, res, next) {
     });
     await prisma.supportTicket.update({ where: { id: ticket.id }, data: { lastMessageAt: new Date() } });
 
-    if (last?.authorRole === "admin") notifyCustomerReply({ ...ticket, user: { name: req.user.name, email: req.user.email } });
+    if (last?.authorRole === "admin") notifyCustomerReply({ ...ticket, user: { name: req.user.name, email: req.user.email, locale: req.user.locale } });
     return res.status(201).json(presentMessage(message));
   } catch (e) {
     next(e);
@@ -309,7 +309,7 @@ export async function adminListTickets(req, res, next) {
     const [data, total] = await Promise.all([
       prisma.supportTicket.findMany({
         where,
-        include: { user: { select: { name: true, email: true } } },
+        include: { user: { select: { name: true, email: true, locale: true } } },
         orderBy: { lastMessageAt: "desc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -328,7 +328,7 @@ export async function adminGetTicket(req, res, next) {
   try {
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: req.params.id },
-      include: { user: { select: { name: true, email: true } } },
+      include: { user: { select: { name: true, email: true, locale: true } } },
     });
     if (!ticket) return res.status(404).json({ message: "التذكرة غير موجودة." });
     return res.json({
@@ -348,7 +348,7 @@ export async function adminReplyTicket(req, res, next) {
 
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: req.params.id },
-      include: { user: { select: { name: true, email: true } } },
+      include: { user: { select: { name: true, email: true, locale: true } } },
     });
     if (!ticket) return res.status(404).json({ message: "التذكرة غير موجودة." });
     // Closed is terminal for everyone — even the admin can't reply to a closed ticket.
@@ -386,7 +386,7 @@ export async function adminCloseTicket(req, res, next) {
     const updated = await prisma.supportTicket.update({
       where: { id: ticket.id },
       data: { status: "closed" },
-      include: { user: { select: { name: true, email: true } } },
+      include: { user: { select: { name: true, email: true, locale: true } } },
     });
     return res.json(presentTicket(updated));
   } catch (e) {

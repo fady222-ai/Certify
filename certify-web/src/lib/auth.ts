@@ -77,10 +77,14 @@ export async function register(input: {
   password: string;
   organizationName?: string;
 }): Promise<{ userId: string; requires_verification: true }> {
+  // Send the current UI locale so the account (and its OTP/transactional emails)
+  // matches the language the user signed up in.
+  const locale =
+    typeof document !== "undefined" && /(?:^|;\s*)certify_locale=(en|ar)/.exec(document.cookie)?.[1];
   const res = await fetch(`${API_URL}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify(locale ? { ...input, locale } : input),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error((data as { message?: string }).message ?? "حدث خطأ ما.");
@@ -191,6 +195,24 @@ export async function disableMfa(code: string): Promise<void> {
 }
 
 /** Re-fetch the profile from /auth/me and update local storage. */
+/**
+ * Persist the signed-in user's UI language on the server (best-effort) so their
+ * transactional emails (OTP, billing, support) follow the same language. No-op
+ * when signed out — new signups carry locale via register().
+ */
+export async function saveLocale(locale: "ar" | "en"): Promise<void> {
+  if (!getToken()) return;
+  try {
+    await authedFetch("auth/locale", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ locale }),
+    });
+  } catch {
+    /* best-effort — UI language still switches locally */
+  }
+}
+
 export async function refreshProfile(): Promise<AuthUser | null> {
   const res = await authedFetch("auth/me");
   if (!res.ok) return null;

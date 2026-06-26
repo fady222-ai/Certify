@@ -10,6 +10,7 @@ const registerSchema = z.object({
   email: z.string().trim().email("بريد إلكتروني غير صالح."),
   password: passwordSchema,
   organizationName: z.string().trim().min(2, "اسم الأكاديمية مطلوب.").max(160),
+  locale: z.enum(["ar", "en"]).optional(),
 });
 
 const loginSchema = z.object({
@@ -194,4 +195,21 @@ export async function resetPasswordHandler(req, res, next) {
 
 export async function meHandler(req, res) {
   return res.json(auth.presentUser(req.user, req.organization));
+}
+
+const localeSchema = z.object({ locale: z.enum(["ar", "en"]) });
+
+// Persist the signed-in user's UI language so transactional emails (OTP,
+// billing, support) match the language they're actually using.
+export async function setLocaleHandler(req, res, next) {
+  try {
+    const parsed = localeSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(422).json({ message: parsed.error.issues[0]?.message ?? "Invalid locale." });
+    }
+    await auth.updateLocale(req.user.id, parsed.data.locale);
+    return res.json({ ok: true });
+  } catch (err) {
+    return next(err);
+  }
 }

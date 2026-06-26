@@ -80,7 +80,7 @@ export function notifyNewTicket(ticket) {
 
   if (ticket.userId && ticket.user?.email) {
     send(
-      ticketAckUserEmail({ userName: ticket.user.name, subject: ticket.subject, dashboardUrl: dashboardUrl() }),
+      ticketAckUserEmail({ userName: ticket.user.name, subject: ticket.subject, dashboardUrl: dashboardUrl(), locale: ticket.user.locale }),
       "ack → user",
     );
   } else if (ticket.guestEmail && ticket.rawToken && allowRecipient(ticket.guestEmail)) {
@@ -98,7 +98,7 @@ export function notifyNewTicket(ticket) {
 export function notifyAdminReply(ticket) {
   if (ticket.userId && ticket.user?.email) {
     send(
-      adminReplyUserEmail({ userName: ticket.user.name, subject: ticket.subject, dashboardUrl: dashboardUrl() }),
+      adminReplyUserEmail({ userName: ticket.user.name, subject: ticket.subject, dashboardUrl: dashboardUrl(), locale: ticket.user.locale }),
       "admin reply → user",
     );
   } else if (ticket.guestEmail && ticket.rawToken) {

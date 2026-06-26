@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getDict, dirFor, fmt, LOCALE_COOKIE, type Dict, type Locale } from "@/lib/i18n";
+import { saveLocale } from "@/lib/auth";
 
 type LocaleCtx = {
   locale: Locale;
@@ -31,6 +32,7 @@ export function LocaleProvider({ locale, children }: { locale: Locale; children:
       document.cookie = `${LOCALE_COOKIE}=${l};path=/;max-age=31536000;samesite=lax`;
       document.documentElement.lang = l;
       document.documentElement.dir = dirFor(l);
+      void saveLocale(l); // keep the user's email language in sync (best-effort)
       router.refresh(); // re-render server components with the new locale
     },
     [locale, router],

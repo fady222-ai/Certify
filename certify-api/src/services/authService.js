@@ -210,24 +210,24 @@ function generateOtp() {
   return crypto.randomInt(100000, 1000000).toString();
 }
 
-async function saveAndSendOtp(userId, userName, email) {
+async function saveAndSendOtp(userId, userName, email, locale = "ar") {
   await prisma.verificationToken.deleteMany({ where: { userId } });
 
   const code = generateOtp();
   const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
   await prisma.verificationToken.create({ data: { userId, code, expiresAt } });
 
-  const msg = otpEmail({ userName, code, expiresMinutes: OTP_TTL_MINUTES });
+  const msg = otpEmail({ userName, code, expiresMinutes: OTP_TTL_MINUTES, locale });
   sendEmail({ to: email, ...msg }).catch(logMailFailure(`OTP to ${email}`));
 }
 
-export async function register({ name, email, password, organizationName }) {
+export async function register({ name, email, password, organizationName, locale }) {
   const existing = await prisma.user.findUnique({ where: { email } });
 
   if (existing) {
     // Already registered but unverified — resend OTP
     if (!existing.emailVerified) {
-      await saveAndSendOtp(existing.id, existing.name, email);
+      await saveAndSendOtp(existing.id, existing.name, email, existing.locale);
       return { userId: existing.id, requiresVerification: true };
     }
     const err = new Error("هذا البريد الإلكتروني مسجّل بالفعل.");
@@ -238,6 +238,7 @@ export async function register({ name, email, password, organizationName }) {
   // Academy name must be unique (normalized, case-insensitive) — blocks repeat
   // spam accounts reusing the same academy name. The name is immutable later.
   const orgName = String(organizationName ?? "").trim().replace(/\s+/g, " ");
+  const userLocale = locale === "en" ? "en" : "ar";
 
   const free = await prisma.plan.findUnique({ where: { slug: "free" } });
   const passwordHash = await hashPassword(password);
@@ -256,7 +257,7 @@ export async function register({ name, email, password, organizationName }) {
       if (dupOrg) throw conflict;
 
       const u = await tx.user.create({
-        data: { name, email, passwordHash, emailVerified: false },
+        data: { name, email, passwordHash, emailVerified: false, locale: userLocale },
       });
 
       await tx.organization.create({
@@ -278,7 +279,7 @@ export async function register({ name, email, password, organizationName }) {
     throw e;
   }
 
-  await saveAndSendOtp(user.id, user.name, email);
+  await saveAndSendOtp(user.id, user.name, email, userLocale);
   return { userId: user.id, requiresVerification: true };
 }
 
@@ -328,6 +329,13 @@ export async function verifyEmail({ userId, code }) {
   return { token: signToken(user), user, org };
 }
 
+export async function updateLocale(userId, locale) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { locale: locale === "en" ? "en" : "ar" },
+  });
+}
+
 export async function resendOtp({ userId }) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user || user.emailVerified) {
@@ -335,7 +343,7 @@ export async function resendOtp({ userId }) {
     err.statusCode = 400;
     throw err;
   }
-  await saveAndSendOtp(user.id, user.name, user.email);
+  await saveAndSendOtp(user.id, user.name, user.email, user.locale);
 }
 
 // Resolve a login identifier to a user: try email first, then fall back to the
@@ -389,7 +397,7 @@ export async function login({ identifier, password }) {
   }
 
   if (!user.emailVerified) {
-    await saveAndSendOtp(user.id, user.name, user.email);
+    await saveAndSendOtp(user.id, user.name, user.email, user.locale);
     const err = new Error("يرجى تفعيل بريدك الإلكتروني أولاً. تم إرسال رمز تحقق جديد إليك.");
     err.statusCode = 403;
     err.userId = user.id;
@@ -425,7 +433,7 @@ export async function forgotPassword({ email }) {
   await prisma.passwordResetToken.create({ data: { userId: user.id, token, expiresAt } });
 
   const resetUrl = `${config.verifyBaseUrl}/reset-password?token=${token}`;
-  const msg = passwordResetEmail({ userName: user.name, resetUrl, expiresHours: RESET_TTL_HOURS });
+  const msg = passwordResetEmail({ userName: user.name, resetUrl, expiresHours: RESET_TTL_HOURS, locale: user.locale });
   sendEmail({ to: user.email, ...msg }).catch(logMailFailure(`password reset to ${user.email}`));
 }
 

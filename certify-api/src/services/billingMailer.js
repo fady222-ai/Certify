@@ -12,7 +12,7 @@ const GATEWAY_AR = { stripe: "Stripe", tap: "Tap Payments", paymob: "Paymob" };
 async function ownerOf(orgId) {
   return prisma.organization.findUnique({
     where: { id: orgId },
-    select: { owner: { select: { name: true, email: true } } },
+    select: { owner: { select: { name: true, email: true, locale: true } } },
   });
 }
 
@@ -34,6 +34,7 @@ export async function sendPaymentReceipt(orgId, plan, sub, { isRenewal = false }
       periodEnd: sub.currentPeriodEnd,
       webUrl: config.verifyBaseUrl,
       isRenewal,
+      locale: org.owner.locale,
     });
     await sendEmail({ to: org.owner.email, ...msg });
   } catch (err) {
@@ -55,6 +56,7 @@ export async function sendRenewalReminder(orgId, plan, sub, daysLeft) {
       daysLeft,
       periodEnd: sub.currentPeriodEnd,
       webUrl: config.verifyBaseUrl,
+      locale: org.owner.locale,
     });
     await sendEmail({ to: org.owner.email, ...msg });
   } catch (err) {
@@ -74,6 +76,7 @@ export async function sendPaymentFailed(orgId, plan) {
       userName: org.owner.name,
       planName: plan.name,
       webUrl: config.verifyBaseUrl,
+      locale: org.owner.locale,
     });
     await sendEmail({ to: org.owner.email, ...msg });
   } catch (err) {

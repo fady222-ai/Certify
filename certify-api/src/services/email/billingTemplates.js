@@ -1,55 +1,24 @@
-function e(str) {
-  if (str == null) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import { e, shell, btn, isEn } from "./emailI18n.js";
 
-const BRAND = "#4f46e5";
-const INTERVAL_AR = { monthly: "شهري", annual: "سنوي" };
+const INTERVAL = {
+  ar: { monthly: "شهري", annual: "سنوي" },
+  en: { monthly: "monthly", annual: "annual" },
+};
 const CURRENCY_SYM = { USD: "$", EGP: "ج.م.", SAR: "ر.س." };
 
 function fmt(amount, currency) {
   return `${CURRENCY_SYM[currency] ?? currency}${amount}`;
 }
 
-function fmtDate(d) {
+function fmtDate(d, locale) {
   if (!d) return "—";
-  try { return new Date(d).toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" }); }
-  catch { return String(d); }
-}
-
-function shell(content) {
-  return `<!DOCTYPE html>
-<html dir="rtl" lang="ar">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Tahoma,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:32px 12px;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
-        style="max-width:520px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(2,6,23,0.08);">
-        <tr>
-          <td style="background:linear-gradient(135deg,${BRAND},${BRAND}cc);padding:22px 32px;text-align:center;">
-            <p style="margin:0;color:#ffffff;font-size:20px;font-weight:800;">Certify</p>
-            <p style="margin:4px 0 0;color:#c7d2fe;font-size:12px;">منصة الشهادات الرقمية</p>
-          </td>
-        </tr>
-        <tr><td style="padding:36px 32px;">${content}</td></tr>
-        <tr>
-          <td style="padding:16px 32px;background:#f8fafc;text-align:center;border-top:1px solid #eef2f7;">
-            <p style="margin:0;font-size:11px;color:#94a3b8;">Certify — منصة الشهادات الرقمية</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
-}
-
-function btn(label, url, bg = BRAND) {
-  return `<a href="${url}" style="display:inline-block;padding:13px 28px;background:${bg};color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;font-size:14px;">${label}</a>`;
+  try {
+    return new Date(d).toLocaleDateString(isEn(locale) ? "en-US" : "ar-EG", {
+      year: "numeric", month: "long", day: "numeric", numberingSystem: "latn",
+    });
+  } catch {
+    return String(d);
+  }
 }
 
 function row(label, value) {
@@ -59,128 +28,130 @@ function row(label, value) {
   </tr>`;
 }
 
-/**
- * Payment receipt — sent after first activation OR auto-renewal.
- */
-export function paymentReceiptEmail({ userName, planName, amount, currency, interval, gateway, periodEnd, webUrl, isRenewal = false }) {
+/** Payment receipt — sent after first activation OR auto-renewal. */
+export function paymentReceiptEmail({ userName, planName, amount, currency, interval, gateway, periodEnd, webUrl, isRenewal = false, locale = "ar" }) {
+  const en = isEn(locale);
   const emoji = isRenewal ? "🔄" : "🎉";
-  const headline = isRenewal ? "تم تجديد اشتراكك" : "تم تفعيل اشتراكك";
-  const subject = isRenewal
-    ? `✅ تم تجديد اشتراكك في Certify — باقة ${planName}`
-    : `✅ مرحباً بك في باقة ${planName} على Certify`;
+  const intervalLabel = (INTERVAL[en ? "en" : "ar"])[interval] ?? interval;
+
+  const headline = en
+    ? (isRenewal ? "Your subscription was renewed" : "Your subscription is active")
+    : (isRenewal ? "تم تجديد اشتراكك" : "تم تفعيل اشتراكك");
+  const subject = en
+    ? (isRenewal ? `✅ Your Certify subscription was renewed — ${planName} plan` : `✅ Welcome to the ${planName} plan on Certify`)
+    : (isRenewal ? `✅ تم تجديد اشتراكك في Certify — باقة ${planName}` : `✅ مرحباً بك في باقة ${planName} على Certify`);
+  const hi = en ? `Hi ${e(userName)} 👋` : `مرحباً ${e(userName)} 👋`;
+  const detailsHead = en ? "Subscription details" : "تفاصيل الاشتراك";
+  const lPlan = en ? "Plan" : "الباقة";
+  const lAmount = en ? "Amount" : "المبلغ";
+  const lGateway = en ? "Payment gateway" : "بوابة الدفع";
+  const lNext = en ? "Next renewal" : "التجديد القادم";
+  const cta = en ? "Go to dashboard" : "الذهاب للوحة التحكم";
 
   const content = `
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:44px;margin-bottom:10px;">${emoji}</div>
       <h1 style="margin:0 0 8px;font-size:20px;color:#111827;">${headline}</h1>
-      <p style="margin:0;font-size:14px;color:#6b7280;">مرحباً ${e(userName)} 👋</p>
+      <p style="margin:0;font-size:14px;color:#6b7280;">${hi}</p>
     </div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
       style="margin-bottom:28px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
       <tr><td colspan="2"
         style="padding:10px 14px;background:#f9fafb;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:0.5px;">
-        تفاصيل الاشتراك
+        ${detailsHead}
       </td></tr>
-      ${row("الباقة", e(planName))}
-      ${row("المبلغ", e(fmt(amount, currency)) + " / " + (INTERVAL_AR[interval] ?? interval))}
-      ${row("بوابة الدفع", e(gateway))}
-      ${row("التجديد القادم", fmtDate(periodEnd))}
+      ${row(lPlan, e(planName))}
+      ${row(lAmount, e(fmt(amount, currency)) + " / " + intervalLabel)}
+      ${row(lGateway, e(gateway))}
+      ${row(lNext, fmtDate(periodEnd, locale))}
     </table>
-    <div style="text-align:center;">${btn("الذهاب للوحة التحكم", webUrl + "/dashboard/billing")}</div>
+    <div style="text-align:center;">${btn(cta, webUrl + "/dashboard/billing")}</div>
   `;
 
-  return {
-    subject,
-    html: shell(content),
-    text: [
-      `مرحباً ${userName}،`,
-      `${headline} في باقة ${planName}.`,
-      `المبلغ: ${fmt(amount, currency)} / ${INTERVAL_AR[interval] ?? interval}`,
-      `بوابة الدفع: ${gateway}`,
-      `التجديد القادم: ${fmtDate(periodEnd)}`,
-      "",
-      webUrl + "/dashboard/billing",
-    ].join("\n"),
-  };
+  const text = (en
+    ? [`Hi ${userName},`, `${headline} on the ${planName} plan.`, `Amount: ${fmt(amount, currency)} / ${intervalLabel}`, `Payment gateway: ${gateway}`, `Next renewal: ${fmtDate(periodEnd, locale)}`, "", webUrl + "/dashboard/billing"]
+    : [`مرحباً ${userName}،`, `${headline} في باقة ${planName}.`, `المبلغ: ${fmt(amount, currency)} / ${intervalLabel}`, `بوابة الدفع: ${gateway}`, `التجديد القادم: ${fmtDate(periodEnd, locale)}`, "", webUrl + "/dashboard/billing"]
+  ).join("\n");
+
+  return { subject, html: shell(content, locale), text };
 }
 
-/**
- * Renewal reminder — for wallet users (Vodafone Cash / InstaPay / Fawry)
- * who need to renew manually since no card token is saved.
- */
-export function renewalReminderEmail({ userName, planName, daysLeft, periodEnd, webUrl }) {
-  const subject = `⏰ اشتراكك في Certify ينتهي خلال ${daysLeft} أيام — جدّده الآن`;
+/** Renewal reminder — wallet users who must renew manually (no saved card). */
+export function renewalReminderEmail({ userName, planName, daysLeft, periodEnd, webUrl, locale = "ar" }) {
+  const en = isEn(locale);
+  const subject = en
+    ? `⏰ Your Certify subscription expires in ${daysLeft} day(s) — renew now`
+    : `⏰ اشتراكك في Certify ينتهي خلال ${daysLeft} أيام — جدّده الآن`;
+  const hi = en ? `Hi ${e(userName)} 👋` : `مرحباً ${e(userName)} 👋`;
+  const title = en ? "Your subscription is about to expire" : "اشتراكك على وشك الانتهاء";
+  const whenEn = daysLeft === 1 ? "tomorrow" : `in ${daysLeft} days`;
+  const whenAr = daysLeft === 1 ? "غداً" : `خلال ${daysLeft} أيام`;
+  const notice = en
+    ? `Your <strong>${e(planName)}</strong> plan subscription will expire <strong>${whenEn}</strong> on <strong>${fmtDate(periodEnd, locale)}</strong>.`
+    : `اشتراكك في باقة <strong>${e(planName)}</strong> سينتهي <strong>${whenAr}</strong> بتاريخ <strong>${fmtDate(periodEnd, locale)}</strong>.`;
+  const body1 = en
+    ? "Your current payment method (Vodafone Cash / InstaPay / Fawry) doesn't support automatic renewal. To keep issuing certificates, please pay again before the subscription expires."
+    : "طريقة دفعك الحالية (فودافون كاش / إنستاباي / فوري) لا تدعم التجديد التلقائي. لمواصلة إصدار الشهادات يرجى الدفع مجدداً قبل انتهاء الاشتراك.";
+  const body2 = en
+    ? "You can also switch to a credit card to enable automatic renewal."
+    : "يمكنك أيضاً التحويل لبطاقة ائتمانية لتفعيل التجديد التلقائي.";
+  const cta = en ? "Renew now" : "جدّد الاشتراك الآن";
 
   const content = `
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:44px;margin-bottom:10px;">⏰</div>
-      <h1 style="margin:0 0 8px;font-size:20px;color:#111827;">اشتراكك على وشك الانتهاء</h1>
-      <p style="margin:0;font-size:14px;color:#6b7280;">مرحباً ${e(userName)} 👋</p>
+      <h1 style="margin:0 0 8px;font-size:20px;color:#111827;">${title}</h1>
+      <p style="margin:0;font-size:14px;color:#6b7280;">${hi}</p>
     </div>
     <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:16px 20px;margin-bottom:24px;text-align:center;">
-      <p style="margin:0;font-size:14px;color:#92400e;line-height:1.7;">
-        اشتراكك في باقة <strong>${e(planName)}</strong> سينتهي
-        <strong>${daysLeft === 1 ? "غداً" : `خلال ${daysLeft} أيام`}</strong>
-        بتاريخ <strong>${fmtDate(periodEnd)}</strong>.
-      </p>
+      <p style="margin:0;font-size:14px;color:#92400e;line-height:1.7;">${notice}</p>
     </div>
-    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 8px;">
-      طريقة دفعك الحالية (فودافون كاش / إنستاباي / فوري) لا تدعم التجديد
-      التلقائي. لمواصلة إصدار الشهادات يرجى الدفع مجدداً قبل انتهاء الاشتراك.
-    </p>
-    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
-      يمكنك أيضاً التحويل لبطاقة ائتمانية لتفعيل التجديد التلقائي.
-    </p>
-    <div style="text-align:center;">${btn("جدّد الاشتراك الآن", webUrl + "/dashboard/billing", "#d97706")}</div>
+    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 8px;">${body1}</p>
+    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">${body2}</p>
+    <div style="text-align:center;">${btn(cta, webUrl + "/dashboard/billing", "#d97706")}</div>
   `;
 
-  return {
-    subject,
-    html: shell(content),
-    text: [
-      `مرحباً ${userName}،`,
-      `اشتراكك في باقة ${planName} سينتهي خلال ${daysLeft} يوم (${fmtDate(periodEnd)}).`,
-      "يرجى التجديد يدوياً لأن طريقة دفعك لا تدعم التجديد التلقائي.",
-      "",
-      webUrl + "/dashboard/billing",
-    ].join("\n"),
-  };
+  const text = (en
+    ? [`Hi ${userName},`, `Your ${planName} plan subscription expires in ${daysLeft} day(s) (${fmtDate(periodEnd, locale)}).`, "Please renew manually — your payment method doesn't support auto-renewal.", "", webUrl + "/dashboard/billing"]
+    : [`مرحباً ${userName}،`, `اشتراكك في باقة ${planName} سينتهي خلال ${daysLeft} يوم (${fmtDate(periodEnd, locale)}).`, "يرجى التجديد يدوياً لأن طريقة دفعك لا تدعم التجديد التلقائي.", "", webUrl + "/dashboard/billing"]
+  ).join("\n");
+
+  return { subject, html: shell(content, locale), text };
 }
 
-/**
- * Payment failed — sent when auto-renewal charge fails (Tap or Paymob card).
- */
-export function paymentFailedEmail({ userName, planName, webUrl }) {
-  const subject = `⚠️ تعذّر تجديد اشتراكك في Certify — باقة ${planName}`;
+/** Payment failed — auto-renewal charge failed (Tap or Paymob card). */
+export function paymentFailedEmail({ userName, planName, webUrl, locale = "ar" }) {
+  const en = isEn(locale);
+  const subject = en
+    ? `⚠️ Couldn't renew your Certify subscription — ${planName} plan`
+    : `⚠️ تعذّر تجديد اشتراكك في Certify — باقة ${planName}`;
+  const hi = en ? `Hi ${e(userName)} 👋` : `مرحباً ${e(userName)} 👋`;
+  const title = en ? "Subscription renewal failed" : "تعذّر تجديد الاشتراك";
+  const notice = en
+    ? `We tried to renew your <strong>${e(planName)}</strong> plan subscription automatically, but the payment didn't go through.`
+    : `حاولنا تجديد اشتراكك في باقة <strong>${e(planName)}</strong> تلقائياً لكن الدفع لم ينجح.`;
+  const body = en
+    ? "To avoid an interruption to your service, please update your payment details or pay manually as soon as possible."
+    : "لتجنّب انقطاع خدمتك يرجى تحديث بيانات الدفع أو إجراء الدفع يدوياً في أقرب وقت.";
+  const cta = en ? "Update payment method" : "تحديث طريقة الدفع";
 
   const content = `
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:44px;margin-bottom:10px;">⚠️</div>
-      <h1 style="margin:0 0 8px;font-size:20px;color:#111827;">تعذّر تجديد الاشتراك</h1>
-      <p style="margin:0;font-size:14px;color:#6b7280;">مرحباً ${e(userName)} 👋</p>
+      <h1 style="margin:0 0 8px;font-size:20px;color:#111827;">${title}</h1>
+      <p style="margin:0;font-size:14px;color:#6b7280;">${hi}</p>
     </div>
     <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px 20px;margin-bottom:24px;text-align:center;">
-      <p style="margin:0;font-size:14px;color:#991b1b;line-height:1.7;">
-        حاولنا تجديد اشتراكك في باقة <strong>${e(planName)}</strong>
-        تلقائياً لكن الدفع لم ينجح.
-      </p>
+      <p style="margin:0;font-size:14px;color:#991b1b;line-height:1.7;">${notice}</p>
     </div>
-    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">
-      لتجنّب انقطاع خدمتك يرجى تحديث بيانات الدفع أو إجراء الدفع يدوياً
-      في أقرب وقت.
-    </p>
-    <div style="text-align:center;">${btn("تحديث طريقة الدفع", webUrl + "/dashboard/billing", "#dc2626")}</div>
+    <p style="font-size:14px;color:#374151;line-height:1.8;margin:0 0 24px;">${body}</p>
+    <div style="text-align:center;">${btn(cta, webUrl + "/dashboard/billing", "#dc2626")}</div>
   `;
 
-  return {
-    subject,
-    html: shell(content),
-    text: [
-      `مرحباً ${userName}،`,
-      `تعذّر تجديد اشتراكك في باقة ${planName} تلقائياً.`,
-      "يرجى تحديث طريقة الدفع أو الدفع يدوياً.",
-      "",
-      webUrl + "/dashboard/billing",
-    ].join("\n"),
-  };
+  const text = (en
+    ? [`Hi ${userName},`, `We couldn't renew your ${planName} plan subscription automatically.`, "Please update your payment method or pay manually.", "", webUrl + "/dashboard/billing"]
+    : [`مرحباً ${userName}،`, `تعذّر تجديد اشتراكك في باقة ${planName} تلقائياً.`, "يرجى تحديث طريقة الدفع أو الدفع يدوياً.", "", webUrl + "/dashboard/billing"]
+  ).join("\n");
+
+  return { subject, html: shell(content, locale), text };
 }

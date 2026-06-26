@@ -214,7 +214,7 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
 > **تنبيه schema:** أُضيف `OrganizationMember.monthlyLimit` و`Certificate.issuedById`. شغّل
 > `npx prisma db push` على بيئة النشر بعد سحب هذا التحديث.
 
-## التدويل i18n (عربي/إنجليزي + RTL/LTR) — قيد التنفيذ المرحلي
+## التدويل i18n (عربي/إنجليزي + RTL/LTR) — الواجهة كاملة + إيميلات ثنائية
 
 بنية i18n قائمة على **كوكي + Root Layout ديناميكي + Context عميل** (بلا إعادة هيكلة المسارات
 لـ`app/[lang]` — غير عملي لتطبيق توجّهه لغة واحدة افتراضية مع مبدّل):
@@ -225,11 +225,27 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
   `t` يحلّ مسار النقطة `nav.overview`). `setLocale` يكتب الكوكي + يضبط `document.documentElement
   .lang/dir` + `router.refresh()`. `app/layout.tsx` (async) يقرأ الكوكي عبر `cookies()` ويضبط
   `<html lang dir>` ويلفّ بالموفّر. `components/LanguageSwitcher.tsx` يبدّل ar↔en.
-- **المنجز (المرحلة 1):** البنية + المبدّل + تبديل RTL/LTR + ترجمة **القشرة العامة**: `SiteHeader`/
-  `SiteFooter` + تنقّل لوحة التحكم وبطاقة الباقة وأزرار الهيدر. (أُزيل `dir="rtl"` المثبّت من
-  `dashboard/layout` والجذر — صار من `<html>`.)
-- **المتبقّي (مراحل تالية):** أجسام صفحات لوحة التحكم، صفحات auth/marketing، الأدمن، الإيميلات،
-  ورسائل الخلفية. تُضاف مفاتيحها تدريجياً إلى `ar.ts`/`en.ts` وتُستبدل النصوص بـ`t(...)`.
+- **المنجز — الواجهة بالكامل:** القشرة العامة (`SiteHeader`/`SiteFooter`/المبدّل) + **التسويق**
+  (`page`/`pricing`) + **auth/verify** + **لوحة التحكم كاملةً** (overview/certificates+تفاصيل/
+  templates+المحرر+المخصِّص/bulk+تفاصيل الدفعة/members/developers/billing/settings/support) +
+  **مكوّناتها** (OnboardingChecklist/AnalyticsPanel/IssueCertificateModal/Revoke+Delete modals/
+  GatewayPicker/SupportContactForm) + **الدعم العام** (`/support` + تذكرة الزائر) + **الأدمن** (7
+  صفحات: layout/overview/organizations+تفاصيل/payment-gateways/support/security) + **القانوني**
+  (terms/privacy/refund عبر `LegalDoc` بخاصية `disclaimer`) + **المساعدة** (`/help`). كل النصوص في
+  `ar.ts`/`en.ts`؛ التواريخ عبر `locale` بـ`numberingSystem:"latn"`؛ الفئات الفيزيائية صارت منطقية
+  (`text-start`/`end-*`/`ps-*`) لتنقلب مع الاتجاه؛ أُزيل كل `dir="rtl"` المثبّت (الاتجاه من `<html>`).
+- **الإيميلات ثنائية اللغة (الخلفية):** كل قوالب البريد تقبل `locale` وتتفرّع (عربي افتراضي، إنجليزي
+  عند `"en"`، وأي قيمة أخرى ترجع للعربي). مساعد مشترك `services/email/emailI18n.js`
+  (`isEn`/`shell(content,locale)`/`btn`/`e`). **مصدر اللغة `User.locale`** (موجود، `@default("ar")`):
+  يُلتقط عند التسجيل (الواجهة ترسله من كوكي اللغة في `register`، والـschema يقبل `locale`)، ويُحدَّث
+  فوراً عند تبديل اللغة لمستخدم مسجَّل عبر `POST /api/auth/locale` (`setLocaleHandler`→`updateLocale`)
+  الذي يستدعيه `LocaleProvider.setLocale` بـ`saveLocale` (best-effort). التوجيه: OTP/استعادة كلمة
+  المرور = `user.locale`؛ الفوترة = `org.owner.locale`؛ شهادة الإصدار = **لغة الأكاديمية**
+  (`org.owner.locale`، فالمتدرّب بلا حساب)؛ دعم المستخدم المسجَّل = `ticket.user.locale`. تبقى
+  **عربيّةً**: إشعارات الأدمن (المنصّة عربية) وإيصالات الزائر (لا لغة مخزّنة للزائر). اختبار
+  `test/email-i18n.test.js` يثبّت اختيار اللغة/الاتجاه والرجوع الافتراضي.
+- **المتبقّي (اختياري):** جعل رسائل أخطاء الـAPI ثنائية اللغة (تفاوض لغة لكل طلب) — مؤجّل؛ معظمها
+  يظهر عبر fallback إنجليزي في الواجهة. وإيصالات الزائر/إشعارات الأدمن تبقى عربية بقرار.
 
 ## العلامة البيضاء (White-label — إخفاء علامة Certify)
 

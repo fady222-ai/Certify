@@ -10,6 +10,7 @@ import {
   forgotPasswordHandler,
   resetPasswordHandler,
   meHandler,
+  setLocaleHandler,
   mfaVerifyHandler,
   mfaSetupHandler,
   mfaEnableHandler,
@@ -138,6 +139,7 @@ apiRouter.post("/support/public/tickets/:token/messages", replyGuestTicket);
 
 // --- Protected ---
 apiRouter.get("/auth/me", requireAuth, meHandler);
+apiRouter.post("/auth/locale", requireAuth, setLocaleHandler);
 apiRouter.post("/auth/logout", requireAuth, logoutHandler);
 apiRouter.post("/auth/mfa/setup", requireAuth, mfaSetupHandler);
 apiRouter.post("/auth/mfa/enable", requireAuth, mfaEnableHandler);
