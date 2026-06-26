@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import {
   listMyTickets, createTicket, getMyTicket, replyTicket,
-  STATUS_LABELS, type SupportTicket, type TicketDetail, type TicketStatus,
+  type SupportTicket, type TicketDetail, type TicketStatus,
 } from "@/lib/support";
+import { useI18n, useT } from "@/components/LocaleProvider";
 import { IconMail, IconArrow, IconCheck } from "@/components/icons";
 
 const STATUS_STYLE: Record<TicketStatus, string> = {
@@ -15,19 +16,19 @@ const STATUS_STYLE: Record<TicketStatus, string> = {
 };
 
 function StatusBadge({ status }: { status: TicketStatus }) {
+  const tr = useT();
   return (
     <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${STATUS_STYLE[status]}`}>
-      {STATUS_LABELS[status]}
+      {status === "closed" ? tr("support.statusClosed") : tr("support.statusOpen")}
     </span>
   );
 }
 
-function fmt(d: string) {
-  return new Date(d).toLocaleString("ar", { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" });
-}
-
 export default function SupportPage() {
   const router = useRouter();
+  const { t, locale } = useI18n();
+  const fmt = (d: string) =>
+    new Date(d).toLocaleString(locale, { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" });
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<TicketDetail | null>(null);
@@ -76,7 +77,7 @@ export default function SupportPage() {
     try {
       await createTicket(subject.trim(), body.trim());
       setSubject(""); setBody(""); setCreating(false);
-      flash("تم إرسال تذكرتك. سيرد فريق الدعم قريبا.");
+      flash(t("support.sent"));
       await load();
     } catch (e) {
       setError((e as Error).message);
@@ -106,13 +107,13 @@ export default function SupportPage() {
       <div className="mb-6 flex items-center justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-extrabold text-ink">
-            <IconMail className="h-6 w-6 text-brand-600" /> الدعم الفني
+            <IconMail className="h-6 w-6 text-brand-600" /> {t("support.title")}
           </h1>
-          <p className="mt-1 text-sm text-ink-soft">افتح تذكرة وسيتواصل معك فريق الدعم.</p>
+          <p className="mt-1 text-sm text-ink-soft">{t("support.subtitle")}</p>
         </div>
         {!selected && (
           <button className="btn-primary" onClick={() => setCreating((v) => !v)}>
-            {creating ? "إلغاء" : "تذكرة جديدة"}
+            {creating ? t("support.cancel") : t("support.newTicket")}
           </button>
         )}
       </div>
@@ -128,7 +129,7 @@ export default function SupportPage() {
       {selected ? (
         <div className="card p-5">
           <button onClick={() => setSelected(null)} className="mb-4 inline-flex items-center gap-1 text-sm font-bold text-brand-700">
-            <IconArrow className="h-4 w-4 rotate-180" /> رجوع للقائمة
+            <IconArrow className="h-4 w-4 rotate-180" /> {t("support.backToList")}
           </button>
           <div className="mb-4 flex items-center justify-between gap-3 border-b pb-4">
             <h2 className="text-lg font-extrabold text-ink">{selected.ticket.subject}</h2>
@@ -141,7 +142,7 @@ export default function SupportPage() {
                 <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   m.author_role === "admin" ? "bg-surface-2 text-ink" : "bg-brand-600 text-white"}`}>
                   <p className="mb-1 text-[11px] font-bold opacity-70">
-                    {m.author_role === "admin" ? "فريق الدعم" : "أنت"} · {fmt(m.created_at)}
+                    {m.author_role === "admin" ? t("support.admin") : t("support.you")} · {fmt(m.created_at)}
                   </p>
                   <p className="whitespace-pre-wrap">{m.body}</p>
                 </div>
@@ -152,23 +153,23 @@ export default function SupportPage() {
           {selected.ticket.status !== "closed" ? (
             <form onSubmit={submitReply} className="mt-5 border-t pt-4">
               <textarea
-                className="input min-h-24" placeholder="اكتب ردك…" value={reply}
+                className="input min-h-24" placeholder={t("support.replyPh")} value={reply}
                 onChange={(e) => setReply(e.target.value)} required maxLength={5000}
               />
               <div className="mt-3 flex items-center justify-end gap-3">
-                <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الرد</button>
+                <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">{t("support.sendReply")}</button>
               </div>
             </form>
           ) : (
             <div className="mt-5 flex flex-col items-start gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="flex items-center gap-1.5 text-sm font-bold text-ink-muted">
-                <IconCheck className="h-4 w-4" /> هذه التذكرة مغلقة. لمتابعة الأمر افتح تذكرة جديدة.
+                <IconCheck className="h-4 w-4" /> {t("support.closedNote")}
               </p>
               <button
                 className="btn-primary"
                 onClick={() => { setSelected(null); setCreating(true); }}
               >
-                تذكرة جديدة
+                {t("support.newTicket")}
               </button>
             </div>
           )}
@@ -179,15 +180,15 @@ export default function SupportPage() {
           {creating && (
             <form onSubmit={submitNew} className="card mb-6 space-y-3 p-5">
               <input
-                className="input" placeholder="الموضوع" value={subject}
+                className="input" placeholder={t("support.subjectPh")} value={subject}
                 onChange={(e) => setSubject(e.target.value)} required minLength={3} maxLength={200}
               />
               <textarea
-                className="input min-h-32" placeholder="صف مشكلتك أو سؤالك بالتفصيل…" value={body}
+                className="input min-h-32" placeholder={t("support.bodyPh")} value={body}
                 onChange={(e) => setBody(e.target.value)} required minLength={5} maxLength={5000}
               />
               <div className="flex justify-end">
-                <button type="submit" disabled={busy} className="btn-primary">إرسال</button>
+                <button type="submit" disabled={busy} className="btn-primary">{t("support.send")}</button>
               </div>
             </form>
           )}
@@ -200,21 +201,21 @@ export default function SupportPage() {
           ) : tickets.length === 0 ? (
             <div className="card p-10 text-center text-ink-soft">
               <IconMail className="mx-auto mb-3 h-10 w-10 text-ink-muted" />
-              <p className="font-bold">لا توجد تذاكر بعد</p>
-              <p className="mt-1 text-sm">افتح تذكرة جديدة وسيرد عليك فريق الدعم.</p>
+              <p className="font-bold">{t("support.noTicketsTitle")}</p>
+              <p className="mt-1 text-sm">{t("support.noTicketsBody")}</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {tickets.map((t) => (
+              {tickets.map((tk) => (
                 <button
-                  key={t.id} onClick={() => openTicket(t.id)}
-                  className="card card-lift flex w-full items-center justify-between gap-3 p-4 text-right"
+                  key={tk.id} onClick={() => openTicket(tk.id)}
+                  className="card card-lift flex w-full items-center justify-between gap-3 p-4 text-start"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-bold text-ink">{t.subject}</p>
-                    <p className="mt-0.5 text-xs text-ink-muted">آخر تحديث: {fmt(t.last_message_at)}</p>
+                    <p className="truncate font-bold text-ink">{tk.subject}</p>
+                    <p className="mt-0.5 text-xs text-ink-muted">{t("support.lastUpdate")} {fmt(tk.last_message_at)}</p>
                   </div>
-                  <StatusBadge status={t.status} />
+                  <StatusBadge status={tk.status} />
                 </button>
               ))}
             </div>

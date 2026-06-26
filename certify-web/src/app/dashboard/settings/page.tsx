@@ -8,12 +8,14 @@ import {
   getOrganization, updateOrganization, uploadBranding, deleteBranding,
   type Organization,
 } from "@/lib/organization";
+import { useT } from "@/components/LocaleProvider";
 import { IconBadge, IconTrash, IconUpload } from "@/components/icons";
 
 const PRESET_COLORS = ["#4f46e5", "#0ea5e9", "#059669", "#d97706", "#dc2626", "#7c3aed", "#db2777", "#0f172a"];
 
 export default function SettingsPage() {
   const router = useRouter();
+  const t = useT();
   const [org, setOrg] = useState<Organization | null>(null);
   const [name, setName] = useState("");
   const [primaryColor, setPrimaryColor] = useState("#4f46e5");
@@ -52,9 +54,9 @@ export default function SettingsPage() {
       const updated = await updateOrganization({ primaryColor });
       setOrg(updated);
       await refreshProfile();
-      setNotice("تم حفظ التغييرات.");
+      setNotice(t("settings.saved"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذر الحفظ.");
+      setError(err instanceof Error ? err.message : t("settings.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -68,9 +70,9 @@ export default function SettingsPage() {
       const updated = await uploadBranding(kind, file);
       setOrg(updated);
       await refreshProfile();
-      setNotice(kind === "logo" ? "تم تحديث الشعار." : "تم تحديث التوقيع.");
+      setNotice(kind === "logo" ? t("settings.logoUpdated") : t("settings.sigUpdated"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذر الرفع.");
+      setError(err instanceof Error ? err.message : t("settings.uploadFailed"));
     }
   }
 
@@ -80,15 +82,15 @@ export default function SettingsPage() {
       setOrg(updated);
       await refreshProfile();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "تعذر الحذف.");
+      setError(err instanceof Error ? err.message : t("settings.deleteFailed"));
     }
   }
 
   return (
       <main className="mx-auto max-w-3xl space-y-6 p-6">
         <div>
-          <h1 className="font-display text-2xl font-black text-ink">هوية الأكاديمية</h1>
-          <p className="mt-1 text-sm text-ink-soft">حدد هوية أكاديميتك — تظهر على كل شهادة تصدرها.</p>
+          <h1 className="font-display text-2xl font-black text-ink">{t("settings.title")}</h1>
+          <p className="mt-1 text-sm text-ink-soft">{t("settings.subtitle")}</p>
         </div>
 
         {notice && (
@@ -103,19 +105,19 @@ export default function SettingsPage() {
         )}
 
         {loading ? (
-          <p className="py-12 text-center text-sm text-ink-muted">جار التحميل…</p>
+          <p className="py-12 text-center text-sm text-ink-muted">{t("settings.loading")}</p>
         ) : (
           <>
             {/* Details */}
             <form onSubmit={saveDetails} className="card space-y-5 p-6">
               <label className="block">
-                <span className="mb-1.5 block text-sm font-bold text-ink">اسم المنظمة</span>
+                <span className="mb-1.5 block text-sm font-bold text-ink">{t("settings.orgName")}</span>
                 <input value={name} readOnly disabled className="input bg-surface-2/60 text-ink-soft cursor-not-allowed" />
-                <p className="mt-1 text-xs text-ink-muted">اسم الأكاديمية ثابت ولا يمكن تغييره بعد التسجيل.</p>
+                <p className="mt-1 text-xs text-ink-muted">{t("settings.orgNameHint")}</p>
               </label>
 
               <div>
-                <span className="mb-2 block text-sm font-bold text-ink">اللون الأساسي</span>
+                <span className="mb-2 block text-sm font-bold text-ink">{t("settings.primaryColor")}</span>
                 <div className="flex flex-wrap items-center gap-2.5">
                   {PRESET_COLORS.map((c) => (
                     <button key={c} type="button" onClick={() => setPrimaryColor(c)}
@@ -133,15 +135,15 @@ export default function SettingsPage() {
               </div>
 
               <button type="submit" disabled={saving} className="btn-primary disabled:opacity-60">
-                {saving ? "جار الحفظ…" : "حفظ التغييرات"}
+                {saving ? t("settings.saving") : t("settings.saveChanges")}
               </button>
             </form>
 
             {/* Branding assets */}
             <div className="grid gap-5 sm:grid-cols-2">
               <AssetCard
-                title="الشعار"
-                hint="PNG شفاف يفضل · حتى 2MB"
+                title={t("settings.logo")}
+                hint={t("settings.logoHint")}
                 url={org?.logo_url ?? null}
                 inputRef={logoRef}
                 onPick={(f) => onUpload("logo", f)}
@@ -149,8 +151,8 @@ export default function SettingsPage() {
                 bg="#ffffff"
               />
               <AssetCard
-                title="التوقيع"
-                hint="صورة توقيع المصدر · حتى 2MB"
+                title={t("settings.signature")}
+                hint={t("settings.signatureHint")}
                 url={org?.signature_url ?? null}
                 inputRef={sigRef}
                 onPick={(f) => onUpload("signature", f)}
@@ -161,7 +163,7 @@ export default function SettingsPage() {
 
             {/* Live preview swatch */}
             <div className="card p-6">
-              <p className="mb-3 text-sm font-bold text-ink-soft">معاينة الهوية</p>
+              <p className="mb-3 text-sm font-bold text-ink-soft">{t("settings.previewTitle")}</p>
               <div className="overflow-hidden rounded-xl border" style={{ borderColor: `${primaryColor}55` }}>
                 <div className="flex items-center gap-3 px-5 py-4 text-white" style={{ background: primaryColor }}>
                   {org?.logo_url ? (
@@ -171,12 +173,12 @@ export default function SettingsPage() {
                       <IconBadge className="h-5 w-5" />
                     </span>
                   )}
-                  <span className="font-display font-extrabold">{name || "اسم المنظمة"}</span>
+                  <span className="font-display font-extrabold">{name || t("settings.orgNamePlaceholder")}</span>
                 </div>
                 <div className="bg-white px-5 py-4 text-center">
-                  <p className="text-xs text-ink-muted">شهادة إتمام</p>
+                  <p className="text-xs text-ink-muted">{t("settings.certType")}</p>
                   <p className="mt-1 font-display text-lg font-black" style={{ color: primaryColor }}>
-                    اسم المتدرب
+                    {t("settings.traineeName")}
                   </p>
                 </div>
               </div>
@@ -198,12 +200,13 @@ function AssetCard({
   onRemove: () => void;
   bg: string;
 }) {
+  const t = useT();
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between">
         <h3 className="font-extrabold text-ink">{title}</h3>
         {url && (
-          <button onClick={onRemove} className="rounded-lg p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600" title="حذف">
+          <button onClick={onRemove} className="rounded-lg p-1.5 text-red-400 hover:bg-red-50 hover:text-red-600" title={t("settings.deleteTitle")}>
             <IconTrash className="h-4 w-4" />
           </button>
         )}
@@ -223,7 +226,7 @@ function AssetCard({
         ) : (
           <span className="flex flex-col items-center gap-1.5 text-ink-muted">
             <IconUpload className="h-6 w-6" />
-            <span className="text-xs font-bold">رفع صورة</span>
+            <span className="text-xs font-bold">{t("settings.uploadImage")}</span>
           </span>
         )}
       </div>
