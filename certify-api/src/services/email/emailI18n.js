@@ -1,21 +1,18 @@
-// Shared helpers for bilingual (Arabic/English) transactional emails.
-// Recipient locale is threaded from User.locale (or the request locale at
-// registration). Anything other than "en" falls back to Arabic.
+// Shared helpers for transactional emails.
 //
-// Global override (product decision): all outgoing system emails are forced to
-// one language via EMAIL_LOCALE. Default "en" — every email (OTP, password
-// reset, billing, certificate, support) goes out in English regardless of the
-// recipient's stored locale. Set EMAIL_LOCALE=ar to force Arabic, or
-// EMAIL_LOCALE=auto to honor each recipient's own locale instead.
-/** Resolve the effective language for an email given the recipient's locale. */
-export function effLocale(locale) {
-  const forced = (process.env.EMAIL_LOCALE || "en").toLowerCase();
-  if (forced === "auto") return locale === "en" ? "en" : "ar";
-  return forced === "en" ? "en" : "ar";
+// Product decision: every outgoing system email is sent in ENGLISH — account
+// activation (OTP), password reset, billing, certificate, and support. The
+// templates keep their Arabic branches (so the language could be revisited
+// later without rewriting them), but email language is fixed to English here,
+// regardless of the recipient's stored locale.
+
+/** The language every outgoing email is rendered in. */
+export function effLocale() {
+  return "en";
 }
 
-export function isEn(locale) {
-  return effLocale(locale) === "en";
+export function isEn() {
+  return true;
 }
 
 /** HTML-escape (shared by all template files). */
