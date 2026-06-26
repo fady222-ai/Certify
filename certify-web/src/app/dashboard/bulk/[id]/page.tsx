@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getToken, authedFetch } from "@/lib/auth";
+import { useI18n, useT } from "@/components/LocaleProvider";
 import { IconCheck, IconArrow } from "@/components/icons";
 
 type BatchDetail = {
@@ -28,6 +29,7 @@ type BatchDetail = {
 
 export default function BatchDetailPage() {
   const router = useRouter();
+  const { t, locale } = useI18n();
   const { id } = useParams<{ id: string }>();
   const [batch, setBatch] = useState<BatchDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function BatchDetailPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-ink-muted">جار التحميل…</p>
+        <p className="text-sm text-ink-muted">{t("batch.loading")}</p>
       </div>
     );
   }
@@ -71,7 +73,7 @@ export default function BatchDetailPage() {
   return (
       <main className="mx-auto max-w-4xl space-y-6 p-6">
         <Link href="/dashboard/bulk" className="inline-flex items-center gap-1 text-sm font-bold text-ink-soft hover:text-brand-700">
-          ← رجوع للإصدار الجماعي
+          ← {t("batch.back")}
         </Link>
 
         {/* Summary */}
@@ -80,9 +82,9 @@ export default function BatchDetailPage() {
             <div>
               <h1 className="font-display text-2xl font-black text-ink">{batch.name}</h1>
               <p className="mt-1 text-sm text-ink-muted">
-                {new Date(batch.createdAt).toLocaleDateString("ar", { numberingSystem: "latn", dateStyle: "long" })}
+                {new Date(batch.createdAt).toLocaleDateString(locale, { numberingSystem: "latn", dateStyle: "long" })}
                 {batch.completedAt && (
-                  <> · اكتملت {new Date(batch.completedAt).toLocaleTimeString("ar-SA", { timeStyle: "short" })}</>
+                  <> · {t("batch.completedAt", { time: new Date(batch.completedAt).toLocaleTimeString(locale, { numberingSystem: "latn", timeStyle: "short" }) })}</>
                 )}
               </p>
             </div>
@@ -92,7 +94,7 @@ export default function BatchDetailPage() {
           {/* Progress bar */}
           <div className="mt-5">
             <div className="mb-2 flex justify-between text-sm">
-              <span className="font-bold text-ink">{batch.successCount} / {batch.totalCount} شهادة</span>
+              <span className="font-bold text-ink">{t("batch.progress", { success: batch.successCount, total: batch.totalCount })}</span>
               <span className="text-ink-muted">{pct}%</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-surface-3">
@@ -103,7 +105,7 @@ export default function BatchDetailPage() {
             </div>
             {batch.failedCount > 0 && (
               <p className="mt-2 text-xs font-bold text-red-500">
-                {batch.failedCount} شهادة فشلت
+                {t("batch.failedCount", { n: batch.failedCount })}
               </p>
             )}
           </div>
@@ -112,10 +114,10 @@ export default function BatchDetailPage() {
         {/* Certificate list */}
         <div className="card overflow-hidden">
           <div className="border-b px-6 py-4">
-            <h2 className="font-display text-lg font-extrabold text-ink">الشهادات الصادرة</h2>
+            <h2 className="font-display text-lg font-extrabold text-ink">{t("batch.issuedCerts")}</h2>
           </div>
           {batch.certificates.length === 0 ? (
-            <p className="px-6 py-10 text-center text-sm text-ink-muted">لم تصدر شهادات بعد…</p>
+            <p className="px-6 py-10 text-center text-sm text-ink-muted">{t("batch.noneIssued")}</p>
           ) : (
             <div className="divide-y">
               {batch.certificates.map((c) => (
@@ -126,17 +128,17 @@ export default function BatchDetailPage() {
                     </span>
                     <div>
                       <p className="font-bold text-ink">{c.recipientName}</p>
-                      <p className="text-xs text-ink-muted">{c.courseName ?? "—"}</p>
+                      <p className="text-xs text-ink-muted">{c.courseName ?? t("batch.dash")}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="hidden font-mono text-xs text-ink-muted sm:inline">{c.verificationCode}</span>
                     <span className="flex items-center gap-1 rounded-full bg-verify-50 px-2.5 py-0.5 text-xs font-bold text-verify-700">
-                      <IconCheck className="h-3 w-3" /> نشطة
+                      <IconCheck className="h-3 w-3" /> {t("batch.active")}
                     </span>
                     <Link href={`/verify/${c.verificationCode}`} target="_blank"
                       className="text-sm font-bold text-brand-700 hover:underline">
-                      تحقق <IconArrow className="inline h-3.5 w-3.5" />
+                      {t("batch.verify")} <IconArrow className="inline h-3.5 w-3.5" />
                     </Link>
                   </div>
                 </div>
@@ -149,21 +151,22 @@ export default function BatchDetailPage() {
 }
 
 function StatusBadge({ status }: { status: string }) {
+  const t = useT();
   if (status === "completed") {
     return (
       <span className="flex items-center gap-1.5 rounded-full bg-verify-50 px-3 py-1 text-sm font-bold text-verify-700">
-        <IconCheck className="h-4 w-4" /> مكتملة
+        <IconCheck className="h-4 w-4" /> {t("batch.statusCompleted")}
       </span>
     );
   }
   if (status === "processing") {
     return (
       <span className="rounded-full bg-gold-50 px-3 py-1 text-sm font-bold text-gold-700 animate-pulse">
-        جار المعالجة…
+        {t("batch.statusProcessing")}
       </span>
     );
   }
   return (
-    <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-bold text-red-600">فشلت</span>
+    <span className="rounded-full bg-red-50 px-3 py-1 text-sm font-bold text-red-600">{t("batch.statusFailed")}</span>
   );
 }
