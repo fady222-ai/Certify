@@ -1,52 +1,25 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { LegalDoc, type LegalSection } from "@/components/LegalDoc";
+import { LegalDoc } from "@/components/LegalDoc";
+import { getDict, normalizeLocale, LOCALE_COOKIE } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "سياسة الاسترداد | Certify",
-  description: "سياسة الإلغاء واسترداد المبالغ لاشتراكات منصة Certify.",
-};
+async function dict() {
+  return getDict(normalizeLocale((await cookies()).get(LOCALE_COOKIE)?.value)).legal;
+}
 
-const sections: LegalSection[] = [
-  {
-    h: "١. الباقة المجانية",
-    p: [
-      "الباقة المجانية لا تتطلب دفعا، ويمكنك تجربتها دون أي التزام مالي قبل الترقية.",
-    ],
-  },
-  {
-    h: "٢. الاشتراكات الشهرية",
-    p: [
-      "تحصل الاشتراكات الشهرية مقدما عن كل دورة فوترة. يمكنك إلغاء التجديد في أي وقت من صفحة «الباقة والفوترة»، ويستمر اشتراكك فعالا حتى نهاية الدورة المدفوعة الحالية ثم لا يجدد.",
-      "لا تسترد المبالغ عن الجزء المتبقي من شهر بدأ بالفعل، إلا في الحالات التي يفرضها القانون.",
-    ],
-  },
-  {
-    h: "٣. الاشتراكات السنوية",
-    p: [
-      "للاشتراكات السنوية، يمكنك طلب استرداد متناسب عن الأشهر الكاملة غير المستخدمة إذا قدم الطلب خلال ١٤ يوما من الدفع، ما لم تكن قد استهلكت حصة كبيرة من الباقة.",
-    ],
-  },
-  {
-    h: "٤. حالات الخطأ أو الخصم المزدوج",
-    p: [
-      "في حال حدوث خصم مزدوج أو خطأ تقني في الفوترة، تواصل معنا وسنراجع الحالة ونعيد المبلغ المخصوم خطأ بالكامل.",
-    ],
-  },
-  {
-    h: "٥. كيفية طلب الاسترداد",
-    p: [
-      "أرسل طلبك عبر صفحة الدعم من بريد الحساب نفسه، مع توضيح سبب الطلب ورقم العملية إن وجد. نسعى للرد خلال أيام عمل قليلة، وتعاد المبالغ المستحقة عبر بوابة الدفع نفسها التي استخدمت في الشراء.",
-    ],
-  },
-];
+export async function generateMetadata(): Promise<Metadata> {
+  const d = (await dict()).refund;
+  return { title: d.metaTitle, description: d.metaDesc };
+}
 
-export default function RefundPage() {
+export default async function RefundPage() {
+  const d = await dict();
   return (
     <>
       <SiteHeader />
-      <LegalDoc title="سياسة الاسترداد" chip="قانوني" sections={sections} />
+      <LegalDoc title={d.refund.title} chip={d.chip} sections={d.refund.sections} disclaimer={d.disclaimer} />
       <SiteFooter />
     </>
   );

@@ -1,75 +1,25 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { LegalDoc, type LegalSection } from "@/components/LegalDoc";
+import { LegalDoc } from "@/components/LegalDoc";
+import { getDict, normalizeLocale, LOCALE_COOKIE } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "شروط الاستخدام | Certify",
-  description: "شروط وأحكام استخدام منصة Certify لإصدار الشهادات الرقمية والتحقق منها.",
-};
+async function dict() {
+  return getDict(normalizeLocale((await cookies()).get(LOCALE_COOKIE)?.value)).legal;
+}
 
-const sections: LegalSection[] = [
-  {
-    h: "١. قبول الشروط",
-    p: [
-      "باستخدامك منصة Certify («المنصة» أو «الخدمة») فإنك توافق على هذه الشروط بالكامل. إن كنت تستخدم المنصة نيابة عن مؤسسة، فأنت تقر بأنك مخول بإلزامها بهذه الشروط.",
-      "إن لم توافق على أي بند، يرجى التوقف عن استخدام الخدمة.",
-    ],
-  },
-  {
-    h: "٢. وصف الخدمة",
-    p: [
-      "توفر Certify أدوات لإصدار شهادات رقمية احترافية، وإدارتها، وتمكين التحقق العام منها عبر رمز فريد وبصمة رقمية مشفرة.",
-      "نسعى لإتاحة الخدمة دون انقطاع، لكننا لا نضمن خلوها التام من الأعطال، ويجوز لنا تعديل الميزات أو إيقافها مع إشعار معقول.",
-    ],
-  },
-  {
-    h: "٣. الحساب والمسؤولية",
-    p: [
-      "أنت مسؤول عن سرية بيانات دخولك وعن كل نشاط يجري عبر حسابك.",
-      "تتعهد بألا تصدر شهادات مزورة أو مضللة، وبأن تكون البيانات التي تدخلها صحيحة ومملوكة لك أو مرخصة لك باستخدامها.",
-    ],
-  },
-  {
-    h: "٤. الاشتراكات والدفع",
-    p: [
-      "تتوفر باقة مجانية وباقات مدفوعة تحصل عبر بوابات دفع خارجية (Stripe / Tap / Paymob). تجدد الاشتراكات المدفوعة تلقائيا حتى الإلغاء.",
-      "الأسعار بالدولار الأمريكي وقد تتغير مع إشعار مسبق. راجع «سياسة الاسترداد» لتفاصيل الإلغاء والاسترجاع.",
-    ],
-  },
-  {
-    h: "٥. الاستخدام المقبول",
-    p: [
-      "يمنع استخدام المنصة لأي غرض غير قانوني، أو لانتهاك حقوق الغير، أو لمحاولة اختراق الأنظمة أو تجاوز حدود الباقة بطرق احتيالية.",
-      "نحتفظ بحق تعليق أو إنهاء أي حساب يخالف هذه الشروط دون إشعار مسبق عند الضرورة.",
-    ],
-  },
-  {
-    h: "٦. الملكية الفكرية",
-    p: [
-      "تظل ملكية المنصة وبرمجياتها وعلامتها التجارية لـ Certify. أما محتوى الشهادات التي تصدرها (الأسماء، الشعارات، التصاميم الخاصة بك) فيبقى ملكا لك.",
-    ],
-  },
-  {
-    h: "٧. إخلاء المسؤولية وحدها",
-    p: [
-      "تقدم الخدمة «كما هي». لا نتحمل مسؤولية أي أضرار غير مباشرة أو تبعية ناتجة عن استخدام المنصة، وبما لا يخالف القوانين السارية.",
-    ],
-  },
-  {
-    h: "٨. تعديل الشروط والتواصل",
-    p: [
-      "قد نحدث هذه الشروط من حين لآخر، ويسري التعديل من تاريخ نشره على هذه الصفحة. استمرارك في الاستخدام يعني قبولك النسخة المحدثة.",
-      "للاستفسارات القانونية تواصل معنا عبر صفحة الدعم.",
-    ],
-  },
-];
+export async function generateMetadata(): Promise<Metadata> {
+  const d = (await dict()).terms;
+  return { title: d.metaTitle, description: d.metaDesc };
+}
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const d = await dict();
   return (
     <>
       <SiteHeader />
-      <LegalDoc title="شروط الاستخدام" chip="قانوني" sections={sections} />
+      <LegalDoc title={d.terms.title} chip={d.chip} sections={d.terms.sections} disclaimer={d.disclaimer} />
       <SiteFooter />
     </>
   );

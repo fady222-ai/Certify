@@ -8,11 +8,13 @@ export function LegalDoc({
   chip,
   sections,
   intro,
+  disclaimer,
 }: {
   title: string;
   chip: string;
   sections: LegalSection[];
   intro?: string;
+  disclaimer: string;
 }) {
   return (
     <main className="mesh-bg flex-1">
@@ -36,8 +38,7 @@ export function LegalDoc({
         </article>
 
         <p className="mt-12 rounded-xl bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-700 ring-1 ring-amber-100">
-          هذا المستند نموذج عام لأغراض المعلومات ولا يعد استشارة قانونية — ينصح بمراجعته
-          مع مستشار قانوني قبل الاعتماد النهائي بما يناسب ولايتك القضائية.
+          {disclaimer}
         </p>
       </div>
     </main>

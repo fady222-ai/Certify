@@ -981,4 +981,122 @@ export const en: Dict = {
       backupNote: "Each code can be used once to recover access if you lose your device.",
     },
   },
+  legal: {
+    chip: "Legal",
+    disclaimer: "This document is a general template for informational purposes and is not legal advice — review it with a legal advisor before relying on it for your jurisdiction.",
+    terms: {
+      metaTitle: "Terms of Use | Certify",
+      metaDesc: "Terms and conditions for using the Certify platform to issue and verify digital certificates.",
+      title: "Terms of Use",
+      sections: [
+        { h: "1. Acceptance of terms", p: [
+          "By using the Certify platform (the \"Platform\" or \"Service\") you agree to these terms in full. If you use the Platform on behalf of an organization, you confirm you are authorized to bind it to these terms.",
+          "If you do not agree to any clause, please stop using the Service.",
+        ] },
+        { h: "2. Service description", p: [
+          "Certify provides tools to issue professional digital certificates, manage them, and enable public verification via a unique code and an encrypted digital fingerprint.",
+          "We aim to keep the Service available without interruption, but we don't guarantee it is entirely free of faults, and we may modify or discontinue features with reasonable notice.",
+        ] },
+        { h: "3. Account and responsibility", p: [
+          "You are responsible for the confidentiality of your login credentials and for all activity carried out through your account.",
+          "You undertake not to issue forged or misleading certificates, and that the data you enter is accurate and owned by or licensed to you.",
+        ] },
+        { h: "4. Subscriptions and payment", p: [
+          "A free plan and paid plans are available, charged via external payment gateways (Stripe / Tap / Paymob). Paid subscriptions renew automatically until cancelled.",
+          "Prices are in US dollars and may change with prior notice. See the \"Refund Policy\" for cancellation and refund details.",
+        ] },
+        { h: "5. Acceptable use", p: [
+          "Using the Platform for any unlawful purpose, to infringe others' rights, or to attempt to breach systems or bypass plan limits fraudulently is prohibited.",
+          "We reserve the right to suspend or terminate any account that violates these terms without prior notice where necessary.",
+        ] },
+        { h: "6. Intellectual property", p: [
+          "Ownership of the Platform, its software, and trademark remains with Certify. The content of the certificates you issue (names, logos, your own designs) remains yours.",
+        ] },
+        { h: "7. Disclaimer and limitation", p: [
+          "The Service is provided \"as is\". We are not liable for any indirect or consequential damages arising from use of the Platform, to the extent permitted by applicable law.",
+        ] },
+        { h: "8. Changes to terms and contact", p: [
+          "We may update these terms from time to time, effective from the date of publication on this page. Continued use means you accept the updated version.",
+          "For legal inquiries, contact us via the support page.",
+        ] },
+      ],
+    },
+    privacy: {
+      metaTitle: "Privacy Policy | Certify",
+      metaDesc: "How the Certify platform collects, uses, and protects your data.",
+      title: "Privacy Policy",
+      sections: [
+        { h: "1. Data we collect", p: [
+          "Account data: name, email, organization name, and password (stored hashed via bcrypt and never visible to us).",
+          "Certificate data you enter: recipient names and emails, course names, logos, and designs.",
+          "Limited technical data for security and operating the Service (such as IP address and request logs to prevent abuse).",
+        ] },
+        { h: "2. How we use data", p: [
+          "To operate the Service: issuing certificates, sending verification codes and email notifications, and providing the public verification page.",
+          "To protect the Platform: detecting abuse and enforcing rate and plan limits.",
+          "We do not sell or rent your data to any party for marketing purposes.",
+        ] },
+        { h: "3. Service providers (data processors)", p: [
+          "We rely on trusted providers to operate parts of the Service: payment gateways (Stripe / Tap / Paymob) to process payments, Resend to send email, and our hosting and database provider.",
+          "We share only the data necessary for them to perform their function, under their own privacy policies. We do not store your bank card details on our servers — the payment gateway handles them directly.",
+        ] },
+        { h: "4. The public verification page", p: [
+          "By the nature of the Service, the certificate's core data (recipient name, course, issue date, organization) is available to anyone holding the verification code, since the purpose is to prove the certificate's authenticity publicly.",
+        ] },
+        { h: "5. Data retention and deletion", p: [
+          "We retain your data as long as your account is active. You can request deletion of your account and data via the support page; we may keep the legal minimum (such as billing records) for the period required by law.",
+        ] },
+        { h: "6. Security", p: [
+          "We apply technical and organizational measures: hashing passwords and encrypting gateway secrets, signing certificates with an HMAC fingerprint, rate limits, and security headers. No system is 100% secure, but we commit to protecting your data with best practices.",
+        ] },
+        { h: "7. Your rights and contact", p: [
+          "You have the right to access, correct, and delete your data. To inquire or exercise these rights, contact us via the support page.",
+        ] },
+      ],
+    },
+    refund: {
+      metaTitle: "Refund Policy | Certify",
+      metaDesc: "Cancellation and refund policy for Certify platform subscriptions.",
+      title: "Refund Policy",
+      sections: [
+        { h: "1. The free plan", p: [
+          "The free plan requires no payment, and you can try it with no financial commitment before upgrading.",
+        ] },
+        { h: "2. Monthly subscriptions", p: [
+          "Monthly subscriptions are charged in advance for each billing cycle. You can cancel renewal anytime from the \"Plan & billing\" page, and your subscription stays active until the end of the current paid cycle, then does not renew.",
+          "Amounts are not refunded for the remaining part of a month that has already started, except where required by law.",
+        ] },
+        { h: "3. Annual subscriptions", p: [
+          "For annual subscriptions, you may request a pro-rated refund for full unused months if the request is made within 14 days of payment, unless you have consumed a large share of the plan.",
+        ] },
+        { h: "4. Errors or double charges", p: [
+          "In the event of a double charge or a technical billing error, contact us and we'll review the case and fully refund the amount charged in error.",
+        ] },
+        { h: "5. How to request a refund", p: [
+          "Send your request via the support page from the account's own email, explaining the reason and the transaction number if available. We aim to respond within a few business days, and due amounts are returned via the same payment gateway used for the purchase.",
+        ] },
+      ],
+    },
+  },
+  help: {
+    metaTitle: "Help Center | Certify",
+    metaDesc: "FAQs and quick guides for using the digital certificate platform.",
+    chip: "Help Center",
+    title: "How can we help you?",
+    subtitle: "Quick answers to the most common questions about issuing and verifying certificates.",
+    faqs: [
+      { q: "How do I issue my first certificate?", a: "After signing in, go to the dashboard and click \"Issue a new certificate\", then enter the trainee's name and the course name (email optional). The certificate is generated instantly with a unique verification code." },
+      { q: "How do I issue certificates for a large group at once?", a: "From \"Bulk issuance\", upload an Excel or CSV file with a name column (required), and email and course_name (optional). The system issues a certificate per row and sends the email automatically when available — up to 500 rows per batch." },
+      { q: "How does a recipient verify a certificate?", a: "Each certificate carries a verification code and a QR code that lead to a public verification page showing the data and confirming there's no tampering via an encrypted digital fingerprint (HMAC-SHA256)." },
+      { q: "How does the platform prevent certificate forgery?", a: "At issuance we compute a digital fingerprint of the certificate data and store it. Each time the verification page opens we recompute and compare the fingerprint; any change in the data is detected instantly." },
+      { q: "Can I customize the certificate design with my organization's identity?", a: "Yes. From \"Organization settings\" set the primary color and upload the logo and signature — they appear automatically on certificates. You can also design custom templates from the visual template editor." },
+      { q: "How does a trainee add the certificate to LinkedIn?", a: "On the verification page there's an \"Add to LinkedIn\" button that auto-fills the certificate data in the certifications section of their profile — free promotion for your organization with every certificate." },
+      { q: "What happens when I reach the monthly plan limit?", a: "Issuance pauses temporarily with an explanatory message. You can upgrade from \"Plan & billing\" to raise the limit instantly, or wait for the counter to reset at the start of the next month." },
+      { q: "How do I revoke a certificate issued by mistake?", a: "Open the certificate from \"Manage certificates\" and click \"Revoke certificate\", specifying the reason. The certificate will show as \"Revoked\" on the public verification page." },
+    ],
+    ctaTitle: "Didn't find your answer?",
+    ctaSubtitle: "Try the platform directly or start your free account now.",
+    ctaStart: "Start free",
+    ctaHome: "Back to home",
+  },
 };

@@ -1,68 +1,25 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { LegalDoc, type LegalSection } from "@/components/LegalDoc";
+import { LegalDoc } from "@/components/LegalDoc";
+import { getDict, normalizeLocale, LOCALE_COOKIE } from "@/lib/i18n";
 
-export const metadata: Metadata = {
-  title: "سياسة الخصوصية | Certify",
-  description: "كيف تجمع منصة Certify بياناتك وتستخدمها وتحميها.",
-};
+async function dict() {
+  return getDict(normalizeLocale((await cookies()).get(LOCALE_COOKIE)?.value)).legal;
+}
 
-const sections: LegalSection[] = [
-  {
-    h: "١. البيانات التي نجمعها",
-    p: [
-      "بيانات الحساب: الاسم، البريد الإلكتروني، اسم المنظمة، وكلمة المرور (مخزنة مشفرة عبر bcrypt ولا نطلع عليها).",
-      "بيانات الشهادات التي تدخلها: أسماء المتلقين وبريدهم وأسماء الدورات والشعارات والتصاميم.",
-      "بيانات تقنية محدودة لأغراض الأمان وتشغيل الخدمة (مثل عنوان IP وسجلات الطلبات لمكافحة إساءة الاستخدام).",
-    ],
-  },
-  {
-    h: "٢. كيف نستخدم البيانات",
-    p: [
-      "لتشغيل الخدمة: إصدار الشهادات، إرسال رموز التحقق والإشعارات بالبريد، وإتاحة صفحة التحقق العامة.",
-      "لحماية المنصة: كشف إساءة الاستخدام وتطبيق حدود المعدل والباقات.",
-      "لا نبيع بياناتك ولا نؤجرها لأي طرف لأغراض تسويقية.",
-    ],
-  },
-  {
-    h: "٣. مزودو الخدمة (معالجو البيانات)",
-    p: [
-      "نعتمد على مزودين موثوقين لتشغيل أجزاء من الخدمة: بوابات الدفع (Stripe / Tap / Paymob) لمعالجة المدفوعات، وخدمة Resend لإرسال البريد، ومزود الاستضافة وقاعدة البيانات.",
-      "تشارك معهم البيانات الضرورية فقط لأداء وظيفتهم، ووفق سياسات الخصوصية الخاصة بهم. لا نخزن بيانات بطاقتك البنكية على خوادمنا — تتولاها بوابة الدفع مباشرة.",
-    ],
-  },
-  {
-    h: "٤. صفحة التحقق العامة",
-    p: [
-      "بطبيعة الخدمة، تكون بيانات الشهادة الأساسية (اسم المتلقي، الدورة، تاريخ الإصدار، المنظمة) متاحة لمن يملك رمز التحقق، إذ إن الغرض هو إثبات صحة الشهادة علنا.",
-    ],
-  },
-  {
-    h: "٥. الاحتفاظ بالبيانات وحذفها",
-    p: [
-      "نحتفظ ببياناتك ما دام حسابك نشطا. يمكنك طلب حذف حسابك وبياناته عبر صفحة الدعم؛ وقد نحتفظ بالحد الأدنى المطلوب نظاما (مثل سجلات الفوترة) للمدة التي يفرضها القانون.",
-    ],
-  },
-  {
-    h: "٦. الأمان",
-    p: [
-      "نطبق إجراءات تقنية وتنظيمية: تشفير كلمات المرور وأسرار البوابات، وتوقيع الشهادات ببصمة HMAC، وحدود معدل، ورؤوس أمان. لا يوجد نظام آمن بنسبة 100%، لكننا نلتزم بحماية بياناتك بأفضل الممارسات.",
-    ],
-  },
-  {
-    h: "٧. حقوقك والتواصل",
-    p: [
-      "لك حق الوصول إلى بياناتك وتصحيحها وحذفها. للاستفسار أو ممارسة هذه الحقوق تواصل معنا عبر صفحة الدعم.",
-    ],
-  },
-];
+export async function generateMetadata(): Promise<Metadata> {
+  const d = (await dict()).privacy;
+  return { title: d.metaTitle, description: d.metaDesc };
+}
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const d = await dict();
   return (
     <>
       <SiteHeader />
-      <LegalDoc title="سياسة الخصوصية" chip="قانوني" sections={sections} />
+      <LegalDoc title={d.privacy.title} chip={d.chip} sections={d.privacy.sections} disclaimer={d.disclaimer} />
       <SiteFooter />
     </>
   );
