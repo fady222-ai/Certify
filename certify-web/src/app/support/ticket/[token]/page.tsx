@@ -5,14 +5,14 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { getGuestTicket, replyGuestTicket, STATUS_LABELS, type TicketDetail } from "@/lib/support";
+import { getGuestTicket, replyGuestTicket, type TicketDetail } from "@/lib/support";
+import { useI18n } from "@/components/LocaleProvider";
 import { IconMail } from "@/components/icons";
 
-function fmt(d: string) {
-  return new Date(d).toLocaleString("ar", { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" });
-}
-
 export default function GuestTicketPage() {
+  const { t, locale } = useI18n();
+  const fmt = (d: string) =>
+    new Date(d).toLocaleString(locale, { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" });
   const { token } = useParams<{ token: string }>();
   const [detail, setDetail] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,16 +59,16 @@ export default function GuestTicketPage() {
         ) : notFound || !detail ? (
           <div className="card p-10 text-center text-ink-soft">
             <IconMail className="mx-auto mb-3 h-10 w-10 text-ink-muted" />
-            <p className="font-bold text-ink">الطلب غير موجود</p>
-            <p className="mt-1 text-sm">قد يكون الرابط غير صحيح أو منتهيا.</p>
-            <Link href="/support" className="btn-primary mt-5 inline-flex">إرسال طلب جديد</Link>
+            <p className="font-bold text-ink">{t("supportPub.notFoundTitle")}</p>
+            <p className="mt-1 text-sm">{t("supportPub.notFoundBody")}</p>
+            <Link href="/support" className="btn-primary mt-5 inline-flex">{t("supportPub.newRequest")}</Link>
           </div>
         ) : (
           <div className="card p-6">
             <div className="mb-4 flex items-center justify-between gap-3 border-b pb-4">
               <h1 className="text-lg font-extrabold text-ink">{detail.ticket.subject}</h1>
               <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-[11px] font-bold text-ink-soft">
-                {STATUS_LABELS[detail.ticket.status]}
+                {detail.ticket.status === "closed" ? t("supportPub.statusClosed") : t("supportPub.statusOpen")}
               </span>
             </div>
 
@@ -78,7 +78,7 @@ export default function GuestTicketPage() {
                   <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                     m.author_role === "admin" ? "bg-surface-2 text-ink" : "bg-brand-600 text-white"}`}>
                     <p className="mb-1 text-[11px] font-bold opacity-70">
-                      {m.author_role === "admin" ? "فريق الدعم" : "أنت"} · {fmt(m.created_at)}
+                      {m.author_role === "admin" ? t("supportPub.admin") : t("supportPub.you")} · {fmt(m.created_at)}
                     </p>
                     <p className="whitespace-pre-wrap">{m.body}</p>
                   </div>
@@ -92,17 +92,17 @@ export default function GuestTicketPage() {
 
             {detail.ticket.status === "closed" ? (
               <div className="mt-5 flex flex-col items-start gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-bold text-ink-muted">هذا الطلب مغلق. لمتابعة الأمر أرسل طلبا جديدا.</p>
-                <Link href="/support" className="btn-primary">إرسال طلب جديد</Link>
+                <p className="text-sm font-bold text-ink-muted">{t("supportPub.closedNote")}</p>
+                <Link href="/support" className="btn-primary">{t("supportPub.newRequest")}</Link>
               </div>
             ) : (
               <form onSubmit={submit} className="mt-5 border-t pt-4">
                 <textarea
-                  className="input min-h-24" placeholder="اكتب ردك…" value={reply}
+                  className="input min-h-24" placeholder={t("supportPub.replyPh")} value={reply}
                   onChange={(e) => setReply(e.target.value)} required maxLength={5000}
                 />
                 <div className="mt-3 flex justify-end">
-                  <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">إرسال الرد</button>
+                  <button type="submit" disabled={busy || !reply.trim()} className="btn-primary">{t("supportPub.sendReply")}</button>
                 </div>
               </form>
             )}

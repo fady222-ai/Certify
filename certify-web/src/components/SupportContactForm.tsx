@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createGuestTicket } from "@/lib/support";
+import { useT } from "@/components/LocaleProvider";
 import { IconCheck } from "@/components/icons";
 
 export function SupportContactForm() {
+  const t = useT();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -35,12 +37,12 @@ export function SupportContactForm() {
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-verify-50 text-verify-600">
           <IconCheck className="h-7 w-7" />
         </div>
-        <h2 className="text-xl font-extrabold text-ink">تم استلام رسالتك</h2>
+        <h2 className="text-xl font-extrabold text-ink">{t("supportPub.receivedTitle")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-ink-soft">
-          أرسلنا رابط متابعة طلبك إلى بريدك الإلكتروني. يمكنك أيضا متابعة المحادثة مباشرة من هنا.
+          {t("supportPub.receivedBody")}
         </p>
         <Link href={`/support/ticket/${done.token}`} className="btn-primary mt-5 inline-flex">
-          متابعة طلبي
+          {t("supportPub.trackMyRequest")}
         </Link>
       </div>
     );
@@ -53,27 +55,27 @@ export function SupportContactForm() {
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         <input
-          className="input" placeholder="الاسم" value={name}
+          className="input" placeholder={t("supportPub.namePh")} value={name}
           onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={120}
         />
         <input
-          className="input" type="email" placeholder="البريد الإلكتروني" value={email}
+          className="input" type="email" placeholder={t("supportPub.emailPh")} value={email}
           onChange={(e) => setEmail(e.target.value)} required maxLength={160}
         />
       </div>
       <input
-        className="input" placeholder="الموضوع" value={subject}
+        className="input" placeholder={t("supportPub.subjectPh")} value={subject}
         onChange={(e) => setSubject(e.target.value)} required minLength={3} maxLength={200}
       />
       <textarea
-        className="input min-h-36" placeholder="كيف يمكننا مساعدتك؟" value={body}
+        className="input min-h-36" placeholder={t("supportPub.bodyPh")} value={body}
         onChange={(e) => setBody(e.target.value)} required minLength={5} maxLength={5000}
       />
       <button type="submit" disabled={busy} className="btn-primary w-full">
-        {busy ? "جار الإرسال…" : "إرسال"}
+        {busy ? t("supportPub.sending") : t("supportPub.send")}
       </button>
       <p className="text-center text-xs text-ink-muted">
-        سيصلك رابط لمتابعة طلبك على بريدك — لا حاجة لإنشاء حساب.
+        {t("supportPub.noAccountNote")}
       </p>
     </form>
   );
