@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin";
 import { formatDate } from "@/lib/format";
 import { IconSearch } from "@/components/icons";
+import { useT } from "@/components/LocaleProvider";
 
 const PLAN_SLUGS = ["free", "pro", "business"];
 
@@ -20,6 +21,7 @@ const PLAN_COLORS: Record<string, string> = {
 };
 
 export default function AdminOrganizationsPage() {
+  const t = useT();
   const [orgs, setOrgs] = useState<AdminOrg[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -50,7 +52,7 @@ export default function AdminOrganizationsPage() {
       showToast(res.message);
       await load(search);
     } catch {
-      showToast("حدث خطأ أثناء تغيير الباقة.");
+      showToast(t("admin.orgs.changePlanError"));
     } finally {
       setBusy(null);
     }
@@ -63,7 +65,7 @@ export default function AdminOrganizationsPage() {
       showToast(res.message);
       setOrgs((prev) => prev.map((o) => o.id === orgId ? res.organization : o));
     } catch {
-      showToast("حدث خطأ.");
+      showToast(t("admin.orgs.genericError"));
     } finally {
       setBusy(null);
     }
@@ -84,26 +86,26 @@ export default function AdminOrganizationsPage() {
       )}
 
       <div>
-        <h1 className="font-display text-2xl font-black text-ink">إدارة المنظمات</h1>
-        <p className="mt-1 text-sm text-ink-soft">كل المنظمات المسجلة على المنصة.</p>
+        <h1 className="font-display text-2xl font-black text-ink">{t("admin.orgs.title")}</h1>
+        <p className="mt-1 text-sm text-ink-soft">{t("admin.orgs.subtitle")}</p>
       </div>
 
       {/* Search */}
       <form onSubmit={handleSearch} className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <IconSearch className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
+          <IconSearch className="absolute end-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="ابحث بالاسم أو البريد الإلكتروني…"
-            className="input pr-11"
+            placeholder={t("admin.orgs.searchPh")}
+            className="input pe-11"
           />
         </div>
         <div className="flex gap-2">
-          <button type="submit" className="btn-primary">بحث</button>
+          <button type="submit" className="btn-primary">{t("admin.orgs.search")}</button>
           {search && (
             <button type="button" onClick={() => { setSearch(""); load(); }} className="btn-ghost">
-              مسح
+              {t("admin.orgs.clear")}
             </button>
           )}
         </div>
@@ -112,28 +114,28 @@ export default function AdminOrganizationsPage() {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="px-6 py-16 text-center text-sm text-ink-muted">جار التحميل…</div>
+          <div className="px-6 py-16 text-center text-sm text-ink-muted">{t("admin.orgs.loading")}</div>
         ) : orgs.length === 0 ? (
           <div className="px-6 py-16 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
               <IconSearch className="h-8 w-8" />
             </div>
-            <h3 className="mt-5 font-display text-xl font-black text-ink">لا توجد نتائج</h3>
-            <p className="mt-2 text-sm text-ink-soft">جرب تعديل كلمات البحث.</p>
+            <h3 className="mt-5 font-display text-xl font-black text-ink">{t("admin.orgs.noResultsTitle")}</h3>
+            <p className="mt-2 text-sm text-ink-soft">{t("admin.orgs.noResultsBody")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="border-b border-line bg-surface-2/60 text-ink-muted text-xs uppercase">
-                  <th className="text-right px-5 py-3 font-medium">المنظمة</th>
-                  <th className="text-right px-5 py-3 font-medium">المالك</th>
-                  <th className="text-right px-5 py-3 font-medium">الباقة</th>
-                  <th className="text-right px-5 py-3 font-medium">الشهر</th>
-                  <th className="text-right px-5 py-3 font-medium">الإجمالي</th>
-                  <th className="text-right px-5 py-3 font-medium">الحالة</th>
-                  <th className="text-right px-5 py-3 font-medium">تاريخ التسجيل</th>
-                  <th className="text-right px-5 py-3 font-medium">إجراءات</th>
+                  <th className="text-start px-5 py-3 font-medium">{t("admin.orgs.colOrg")}</th>
+                  <th className="text-start px-5 py-3 font-medium">{t("admin.orgs.colOwner")}</th>
+                  <th className="text-start px-5 py-3 font-medium">{t("admin.orgs.colPlan")}</th>
+                  <th className="text-start px-5 py-3 font-medium">{t("admin.orgs.colMonth")}</th>
+                  <th className="text-start px-5 py-3 font-medium">{t("admin.orgs.colTotal")}</th>
+                  <th className="text-start px-5 py-3 font-medium">{t("admin.orgs.colStatus")}</th>
+                  <th className="text-start px-5 py-3 font-medium">{t("admin.orgs.colJoined")}</th>
+                  <th className="text-start px-5 py-3 font-medium">{t("admin.orgs.colActions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -192,12 +194,12 @@ export default function AdminOrganizationsPage() {
                       {org.suspended ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-xs font-medium ring-1 ring-red-100">
                           <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                          موقوف
+                          {t("admin.orgs.suspended")}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium ring-1 ring-emerald-100">
                           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                          نشط
+                          {t("admin.orgs.active")}
                         </span>
                       )}
                     </td>
@@ -214,7 +216,7 @@ export default function AdminOrganizationsPage() {
                           href={`/admin/organizations/${org.id}`}
                           className="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-medium text-ink-soft ring-1 ring-line transition-colors hover:bg-brand-50 hover:text-brand-700"
                         >
-                          تفاصيل
+                          {t("admin.orgs.details")}
                         </Link>
                         <button
                           onClick={() => handleSuspend(org.id)}
@@ -225,7 +227,7 @@ export default function AdminOrganizationsPage() {
                               : "bg-red-50 text-red-600 hover:bg-red-100 ring-1 ring-red-200"
                           }`}
                         >
-                          {busy === org.id ? "..." : org.suspended ? "تفعيل" : "إيقاف"}
+                          {busy === org.id ? "..." : org.suspended ? t("admin.orgs.activate") : t("admin.orgs.suspend")}
                         </button>
                       </div>
                     </td>
@@ -238,10 +240,10 @@ export default function AdminOrganizationsPage() {
       </div>
 
       <p className="text-xs text-ink-muted">
-        إجمالي: {orgs.length} منظمة
+        {t("admin.orgs.totalCount", { n: orgs.length })}
         {orgs.filter((o) => o.suspended).length > 0 && (
-          <span className="text-red-500 mr-2">
-            ({orgs.filter((o) => o.suspended).length} موقوف)
+          <span className="text-red-500 ms-2">
+            {t("admin.orgs.suspendedCount", { n: orgs.filter((o) => o.suspended).length })}
           </span>
         )}
       </p>

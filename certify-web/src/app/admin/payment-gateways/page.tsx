@@ -10,19 +10,20 @@ import {
   type GatewayStatus,
 } from "@/lib/admin";
 import { Switch } from "@/components/Switch";
+import { useT } from "@/components/LocaleProvider";
 
 type Draft = Record<string, string>;
 
-const SOURCE_LABEL: Record<PaymentGateway["source"], string> = {
-  db: "محفوظة في قاعدة البيانات",
-  env: "من متغيرات البيئة",
-  none: "غير مهيأة",
+const SOURCE_KEY: Record<PaymentGateway["source"], string> = {
+  db: "admin.gateways.sourceDb",
+  env: "admin.gateways.sourceEnv",
+  none: "admin.gateways.sourceNone",
 };
 
-const STATUS_META: Record<GatewayStatus, { label: string; pill: string; dot: string }> = {
-  live: { label: "مفعلة للعملاء", pill: "bg-green-50 text-green-700", dot: "bg-green-500" },
-  needs_setup: { label: "بحاجة إلى إعداد", pill: "bg-amber-50 text-amber-700", dot: "bg-amber-400" },
-  off: { label: "متوقفة", pill: "bg-gray-100 text-gray-500", dot: "bg-gray-300" },
+const STATUS_META: Record<GatewayStatus, { labelKey: string; pill: string; dot: string }> = {
+  live: { labelKey: "admin.gateways.statusLive", pill: "bg-green-50 text-green-700", dot: "bg-green-500" },
+  needs_setup: { labelKey: "admin.gateways.statusNeedsSetup", pill: "bg-amber-50 text-amber-700", dot: "bg-amber-400" },
+  off: { labelKey: "admin.gateways.statusOff", pill: "bg-gray-100 text-gray-500", dot: "bg-gray-300" },
 };
 
 function draftFromGateway(g: PaymentGateway): Draft {
@@ -32,6 +33,7 @@ function draftFromGateway(g: PaymentGateway): Draft {
 }
 
 export default function PaymentGatewaysPage() {
+  const t = useT();
   const [gateways, setGateways] = useState<PaymentGateway[] | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,8 @@ export default function PaymentGatewaysPage() {
   useEffect(() => {
     listPaymentGateways()
       .then((r) => hydrate(r.data))
-      .catch((e) => setError(e instanceof Error ? e.message : "تعذر التحميل."));
+      .catch((e) => setError(e instanceof Error ? e.message : t("admin.gateways.loadError")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function setField(gateway: string, key: string, value: string) {
@@ -79,7 +82,7 @@ export default function PaymentGatewaysPage() {
     } catch (e) {
       setNotice((n) => ({
         ...n,
-        [g.gateway]: { ok: false, text: e instanceof Error ? e.message : "تعذر الحفظ." },
+        [g.gateway]: { ok: false, text: e instanceof Error ? e.message : t("admin.gateways.saveError") },
       }));
     } finally {
       setSavingId(null);
@@ -96,7 +99,7 @@ export default function PaymentGatewaysPage() {
     persist(g, { enabled: value, fields: {} });
 
   async function onReset(g: PaymentGateway) {
-    if (!confirm(`إعادة بوابة ${g.label} إلى الإعداد الافتراضي (متغيرات البيئة)؟ سيحذف ما هو محفوظ.`)) return;
+    if (!confirm(t("admin.gateways.resetConfirm", { label: g.label }))) return;
     setSavingId(g.gateway);
     try {
       const res = await resetPaymentGateway(g.gateway);
@@ -106,7 +109,7 @@ export default function PaymentGatewaysPage() {
     } catch (e) {
       setNotice((n) => ({
         ...n,
-        [g.gateway]: { ok: false, text: e instanceof Error ? e.message : "تعذر التنفيذ." },
+        [g.gateway]: { ok: false, text: e instanceof Error ? e.message : t("admin.gateways.execError") },
       }));
     } finally {
       setSavingId(null);
@@ -117,10 +120,9 @@ export default function PaymentGatewaysPage() {
 
   return (
     <main className="mx-auto max-w-3xl p-6">
-      <h1 className="font-display text-2xl font-black text-ink">بوابات الدفع</h1>
+      <h1 className="font-display text-2xl font-black text-ink">{t("admin.gateways.title")}</h1>
       <p className="text-sm text-ink-soft mt-1">
-        تصبح البوابة متاحة للعملاء عند اكتمال مفاتيحها وتفعيل «الإتاحة للعملاء». المفاتيح
-        السرية تخزن مشفرة ولا تعرض كاملة — اترك الحقل السري فارغا للإبقاء على القيمة المحفوظة.
+        {t("admin.gateways.subtitle")}
       </p>
 
       {error && (
@@ -138,7 +140,7 @@ export default function PaymentGatewaysPage() {
       {/* ملخص: ما يراه العملاء عند الدفع (الرابط الصريح بين الإعداد والنتيجة) */}
       {gateways && gateways.length > 0 && (
         <div className="mt-6 rounded-xl border border-line bg-surface-2/60 px-4 py-3">
-          <p className="text-xs font-bold text-ink-soft">ما يراه العملاء عند الدفع</p>
+          <p className="text-xs font-bold text-ink-soft">{t("admin.gateways.customersSee")}</p>
           {liveGateways.length > 0 ? (
             <div className="mt-2 flex flex-wrap gap-2">
               {liveGateways.map((g) => (
@@ -149,7 +151,7 @@ export default function PaymentGatewaysPage() {
             </div>
           ) : (
             <p className="mt-1.5 text-sm font-medium text-amber-700">
-              لا تتوفر أي وسيلة دفع للعملاء حاليا — لن يتمكنوا من الترقية.
+              {t("admin.gateways.noneAvailable")}
             </p>
           )}
         </div>
@@ -199,22 +201,22 @@ export default function PaymentGatewaysPage() {
                     <span className="text-xs text-ink-muted">({g.region})</span>
                     <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${meta.pill}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                      {meta.label}
+                      {t(meta.labelKey)}
                     </span>
                   </div>
-                  <p className="text-xs text-ink-muted mt-1">المصدر: {SOURCE_LABEL[g.source]}</p>
+                  <p className="text-xs text-ink-muted mt-1">{t("admin.gateways.sourceLabel", { source: t(SOURCE_KEY[g.source]) })}</p>
                 </div>
 
                 {/* مفتاح الإتاحة يظهر فقط بعد اكتمال المفاتيح (live/off) */}
                 {status !== "needs_setup" && (
                   <div className="flex items-center gap-2.5 select-none">
                     <span className={`text-sm font-bold ${status === "live" ? "text-green-700" : "text-ink-muted"}`}>
-                      الإتاحة للعملاء
+                      {t("admin.gateways.availability")}
                     </span>
                     <Switch
                       checked={status === "live"}
                       disabled={saving}
-                      aria-label={`إتاحة بوابة ${g.label} للعملاء`}
+                      aria-label={t("admin.gateways.availabilityAria", { label: g.label })}
                       onChange={(v) => toggleAvailable(g, v)}
                     />
                   </div>
@@ -224,12 +226,12 @@ export default function PaymentGatewaysPage() {
               {/* تلميح حسب الحالة */}
               {status === "needs_setup" && (
                 <div className="mt-4 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-700 ring-1 ring-amber-100">
-                  أدخل المفاتيح المطلوبة ثم احفظ لإتاحة هذه البوابة للعملاء.
+                  {t("admin.gateways.needsSetupHint")}
                 </div>
               )}
               {status === "off" && (
                 <div className="mt-4 rounded-xl bg-surface-2 px-4 py-2.5 text-sm font-medium text-ink-soft ring-1 ring-line">
-                  البوابة متوقفة — لن تظهر للعملاء. فعل «الإتاحة للعملاء» لإظهارها.
+                  {t("admin.gateways.offHint")}
                 </div>
               )}
 
@@ -240,7 +242,7 @@ export default function PaymentGatewaysPage() {
                       {f.label}
                       {f.required && <span className="text-red-500">*</span>}
                       {f.secret && f.set && (
-                        <span className="text-xs font-normal text-ink-muted">(محفوظ: {f.preview})</span>
+                        <span className="text-xs font-normal text-ink-muted">{t("admin.gateways.savedPreview", { preview: f.preview ?? "" })}</span>
                       )}
                     </span>
                     <input
@@ -252,9 +254,9 @@ export default function PaymentGatewaysPage() {
                       placeholder={
                         f.secret
                           ? f.set
-                            ? "اتركه فارغا للإبقاء على القيمة الحالية"
-                            : "أدخل القيمة"
-                          : "أدخل القيمة"
+                            ? t("admin.gateways.keepCurrent")
+                            : t("admin.gateways.enterValue")
+                          : t("admin.gateways.enterValue")
                       }
                       className="input"
                     />
@@ -280,11 +282,11 @@ export default function PaymentGatewaysPage() {
                       disabled={saving || requiredMissing.length > 0}
                       className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {saving ? "جار الحفظ…" : "حفظ وإتاحة للعملاء"}
+                      {saving ? t("admin.gateways.saving") : t("admin.gateways.saveAndEnable")}
                     </button>
                     {requiredMissing.length > 0 && (
                       <span className="text-xs font-medium text-amber-700">
-                        أكمل الحقول المطلوبة: {requiredMissing.map((f) => f.label).join("، ")}.
+                        {t("admin.gateways.completeRequired", { fields: requiredMissing.map((f) => f.label).join("، ") })}
                       </span>
                     )}
                   </>
@@ -294,7 +296,7 @@ export default function PaymentGatewaysPage() {
                     disabled={saving}
                     className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {saving ? "جار الحفظ…" : "حفظ التعديلات"}
+                    {saving ? t("admin.gateways.saving") : t("admin.gateways.saveChanges")}
                   </button>
                 )}
                 {g.source === "db" && (
@@ -303,7 +305,7 @@ export default function PaymentGatewaysPage() {
                     disabled={saving}
                     className="rounded-xl px-4 py-2.5 text-sm font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
                   >
-                    إعادة للافتراضي
+                    {t("admin.gateways.resetDefault")}
                   </button>
                 )}
               </div>

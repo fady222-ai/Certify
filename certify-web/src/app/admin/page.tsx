@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAdminStats, type AdminStats } from "@/lib/admin";
 import { getStoredUser } from "@/lib/auth";
+import { useT } from "@/components/LocaleProvider";
 import {
   IconBuilding, IconUsers, IconBadge, IconChart, IconArrow,
   IconCreditCard, IconBolt, IconMail, IconClock, IconBan, IconLock,
@@ -74,6 +75,7 @@ const PLAN_BAR: Record<string, string> = {
 };
 
 export default function AdminOverviewPage() {
+  const t = useT();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [mfaEnabled, setMfaEnabled] = useState(true); // assume on until checked (no flash)
@@ -89,8 +91,8 @@ export default function AdminOverviewPage() {
   return (
     <main className="space-y-7 p-6">
       <div>
-        <h1 className="font-display text-2xl font-black text-ink">نظرة عامة على المنصة</h1>
-        <p className="mt-1 text-sm text-ink-soft">مؤشرات الأعمال والتشغيل — مباشرة من قاعدة البيانات.</p>
+        <h1 className="font-display text-2xl font-black text-ink">{t("admin.overview.title")}</h1>
+        <p className="mt-1 text-sm text-ink-soft">{t("admin.overview.subtitle")}</p>
       </div>
 
       {!mfaEnabled && (
@@ -100,39 +102,39 @@ export default function AdminOverviewPage() {
         >
           <IconLock className="h-5 w-5 shrink-0 text-amber-700" />
           <span className="text-sm font-bold text-amber-800">
-            فعل المصادقة الثنائية لحماية حسابك الإداري — اضغط للإعداد.
+            {t("admin.overview.mfaNudge")}
           </span>
         </Link>
       )}
 
       {/* مؤشرات الأعمال (الأهم) */}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="الإيراد الشهري المتكرر" value={money(stats?.mrr)} sub={`سنويا ≈ ${money(stats?.arr)}`} icon={IconCreditCard} tone="verify" loading={loading} />
-        <KpiCard label="اشتراكات نشطة" value={(stats?.active_subscriptions ?? 0).toLocaleString("en-US")} sub={`من ${stats?.total_organizations ?? 0} منظمة`} icon={IconBolt} tone="brand" loading={loading} />
-        <KpiCard label="نسبة التحويل للمدفوع" value={`${stats?.paid_conversion_pct ?? 0}%`} sub="منظمات مشتركة / الإجمالي" icon={IconChart} tone="gold" loading={loading} />
-        <KpiCard label="منظمات جديدة هذا الشهر" value={(stats?.new_orgs_this_month ?? 0).toLocaleString("en-US")} icon={IconBuilding} tone="brand" loading={loading} />
+        <KpiCard label={t("admin.overview.mrr")} value={money(stats?.mrr)} sub={t("admin.overview.arrSub", { amount: money(stats?.arr) })} icon={IconCreditCard} tone="verify" loading={loading} />
+        <KpiCard label={t("admin.overview.activeSubs")} value={(stats?.active_subscriptions ?? 0).toLocaleString("en-US")} sub={t("admin.overview.activeSubsSub", { n: stats?.total_organizations ?? 0 })} icon={IconBolt} tone="brand" loading={loading} />
+        <KpiCard label={t("admin.overview.conversion")} value={`${stats?.paid_conversion_pct ?? 0}%`} sub={t("admin.overview.conversionSub")} icon={IconChart} tone="gold" loading={loading} />
+        <KpiCard label={t("admin.overview.newOrgs")} value={(stats?.new_orgs_this_month ?? 0).toLocaleString("en-US")} icon={IconBuilding} tone="brand" loading={loading} />
       </div>
 
       {/* يحتاج إلى إجراء */}
       <div>
-        <h2 className="mb-3 font-display text-lg font-extrabold text-ink">يحتاج إلى إجراء</h2>
+        <h2 className="mb-3 font-display text-lg font-extrabold text-ink">{t("admin.overview.needsAction")}</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <AttentionCard label="تذاكر دعم مفتوحة" count={stats?.open_tickets ?? 0} href="/admin/support" icon={IconMail} loading={loading} />
-          <AttentionCard label="مدفوعات متأخرة" count={stats?.past_due ?? 0} href="/admin/organizations" icon={IconClock} loading={loading} />
-          <AttentionCard label="اشتراكات ستلغى" count={stats?.cancelling ?? 0} href="/admin/organizations" icon={IconBolt} loading={loading} />
-          <AttentionCard label="منظمات موقوفة" count={stats?.suspended_orgs ?? 0} href="/admin/organizations" icon={IconBan} loading={loading} />
+          <AttentionCard label={t("admin.overview.openTickets")} count={stats?.open_tickets ?? 0} href="/admin/support" icon={IconMail} loading={loading} />
+          <AttentionCard label={t("admin.overview.pastDue")} count={stats?.past_due ?? 0} href="/admin/organizations" icon={IconClock} loading={loading} />
+          <AttentionCard label={t("admin.overview.cancelling")} count={stats?.cancelling ?? 0} href="/admin/organizations" icon={IconBolt} loading={loading} />
+          <AttentionCard label={t("admin.overview.suspended")} count={stats?.suspended_orgs ?? 0} href="/admin/organizations" icon={IconBan} loading={loading} />
         </div>
       </div>
 
       {/* توزيع الباقات + إحصاءات المنصة */}
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="card p-6">
-          <h2 className="font-display text-lg font-extrabold text-ink">توزيع الباقات</h2>
+          <h2 className="font-display text-lg font-extrabold text-ink">{t("admin.overview.planDistribution")}</h2>
           <div className="mt-4 space-y-3">
             {loading || !stats ? (
-              <p className="text-sm text-ink-muted">جار التحميل…</p>
+              <p className="text-sm text-ink-muted">{t("admin.overview.loading")}</p>
             ) : stats.plan_distribution.length === 0 ? (
-              <p className="text-sm text-ink-muted">لا توجد بيانات بعد.</p>
+              <p className="text-sm text-ink-muted">{t("admin.overview.noData")}</p>
             ) : (
               stats.plan_distribution.map((p) => {
                 const pct = planTotal ? Math.round((p.count / planTotal) * 100) : 0;
@@ -153,12 +155,12 @@ export default function AdminOverviewPage() {
         </div>
 
         <div className="card p-6">
-          <h2 className="font-display text-lg font-extrabold text-ink">إحصاءات المنصة</h2>
+          <h2 className="font-display text-lg font-extrabold text-ink">{t("admin.overview.platformStats")}</h2>
           <div className="mt-4 grid grid-cols-2 gap-4">
-            <MiniStat label="إجمالي المنظمات" value={stats?.total_organizations} icon={IconBuilding} loading={loading} />
-            <MiniStat label="المستخدمون" value={stats?.total_users} icon={IconUsers} loading={loading} />
-            <MiniStat label="شهادات هذا الشهر" value={stats?.certificates_this_month} icon={IconChart} loading={loading} />
-            <MiniStat label="إجمالي الشهادات" value={stats?.total_certificates} icon={IconBadge} loading={loading} />
+            <MiniStat label={t("admin.overview.totalOrgs")} value={stats?.total_organizations} icon={IconBuilding} loading={loading} />
+            <MiniStat label={t("admin.overview.users")} value={stats?.total_users} icon={IconUsers} loading={loading} />
+            <MiniStat label={t("admin.overview.certsThisMonth")} value={stats?.certificates_this_month} icon={IconChart} loading={loading} />
+            <MiniStat label={t("admin.overview.totalCerts")} value={stats?.total_certificates} icon={IconBadge} loading={loading} />
           </div>
         </div>
       </div>
@@ -166,21 +168,21 @@ export default function AdminOverviewPage() {
       {/* آخر المنظمات */}
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="font-display text-lg font-extrabold text-ink">آخر المنظمات المنضمة</h2>
+          <h2 className="font-display text-lg font-extrabold text-ink">{t("admin.overview.recentOrgs")}</h2>
           <Link href="/admin/organizations" className="text-sm font-bold text-brand-700 hover:underline">
-            عرض الكل <IconArrow className="inline h-3.5 w-3.5" />
+            {t("admin.overview.viewAll")} <IconArrow className="inline h-3.5 w-3.5" />
           </Link>
         </div>
 
         {loading ? (
-          <div className="px-6 py-12 text-center text-sm text-ink-muted">جار التحميل…</div>
+          <div className="px-6 py-12 text-center text-sm text-ink-muted">{t("admin.overview.loading")}</div>
         ) : !stats || stats.recent_organizations.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-brand-50 text-brand-600">
               <IconBuilding className="h-8 w-8" />
             </div>
-            <h3 className="mt-5 font-display text-xl font-black text-ink">لا توجد منظمات بعد</h3>
-            <p className="mt-2 text-sm text-ink-soft">ستظهر المنظمات هنا فور تسجيلها على المنصة.</p>
+            <h3 className="mt-5 font-display text-xl font-black text-ink">{t("admin.overview.noOrgsTitle")}</h3>
+            <p className="mt-2 text-sm text-ink-soft">{t("admin.overview.noOrgsBody")}</p>
           </div>
         ) : (
           <div className="divide-y">
@@ -197,7 +199,7 @@ export default function AdminOverviewPage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <PlanBadge slug={org.plan?.slug} name={org.plan?.name} />
-                  <span className="hidden text-sm text-ink-soft sm:inline">{org.certs_total} شهادة</span>
+                  <span className="hidden text-sm text-ink-soft sm:inline">{t("admin.overview.certsCount", { n: org.certs_total })}</span>
                 </div>
               </div>
             ))}

@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { IconArrow, IconBuilding, IconUsers, IconBadge, IconCreditCard, IconMail, IconCheck } from "@/components/icons";
+import { useT } from "@/components/LocaleProvider";
 
 const PLAN_SLUGS = ["free", "pro", "business"];
 const PLAN_COLORS: Record<string, string> = {
@@ -16,11 +17,17 @@ const PLAN_COLORS: Record<string, string> = {
   pro: "bg-brand-50 text-brand-700",
   business: "bg-amber-50 text-amber-700",
 };
-const SUB_STATUS: Record<string, { label: string; cls: string }> = {
-  active: { label: "نشط", cls: "bg-emerald-50 text-emerald-700" },
-  past_due: { label: "متأخر", cls: "bg-amber-50 text-amber-700" },
-  cancelled: { label: "ملغى", cls: "bg-red-50 text-red-600" },
-  inactive: { label: "غير مفعل", cls: "bg-gray-100 text-gray-500" },
+const SUB_STATUS_CLS: Record<string, string> = {
+  active: "bg-emerald-50 text-emerald-700",
+  past_due: "bg-amber-50 text-amber-700",
+  cancelled: "bg-red-50 text-red-600",
+  inactive: "bg-gray-100 text-gray-500",
+};
+const SUB_STATUS_KEY: Record<string, string> = {
+  active: "admin.orgDetail.subActive",
+  past_due: "admin.orgDetail.subPastDue",
+  cancelled: "admin.orgDetail.subCancelled",
+  inactive: "admin.orgDetail.subInactive",
 };
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -44,6 +51,7 @@ function Card({ title, icon: Icon, children }: { title: string; icon: typeof Ico
 }
 
 export default function AdminOrgDetailPage() {
+  const t = useT();
   const { id } = useParams<{ id: string }>();
   const [org, setOrg] = useState<AdminOrgDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -126,8 +134,8 @@ export default function AdminOrgDetailPage() {
   if (error || !org) {
     return (
       <main className="mx-auto max-w-3xl p-6">
-        <Link href="/admin/organizations" className="text-sm font-bold text-brand-700">← رجوع للمنظمات</Link>
-        <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">{error ?? "غير موجود"}</div>
+        <Link href="/admin/organizations" className="text-sm font-bold text-brand-700">← {t("admin.orgDetail.back")}</Link>
+        <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">{error ?? t("admin.orgDetail.notFound")}</div>
       </main>
     );
   }
@@ -140,7 +148,7 @@ export default function AdminOrgDetailPage() {
       )}
 
       <Link href="/admin/organizations" className="inline-flex items-center gap-1 text-sm font-bold text-brand-700">
-        <IconArrow className="h-4 w-4 rotate-180" /> رجوع للمنظمات
+        <IconArrow className="h-4 w-4 rotate-180" /> {t("admin.orgDetail.back")}
       </Link>
 
       {/* Header + actions */}
@@ -149,12 +157,12 @@ export default function AdminOrgDetailPage() {
           <div className="flex items-center gap-2">
             <h1 className="font-display text-2xl font-black text-ink">{org.name}</h1>
             {org.suspended ? (
-              <span className="rounded-md bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600 ring-1 ring-red-100">موقوف</span>
+              <span className="rounded-md bg-red-50 px-2 py-0.5 text-xs font-bold text-red-600 ring-1 ring-red-100">{t("admin.orgDetail.suspended")}</span>
             ) : (
-              <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">نشط</span>
+              <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">{t("admin.orgDetail.active")}</span>
             )}
           </div>
-          <p className="mt-1 text-xs text-ink-muted">{org.slug} · سجلت {formatDate(org.created_at)}</p>
+          <p className="mt-1 text-xs text-ink-muted">{org.slug} · {t("admin.orgDetail.registeredOn", { date: formatDate(org.created_at) })}</p>
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -172,75 +180,75 @@ export default function AdminOrgDetailPage() {
               org.suspended ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100"
                 : "bg-red-50 text-red-600 ring-1 ring-red-200 hover:bg-red-100"}`}
           >
-            {busy ? "…" : org.suspended ? "تفعيل" : "إيقاف"}
+            {busy ? "…" : org.suspended ? t("admin.orgDetail.activate") : t("admin.orgDetail.suspend")}
           </button>
         </div>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
-        <Card title="المالك" icon={IconMail}>
-          <Row label="الاسم">{org.owner_name ?? "—"}</Row>
-          <Row label="البريد">{org.owner_email ?? "—"}</Row>
-          <Row label="حالة البريد">
+        <Card title={t("admin.orgDetail.ownerCard")} icon={IconMail}>
+          <Row label={t("admin.orgDetail.name")}>{org.owner_name ?? "—"}</Row>
+          <Row label={t("admin.orgDetail.email")}>{org.owner_email ?? "—"}</Row>
+          <Row label={t("admin.orgDetail.emailStatus")}>
             {org.owner_verified
-              ? <span className="inline-flex items-center gap-1 text-emerald-700"><IconCheck className="h-3.5 w-3.5" /> محقق</span>
-              : <span className="text-amber-700">غير محقق</span>}
+              ? <span className="inline-flex items-center gap-1 text-emerald-700"><IconCheck className="h-3.5 w-3.5" /> {t("admin.orgDetail.verified")}</span>
+              : <span className="text-amber-700">{t("admin.orgDetail.unverified")}</span>}
           </Row>
           {!org.owner_verified && (
             <div className="flex flex-wrap gap-2 py-2">
               <button onClick={verifyEmail} disabled={busy}
                 className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:opacity-60">
-                تحقيق البريد يدويا
+                {t("admin.orgDetail.verifyManually")}
               </button>
               <button onClick={resendOtp} disabled={busy}
                 className="rounded-lg bg-surface-2 px-3 py-1.5 text-xs font-bold text-ink-soft ring-1 ring-line transition hover:bg-brand-50 hover:text-brand-700 disabled:opacity-60">
-                إعادة إرسال الرمز
+                {t("admin.orgDetail.resendOtp")}
               </button>
             </div>
           )}
-          <Row label="انضم في">{formatDate(org.owner_joined_at)}</Row>
+          <Row label={t("admin.orgDetail.joinedAt")}>{formatDate(org.owner_joined_at)}</Row>
         </Card>
 
-        <Card title="الباقة والاستخدام" icon={IconBadge}>
-          <Row label="الباقة">{org.plan?.name ?? "مجانية"}</Row>
-          <Row label="هذا الشهر">{org.certs_this_month}{org.plan?.limit ? ` / ${org.plan.limit}` : ""}</Row>
-          <Row label="إجمالي الشهادات">{org.certs_total}</Row>
+        <Card title={t("admin.orgDetail.planCard")} icon={IconBadge}>
+          <Row label={t("admin.orgDetail.plan")}>{org.plan?.name ?? t("admin.orgDetail.planFree")}</Row>
+          <Row label={t("admin.orgDetail.thisMonth")}>{org.certs_this_month}{org.plan?.limit ? ` / ${org.plan.limit}` : ""}</Row>
+          <Row label={t("admin.orgDetail.totalCerts")}>{org.certs_total}</Row>
         </Card>
 
-        <Card title="الاشتراك" icon={IconCreditCard}>
+        <Card title={t("admin.orgDetail.subscriptionCard")} icon={IconCreditCard}>
           {sub ? (
             <>
-              <Row label="الحالة">
-                <span className={`rounded-md px-2 py-0.5 text-xs ${SUB_STATUS[sub.status]?.cls ?? "bg-gray-100 text-gray-500"}`}>
-                  {SUB_STATUS[sub.status]?.label ?? sub.status}
+              <Row label={t("admin.orgDetail.status")}>
+                <span className={`rounded-md px-2 py-0.5 text-xs ${SUB_STATUS_CLS[sub.status] ?? "bg-gray-100 text-gray-500"}`}>
+                  {SUB_STATUS_KEY[sub.status] ? t(SUB_STATUS_KEY[sub.status]) : sub.status}
                 </span>
               </Row>
-              <Row label="المبلغ">{sub.amount != null ? `$${sub.amount} / ${sub.interval === "annual" ? "سنة" : "شهر"}` : "—"}</Row>
-              <Row label="البوابة">{sub.gateway}</Row>
-              <Row label="نهاية الفترة">{formatDate(sub.current_period_end)}</Row>
-              {sub.cancel_at_period_end && <Row label="إلغاء تلقائي">نهاية الفترة</Row>}
+              <Row label={t("admin.orgDetail.amount")}>{sub.amount != null ? `$${sub.amount} / ${sub.interval === "annual" ? t("admin.orgDetail.year") : t("admin.orgDetail.month")}` : "—"}</Row>
+              <Row label={t("admin.orgDetail.gateway")}>{sub.gateway}</Row>
+              <Row label={t("admin.orgDetail.periodEnd")}>{formatDate(sub.current_period_end)}</Row>
+              {sub.cancel_at_period_end && <Row label={t("admin.orgDetail.autoCancel")}>{t("admin.orgDetail.autoCancelValue")}</Row>}
             </>
           ) : (
-            <p className="py-2 text-sm text-ink-muted">لا يوجد اشتراك مدفوع.</p>
+            <p className="py-2 text-sm text-ink-muted">{t("admin.orgDetail.noSubscription")}</p>
           )}
         </Card>
 
-        <Card title="المحتوى" icon={IconUsers}>
-          <Row label="القوالب">{org.counts.templates}</Row>
-          <Row label="الدفعات">{org.counts.batches}</Row>
-          <Row label="الأعضاء">{org.counts.members}</Row>
-          <Row label="تذاكر الدعم">{org.counts.support_tickets}</Row>
+        <Card title={t("admin.orgDetail.contentCard")} icon={IconUsers}>
+          <Row label={t("admin.orgDetail.templates")}>{org.counts.templates}</Row>
+          <Row label={t("admin.orgDetail.batches")}>{org.counts.batches}</Row>
+          <Row label={t("admin.orgDetail.members")}>{org.counts.members}</Row>
+          <Row label={t("admin.orgDetail.supportTickets")}>{org.counts.support_tickets}</Row>
         </Card>
 
-        <Card title="معلومات" icon={IconBuilding}>
-          <Row label="آخر تحديث">{formatDateTime(org.updated_at)}</Row>
-          <Row label="اللون الأساسي">
+        <Card title={t("admin.orgDetail.infoCard")} icon={IconBuilding}>
+          <Row label={t("admin.orgDetail.lastUpdated")}>{formatDateTime(org.updated_at)}</Row>
+          <Row label={t("admin.orgDetail.primaryColor")}>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-4 w-4 rounded ring-1 ring-line" style={{ backgroundColor: org.branding.primary_color }} />
               <span dir="ltr">{org.branding.primary_color}</span>
             </span>
           </Row>
-          <Row label="الشعار">{org.branding.logo_url ? "موجود" : "—"}</Row>
+          <Row label={t("admin.orgDetail.logo")}>{org.branding.logo_url ? t("admin.orgDetail.logoPresent") : "—"}</Row>
         </Card>
       </div>
     </main>
