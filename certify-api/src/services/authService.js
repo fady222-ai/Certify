@@ -346,29 +346,20 @@ export async function resendOtp({ userId }) {
   await saveAndSendOtp(user.id, user.name, user.email, user.locale);
 }
 
-// Resolve a login identifier to a user: try email first, then fall back to the
-// (unique, case-insensitive) academy name → its owner. Lets users sign in with
-// either their email or their academy name, like global platforms.
+// Resolve a login identifier to a user. Login is by EMAIL only (sign-in by
+// academy name was removed): the academy name is public, so accepting it as a
+// login identifier widened the guessing surface for no real benefit.
 async function findUserByIdentifier(identifier) {
   const id = String(identifier ?? "").trim();
   if (!id) return null;
-
-  const byEmail = await prisma.user.findUnique({ where: { email: id } });
-  if (byEmail) return byEmail;
-
-  const org = await prisma.organization.findFirst({
-    where: { name: { equals: id, mode: "insensitive" } },
-    select: { ownerId: true },
-  });
-  if (!org) return null;
-  return prisma.user.findUnique({ where: { id: org.ownerId } });
+  return prisma.user.findUnique({ where: { email: id } });
 }
 
 export async function login({ identifier, password }) {
   const user = await findUserByIdentifier(identifier);
 
   if (!user || !user.passwordHash) {
-    const err = new Error("البريد الإلكتروني/اسم الأكاديمية أو كلمة المرور غير صحيحة.");
+    const err = new Error("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
     err.statusCode = 401;
     throw err;
   }
@@ -384,7 +375,7 @@ export async function login({ identifier, password }) {
       data: { failedLoginAttempts: (user.failedLoginAttempts ?? 0) + 1 },
     });
 
-    const err = new Error("البريد الإلكتروني/اسم الأكاديمية أو كلمة المرور غير صحيحة.");
+    const err = new Error("البريد الإلكتروني أو كلمة المرور غير صحيحة.");
     err.statusCode = 401;
     throw err;
   }

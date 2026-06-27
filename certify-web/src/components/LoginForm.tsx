@@ -209,12 +209,14 @@ export function LoginForm() {
         <span className="relative block">
           <IconMail className="pointer-events-none absolute start-3 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-muted" />
           <input
-            type="text"
+            type="email"
+            autoComplete="email"
             required
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             placeholder={t("auth.login.identifierPh")}
             className="input ps-11"
+            dir="ltr"
           />
         </span>
       </label>

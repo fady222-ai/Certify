@@ -186,16 +186,17 @@ test("login: unknown identifier throws the same 401 (no user enumeration)", asyn
   assert.match(err.message, /غير صحيحة/);
 });
 
-test("login: a verified account can sign in by academy name (resolves to its owner)", async () => {
+test("login: sign-in by academy name is no longer accepted (email only)", async () => {
   const passwordHash = await bcrypt.hash("correct-horse", 10);
   installFakePrisma({
     user: { id: "u1", email: "owner@x.com", passwordHash, emailVerified: true, failedLoginAttempts: 0, role: "user" },
     org: { id: "o1", ownerId: "u1", name: "أكاديمية النور", plan: null },
   });
 
-  // identifier is the academy name, not the email
-  const { token } = await login({ identifier: "أكاديمية النور", password: "correct-horse" });
-  assert.equal(verifyToken(token).sub, "u1");
+  // The academy name must NOT resolve to the owner — it returns a 401 like any
+  // unknown identifier (login is by email only now).
+  const err = await expectStatus(login({ identifier: "أكاديمية النور", password: "correct-horse" }), 401);
+  assert.match(err.message, /البريد الإلكتروني/);
 });
 
 test("login: correct password but unverified email throws 403 and (re)sends an OTP", async () => {

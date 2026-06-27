@@ -14,7 +14,7 @@ const registerSchema = z.object({
 });
 
 const loginSchema = z.object({
-  identifier: z.string().trim().min(1, "أدخل البريد الإلكتروني أو اسم الأكاديمية."),
+  identifier: z.string().trim().min(1, "أدخل البريد الإلكتروني."),
   password: z.string().min(1, "كلمة المرور مطلوبة."),
 });
 
