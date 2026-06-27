@@ -15,14 +15,17 @@ export function isEn() {
   return true;
 }
 
-/** HTML-escape (shared by all template files). */
+/** HTML-escape (shared by all template files). Escapes the single quote too so
+ * a value placed in a single-quoted attribute can't break out (defense in depth
+ * — current callers use text/double-quoted contexts). */
 export function e(str) {
   if (str == null) return "";
   return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export const BRAND = "#4f46e5";

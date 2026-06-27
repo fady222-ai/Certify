@@ -538,6 +538,10 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
 `EMAIL_FROM`, ومفاتيح `STRIPE_*` / `TAP_*` / `PAYMOB_*` (كلها اختيارية للبدء).
 `ERROR_WEBHOOK_URL` اختياري: عند ضبطه تُرسَل تنبيهات أخطاء الخادم (5xx + أخطاء
 غير ملتقطة) إلى webhook متوافق مع Slack/Discord (`{ text }`).
+`SENTRY_DSN` اختياري: مراقبة أخطاء كاملة عبر Sentry (`@sentry/node`). يُهيّأ في
+`src/instrument.js` (يُستورَد أولاً في `server.js`) و`reportError` يرسل
+`captureException` عند ضبط الـDSN — لا أثر بدونه. متغيّرات إضافية: `SENTRY_ENVIRONMENT`،
+`SENTRY_TRACES_SAMPLE_RATE` (افتراضي 0 = أخطاء فقط).
 
 ---
 

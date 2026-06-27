@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import { config } from "../config/index.js";
 
 // Basic throttle so a burst of errors can't spam the alert channel.
@@ -17,6 +18,16 @@ export function reportError(err, context = {}) {
     console.error(`[error]${context.where ? " " + context.where : ""}`, err);
   } catch {
     /* logging must never throw */
+  }
+
+  // Full error monitoring via Sentry (no-op unless SENTRY_DSN is set). Not
+  // throttled — Sentry does its own dedupe/grouping and we want every event.
+  if (config.sentryDsn) {
+    try {
+      Sentry.captureException(err, { extra: context });
+    } catch {
+      /* monitoring must never throw */
+    }
   }
 
   const url = config.errorWebhookUrl;

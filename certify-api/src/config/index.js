@@ -48,6 +48,10 @@ export const config = {
   // Optional alert webhook (Slack/Discord) for server errors — disabled if unset.
   errorWebhookUrl: process.env.ERROR_WEBHOOK_URL || null,
 
+  // Optional Sentry error monitoring — full error tracking when a DSN is set.
+  sentryDsn: process.env.SENTRY_DSN || null,
+  sentryEnv: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || "development",
+
   // Super-admin account — provisioned automatically on startup from these vars.
   // The account always has role="admin"; its password is whatever you set here.
   adminEmail: (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase(),

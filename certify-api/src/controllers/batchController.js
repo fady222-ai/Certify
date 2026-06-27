@@ -273,12 +273,32 @@ const PROGRESS_FLUSH_EVERY = 10;
 // NOT from serialising — so concurrency can't overshoot the monthly limit.
 const CONCURRENCY = 4;
 
+// Per-org serialization: chain each org's batches so two batches for the SAME
+// org never interleave their quota reservation + issuance (which would let the
+// read-then-issue window overshoot the monthly cap). In-process only — a
+// horizontally-scaled deploy would still need a shared lock (same caveat as the
+// gatewayConfig/whatsappConfig caches). A single batch is already safe (its pool
+// never issues more than the reserved `allowed`).
+const orgChain = new Map();
+function withOrgLock(orgId, fn) {
+  const run = (orgChain.get(orgId) ?? Promise.resolve()).then(fn, fn);
+  const tail = run.catch(() => {});
+  orgChain.set(orgId, tail);
+  tail.then(() => { if (orgChain.get(orgId) === tail) orgChain.delete(orgId); });
+  return run;
+}
+
 // `issue` is injectable so the aggregation logic can be unit-tested without
 // launching headless Chrome; production callers use the real issueCertificate.
 // `deps` lets tests stub the quota helpers without a DB.
-export async function processBatchAsync(
+export function processBatchAsync(
   batchId, rows, organization, defaultCourse, templateId, issue = issueCertificate, actingUserId = null, deps = {},
 ) {
+  return withOrgLock(organization.id, () =>
+    runBatch(batchId, rows, organization, defaultCourse, templateId, issue, actingUserId, deps));
+}
+
+async function runBatch(batchId, rows, organization, defaultCourse, templateId, issue, actingUserId, deps) {
   const { reserve = reserveQuota, ensureUsage = ensureUsageRow } = deps;
   let successCount = 0;
   let failedCount = 0;

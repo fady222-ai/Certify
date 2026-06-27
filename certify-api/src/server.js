@@ -1,3 +1,4 @@
+import "./instrument.js"; // initialize Sentry first (no-op unless SENTRY_DSN set)
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";

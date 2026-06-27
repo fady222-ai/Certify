@@ -179,6 +179,27 @@ test("processBatchAsync: reserves quota and marks overflow rows failed (no overs
   assert.equal(final.status, "completed");
 });
 
+test("processBatchAsync: serializes concurrent batches for the SAME org (no quota race)", async () => {
+  installFakePrisma();
+  let active = 0;
+  let maxActive = 0;
+  const reserve = async () => {
+    active++; maxActive = Math.max(maxActive, active);
+    await new Promise((r) => setTimeout(r, 5)); // hold the critical section briefly
+    active--;
+    return { allowed: 1 };
+  };
+  const fakeIssue = async () => ({ id: "c" });
+  const deps = { reserve, ensureUsage: async () => {} };
+  const org = { id: "same-org" };
+  // Fire two batches for the same org at once; the per-org lock must serialize them.
+  await Promise.all([
+    processBatchAsync("b-a", [{ recipientName: "A" }], org, null, null, fakeIssue, null, deps),
+    processBatchAsync("b-b", [{ recipientName: "B" }], org, null, null, fakeIssue, null, deps),
+  ]);
+  assert.equal(maxActive, 1, "reservations for one org never overlap");
+});
+
 test("processBatchAsync: issues with skipLimits (quota already reserved)", async () => {
   installFakePrisma();
   let opts;
