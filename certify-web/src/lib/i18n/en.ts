@@ -10,6 +10,7 @@ export const en: Dict = {
     how: "How it works",
     pricing: "Pricing",
     verifyCert: "Verify a certificate",
+    wallet: "My certificates",
     login: "Sign in",
     startFree: "Start free",
   },

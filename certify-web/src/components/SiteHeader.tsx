@@ -17,10 +17,14 @@ export function SiteHeader() {
           <a href="/#how" className="transition hover:text-brand-700">{t("header.how")}</a>
           <a href="/#pricing" className="transition hover:text-brand-700">{t("header.pricing")}</a>
           <Link href="/verify" className="transition hover:text-brand-700">{t("header.verifyCert")}</Link>
+          <Link href="/wallet" className="transition hover:text-brand-700">{t("header.wallet")}</Link>
         </nav>
 
         <div className="flex items-center gap-2.5">
           <LanguageSwitcher />
+          {/* Student/trainee entry point — fallback button on small screens where
+              the main nav is hidden (the nav already shows it on md+). */}
+          <Link href="/wallet" className="btn-ghost hidden sm:inline-flex md:hidden">{t("header.wallet")}</Link>
           <Link href="/login" className="btn-ghost hidden sm:inline-flex">{t("header.login")}</Link>
           <Link href="/register" className="btn-primary">{t("header.startFree")}</Link>
         </div>

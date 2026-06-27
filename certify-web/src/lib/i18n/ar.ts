@@ -9,6 +9,7 @@ export const ar = {
     how: "كيف تعمل",
     pricing: "الأسعار",
     verifyCert: "تحقق من شهادة",
+    wallet: "شهاداتي",
     login: "تسجيل الدخول",
     startFree: "ابدأ مجانا",
   },
