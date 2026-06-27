@@ -18,6 +18,30 @@ const requestSchema = z.object({
   email: z.string().trim().email("بريد إلكتروني غير صالح.").max(160),
 });
 
+// Per-recipient cooldown (in addition to the per-IP limiter in server.js): caps
+// how many wallet emails a single address can receive, so an IP-rotating
+// attacker can't mass-mail a known victim. In-memory per process (same caveat as
+// the support guest-receipt cap); exceeding it silently skips the send while the
+// response stays generic (no enumeration).
+const RECIPIENT_MAX = 3;
+const RECIPIENT_WINDOW_MS = 60 * 60 * 1000;
+const recipientHits = new Map();
+
+function allowRecipient(email) {
+  const now = Date.now();
+  const hits = (recipientHits.get(email) ?? []).filter((t) => now - t < RECIPIENT_WINDOW_MS);
+  if (hits.length >= RECIPIENT_MAX) {
+    recipientHits.set(email, hits);
+    return false;
+  }
+  hits.push(now);
+  recipientHits.set(email, hits);
+  if (recipientHits.size > 5000) {
+    for (const [k, v] of recipientHits) if (!v.some((t) => now - t < RECIPIENT_WINDOW_MS)) recipientHits.delete(k);
+  }
+  return true;
+}
+
 function signWalletToken(email) {
   return jwt.sign({ typ: "wallet", email: email.toLowerCase() }, config.appKey, {
     expiresIn: WALLET_TTL,
@@ -48,7 +72,7 @@ export async function requestWalletLink(req, res, next) {
     const count = await prisma.certificate.count({
       where: { recipientEmail: email, status: { not: "revoked" } },
     });
-    if (count > 0) {
+    if (count > 0 && allowRecipient(email)) {
       const msg = walletLinkEmail({ url: walletUrl(signWalletToken(email)), count });
       sendEmail({ to: email, ...msg }).catch(logMailFailure(`wallet link to ${email}`));
     }
