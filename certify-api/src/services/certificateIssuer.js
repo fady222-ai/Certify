@@ -3,6 +3,7 @@ import { prisma } from "../db/prisma.js";
 import { computeHash, toDateOnly } from "./certificateHasher.js";
 import { renderPdf } from "./certificateRenderer.js";
 import { sendCertificateEmail } from "./certificateMailer.js";
+import { sendCertificateWhatsapp } from "./certificateWhatsapp.js";
 
 /** Error thrown when an organization exceeds its monthly plan limit. */
 export class PlanLimitError extends Error {
@@ -194,6 +195,14 @@ export async function issueCertificate(organization, data, render = true, option
   if (sendMail && cert.recipientEmail) {
     sendCertificateEmail(cert).catch((e) =>
       console.error(`[mailer] failed for ${cert.verificationCode}:`, e.message)
+    );
+  }
+
+  // Deliver over WhatsApp too (best-effort) — gated inside on platform + org
+  // enablement, credentials, and a usable recipient phone.
+  if (sendMail && cert.recipientPhone) {
+    sendCertificateWhatsapp(cert).catch((e) =>
+      console.error(`[whatsapp] failed for ${cert.verificationCode}:`, e.message)
     );
   }
 

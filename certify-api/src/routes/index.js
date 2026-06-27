@@ -99,6 +99,12 @@ import {
   apiListCertificates,
   apiGetCertificate,
 } from "../controllers/apiV1Controller.js";
+import {
+  adminGetWhatsapp,
+  adminSetWhatsapp,
+  getOrgWhatsapp,
+  updateOrgWhatsapp,
+} from "../controllers/whatsappController.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
 import { requireOwner } from "../middleware/requireOrgRole.js";
@@ -173,6 +179,11 @@ apiRouter.get("/api-keys", requireAuth, requireOwner, listApiKeys);
 apiRouter.post("/api-keys", requireAuth, requireOwner, createApiKey);
 apiRouter.delete("/api-keys/:id", requireAuth, requireOwner, revokeApiKey);
 
+// WhatsApp delivery config (owner only). GET also returns the platform flag so
+// the UI can show/hide the feature.
+apiRouter.get("/whatsapp", requireAuth, requireOwner, getOrgWhatsapp);
+apiRouter.put("/whatsapp", requireAuth, requireOwner, updateOrgWhatsapp);
+
 // --- Public developer API (v1) — authenticated by an API key ---
 const apiV1Router = Router();
 apiV1Router.post("/certificates", requireApiKey, apiIssueCertificate);
@@ -234,6 +245,8 @@ apiRouter.post("/admin/organizations/:id/verify-email", requireAuth, requireAdmi
 apiRouter.get("/admin/payment-gateways", requireAuth, requireAdmin, listPaymentGateways);
 apiRouter.put("/admin/payment-gateways/:gateway", requireAuth, requireAdmin, updatePaymentGateway);
 apiRouter.delete("/admin/payment-gateways/:gateway", requireAuth, requireAdmin, deletePaymentGateway);
+apiRouter.get("/admin/whatsapp", requireAuth, requireAdmin, adminGetWhatsapp);
+apiRouter.put("/admin/whatsapp", requireAuth, requireAdmin, adminSetWhatsapp);
 
 // Support — admin queue
 apiRouter.get("/support/admin/tickets", requireAuth, requireAdmin, adminListTickets);

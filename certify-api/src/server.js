@@ -10,6 +10,8 @@ import { ensureAdmin } from "./services/ensureAdmin.js";
 import { ensureOrgNameIndex } from "./services/ensureOrgNameIndex.js";
 import { startRenewalJob } from "./jobs/renewSubscriptions.js";
 import { loadGatewayConfigs } from "./services/gatewayConfig.js";
+import { loadPlatformSettings } from "./services/platformSettings.js";
+import { loadWhatsappConfigs } from "./services/whatsappConfig.js";
 import { reportError } from "./services/errorReporter.js";
 
 const app = express();
@@ -197,5 +199,8 @@ app.listen(config.port, "0.0.0.0", () => {
   ensureOrgNameIndex().catch((e) => console.error("[orgindex]", e.message));
   // Load admin-set payment gateway credentials into memory (falls back to env).
   loadGatewayConfigs().catch((e) => console.error("[gatewayConfig]", e.message));
+  // Load the platform WhatsApp flag + per-org WhatsApp credentials into memory.
+  loadPlatformSettings().catch((e) => console.error("[platformSettings]", e.message));
+  loadWhatsappConfigs().catch((e) => console.error("[whatsappConfig]", e.message));
   startRenewalJob();
 });

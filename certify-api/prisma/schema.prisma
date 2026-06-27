@@ -114,8 +114,37 @@ model Organization {
   subscriptions  Subscription[]
   supportTickets SupportTicket[]
   apiKeys        ApiKey[]
+  whatsappConfig WhatsappConfig?
 
   @@map("organizations")
+}
+
+// Per-organization WhatsApp Cloud API credentials for automatic certificate
+// delivery. Mirrors GatewayConfig: the field set is stored as one AES-GCM
+// encrypted JSON blob; the API only ever returns masked previews of secrets.
+model WhatsappConfig {
+  id             String   @id @default(uuid())
+  organizationId String   @unique @map("organization_id")
+  enabled        Boolean  @default(false) // the org's own on/off (within the platform toggle)
+  secrets        String // encrypted JSON: { phoneNumberId, accessToken, templateName, languageCode }
+  updatedById    String?  @map("updated_by_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("whatsapp_configs")
+}
+
+// Platform-wide key/value settings managed by the platform admin (e.g. the
+// global WhatsApp feature flag). Cached in memory; refreshed on write.
+model PlatformSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_settings")
 }
 
 model ApiKey {
