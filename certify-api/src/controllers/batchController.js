@@ -1,17 +1,8 @@
 import crypto from "node:crypto";
-import path from "node:path";
-import fs from "node:fs";
-import { fileURLToPath } from "node:url";
 import ExcelJS from "exceljs";
 import { parse as parseCsv } from "csv-parse/sync";
 import { prisma } from "../db/prisma.js";
 import { issueCertificate, PlanLimitError, reserveQuota, ensureUsageRow } from "../services/certificateIssuer.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const storageDir = path.join(__dirname, "../../storage/uploads");
-
-// Ensure upload dir exists
-fs.mkdirSync(storageDir, { recursive: true });
 
 /**
  * POST /batches

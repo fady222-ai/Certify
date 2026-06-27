@@ -32,8 +32,12 @@ app.use((req, res, next) => {
 });
 app.set("trust proxy", 1);
 
-// Serve generated certificate PDFs.
-app.use("/storage", express.static(path.resolve(config.storageDir)));
+// Serve generated certificate PDFs + uploaded images. Defense in depth: force
+// nosniff so a stored file can never be content-sniffed into an executable type
+// (uploads are already restricted to png/jpg/webp with server-generated names).
+app.use("/storage", express.static(path.resolve(config.storageDir), {
+  setHeaders: (res) => res.setHeader("X-Content-Type-Options", "nosniff"),
+}));
 
 // Rate-limit the API surface.
 app.use(
