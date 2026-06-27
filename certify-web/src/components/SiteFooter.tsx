@@ -31,6 +31,7 @@ export function SiteFooter() {
             <ul className="space-y-2 text-sm text-ink-soft">
               <li><Link href="/login" className="hover:text-brand-700">{t("footer.loginLink")}</Link></li>
               <li><Link href="/register" className="hover:text-brand-700">{t("footer.register")}</Link></li>
+              <li><Link href="/wallet" className="hover:text-brand-700">{t("footer.wallet")}</Link></li>
             </ul>
           </div>
 

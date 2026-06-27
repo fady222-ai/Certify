@@ -105,6 +105,7 @@ import {
   getOrgWhatsapp,
   updateOrgWhatsapp,
 } from "../controllers/whatsappController.js";
+import { requestWalletLink, getWallet } from "../controllers/walletController.js";
 import { requireAuth } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/requireAdmin.js";
 import { requireOwner } from "../middleware/requireOrgRole.js";
@@ -142,6 +143,10 @@ apiRouter.post("/auth/mfa/verify", mfaVerifyHandler); // step 2 of login (public
 apiRouter.post("/support/public/tickets", createGuestTicket);
 apiRouter.get("/support/public/tickets/:token", getGuestTicket);
 apiRouter.post("/support/public/tickets/:token/messages", replyGuestTicket);
+
+// Trainee certificate wallet (public, capability-token via emailed magic link).
+apiRouter.post("/wallet/request", requestWalletLink);
+apiRouter.get("/wallet/:token", getWallet);
 
 // --- Protected ---
 apiRouter.get("/auth/me", requireAuth, meHandler);
