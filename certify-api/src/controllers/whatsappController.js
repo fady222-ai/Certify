@@ -28,7 +28,10 @@ export async function adminSetWhatsapp(req, res) {
 
 /** GET /api/whatsapp — masked WhatsApp config for the owner's org. */
 export async function getOrgWhatsapp(req, res) {
-  res.json(presentOrgWhatsapp(req.organization.id));
+  res.json({
+    ...presentOrgWhatsapp(req.organization.id),
+    plan_allowed: !!req.organization.plan?.hasWhatsapp,
+  });
 }
 
 /**
@@ -39,10 +42,14 @@ export async function getOrgWhatsapp(req, res) {
 export async function updateOrgWhatsapp(req, res) {
   const orgId = req.organization.id;
 
-  // The org can't enable WhatsApp while the platform feature is off.
+  // The org can't enable WhatsApp while the platform feature is off, or on a
+  // plan that doesn't include it (paid feature).
   const wantsEnable = req.body?.enabled === true;
   if (wantsEnable && !isWhatsappEnabledPlatform()) {
     return res.status(403).json({ message: "ميزة واتساب غير مفعّلة من إدارة المنصة." });
+  }
+  if (wantsEnable && !req.organization.plan?.hasWhatsapp) {
+    return res.status(403).json({ message: "ميزة واتساب متاحة في باقتي Pro وBusiness. رقِّ باقتك لتفعيلها." });
   }
 
   const incoming = req.body?.fields ?? {};
@@ -64,5 +71,8 @@ export async function updateOrgWhatsapp(req, res) {
   }
 
   await saveWhatsappConfig(orgId, merged, enabled, req.user.id);
-  res.json({ message: "تم حفظ إعدادات واتساب بنجاح.", config: presentOrgWhatsapp(orgId) });
+  res.json({
+    message: "تم حفظ إعدادات واتساب بنجاح.",
+    config: { ...presentOrgWhatsapp(orgId), plan_allowed: !!req.organization.plan?.hasWhatsapp },
+  });
 }

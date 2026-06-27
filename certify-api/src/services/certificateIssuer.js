@@ -198,9 +198,9 @@ export async function issueCertificate(organization, data, render = true, option
     );
   }
 
-  // Deliver over WhatsApp too (best-effort) — gated inside on platform + org
-  // enablement, credentials, and a usable recipient phone.
-  if (sendMail && cert.recipientPhone) {
+  // Deliver over WhatsApp too (best-effort) — gated on the org's plan (paid
+  // feature) here, and inside on platform + org enablement + credentials.
+  if (sendMail && cert.recipientPhone && organization.plan?.hasWhatsapp) {
     sendCertificateWhatsapp(cert).catch((e) =>
       console.error(`[whatsapp] failed for ${cert.verificationCode}:`, e.message)
     );

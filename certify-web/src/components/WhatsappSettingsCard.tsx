@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getWhatsapp, updateWhatsapp, type WaConfig } from "@/lib/whatsapp";
 import { useT } from "@/components/LocaleProvider";
 import { Switch } from "@/components/Switch";
@@ -83,6 +84,11 @@ export function WhatsappSettingsCard() {
         <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800 ring-1 ring-amber-100">
           {t("wa.platformOff")}
         </p>
+      ) : cfg.plan_allowed === false ? (
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-100">
+          <span className="text-sm font-bold text-amber-800">{t("wa.planOff")}</span>
+          <Link href="/dashboard/billing" className="btn-primary shrink-0">{t("wa.upgrade")}</Link>
+        </div>
       ) : (
         <>
           {toast && (

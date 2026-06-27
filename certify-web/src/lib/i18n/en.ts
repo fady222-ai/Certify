@@ -999,6 +999,8 @@ export const en: Dict = {
     title: "Automatic WhatsApp delivery",
     subtitle: "Send the certificate to the trainee's WhatsApp automatically on issuance — single and bulk.",
     platformOff: "WhatsApp delivery isn't enabled by the platform admin yet. Contact support to enable it for your account.",
+    planOff: "WhatsApp delivery is available on the Pro and Business plans. Upgrade to enable it.",
+    upgrade: "Upgrade plan",
     enableLabel: "Enable WhatsApp delivery",
     needsKeys: "Enter the connection keys first, then enable the feature.",
     fieldsHint: "Enter your WhatsApp Business Cloud API details from your academy's Meta account.",

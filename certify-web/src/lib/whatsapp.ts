@@ -11,6 +11,7 @@ export type WaField = {
 
 export type WaConfig = {
   platform_enabled: boolean;
+  plan_allowed?: boolean;
   enabled: boolean;
   available: boolean;
   fields: WaField[];

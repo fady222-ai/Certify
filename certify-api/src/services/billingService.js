@@ -21,6 +21,7 @@ export function presentPlan(p) {
     has_bulk_issuance: p.hasBulkIssuance,
     has_api: p.hasApi,
     has_white_label: p.hasWhiteLabel,
+    has_whatsapp: p.hasWhatsapp,
   };
 }
 

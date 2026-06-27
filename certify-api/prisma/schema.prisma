@@ -79,6 +79,7 @@ model Plan {
   hasBulkIssuance      Boolean @default(false) @map("has_bulk_issuance")
   hasApi               Boolean @default(false) @map("has_api")
   hasWhiteLabel        Boolean @default(false) @map("has_white_label")
+  hasWhatsapp          Boolean @default(false) @map("has_whatsapp")
   isActive             Boolean @default(true) @map("is_active")
 
   organizations Organization[]

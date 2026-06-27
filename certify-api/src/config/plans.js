@@ -9,6 +9,6 @@
 // (brand-hiding on the public verification page) is gated to Business.
 export const PLANS = [
   { slug: "free",     name: "Free",     priceMonthly: 0,  priceYearly: 0,   certificatesPerMonth: 10,    teamMembersLimit: 1,  hasBulkIssuance: false },
-  { slug: "pro",      name: "Pro",      priceMonthly: 29, priceYearly: 290, certificatesPerMonth: 2000,  teamMembersLimit: 3,  hasBulkIssuance: true, hasApi: true },
-  { slug: "business", name: "Business", priceMonthly: 79, priceYearly: 790, certificatesPerMonth: 10000, teamMembersLimit: 10, hasBulkIssuance: true, hasApi: true, hasWhiteLabel: true },
+  { slug: "pro",      name: "Pro",      priceMonthly: 29, priceYearly: 290, certificatesPerMonth: 2000,  teamMembersLimit: 3,  hasBulkIssuance: true, hasApi: true, hasWhatsapp: true },
+  { slug: "business", name: "Business", priceMonthly: 79, priceYearly: 790, certificatesPerMonth: 10000, teamMembersLimit: 10, hasBulkIssuance: true, hasApi: true, hasWhiteLabel: true, hasWhatsapp: true },
 ];
