@@ -40,6 +40,7 @@ import {
   createBatch,
   listBatches,
   getBatch,
+  downloadTemplate,
 } from "../controllers/batchController.js";
 import {
   listPlans,
@@ -225,6 +226,7 @@ apiRouter.post("/organization/branding/:kind", requireAuth, (req, res, next) => 
 apiRouter.delete("/organization/branding/:kind", requireAuth, deleteBranding);
 
 apiRouter.get("/batches", requireAuth, listBatches);
+apiRouter.get("/batches/template", requireAuth, downloadTemplate); // before /:id
 apiRouter.post("/batches", requireAuth, (req, res, next) => {
   uploadFile(req, res, (err) => {
     if (err) return res.status(400).json({ message: err.message });

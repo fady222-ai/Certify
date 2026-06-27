@@ -12,6 +12,7 @@ import {
   processBatchAsync,
   isValidEmail,
   createBatch,
+  downloadTemplate,
 } from "../src/controllers/batchController.js";
 
 const csvFile = (text) => ({ originalname: "rows.csv", mimetype: "text/csv", buffer: Buffer.from(text) });
@@ -90,6 +91,29 @@ test("parseFile (XLSX): reads the first sheet", async () => {
   const rows = await parseFile({ originalname: "data.xlsx", mimetype: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer });
   assert.equal(rows.length, 1);
   assert.deepEqual(rows[0], { recipientName: "Omar", recipientEmail: "omar@x.com", recipientPhone: undefined, courseName: "History" });
+});
+
+test("downloadTemplate: emits a valid .xlsx whose headers round-trip through parseFile", async () => {
+  let sent = null;
+  const headers = {};
+  const res = { setHeader: (k, v) => { headers[k] = v; }, send: (b) => { sent = b; }, status: () => ({ json: () => {} }) };
+  await downloadTemplate({}, res);
+
+  assert.match(headers["Content-Type"], /spreadsheetml\.sheet/);
+  assert.match(headers["Content-Disposition"], /certify-bulk-template\.xlsx/);
+  assert.equal(sent.slice(0, 2).toString(), "PK", "is a real xlsx (zip) file");
+
+  // The template the academy downloads must parse back with our exact columns.
+  const rows = await parseFile({
+    originalname: "certify-bulk-template.xlsx",
+    mimetype: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: sent,
+  });
+  assert.equal(rows.length, 1, "the one example row is parsed");
+  assert.equal(rows[0].recipientName, "Abdullah Mohammed");
+  assert.equal(rows[0].recipientEmail, "student@example.com");
+  assert.equal(rows[0].courseName, "Digital Marketing Fundamentals");
+  assert.ok(rows[0].recipientPhone, "phone column is recognized");
 });
 
 test("isValidEmail accepts well-formed and rejects malformed addresses", () => {

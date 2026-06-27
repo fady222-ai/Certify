@@ -8,7 +8,7 @@ import { listTemplates } from "@/lib/templates";
 import { getOrganization } from "@/lib/organization";
 import { getBilling } from "@/lib/billing";
 import { useI18n } from "@/components/LocaleProvider";
-import { IconUpload, IconCheck, IconArrow } from "@/components/icons";
+import { IconUpload, IconCheck, IconArrow, IconDownload } from "@/components/icons";
 
 type BatchStatus = {
   id: string;
@@ -34,6 +34,7 @@ export default function BulkPage() {
   const [dragOver, setDragOver] = useState(false);
 
   const [uploading, setUploading] = useState(false);
+  const [downloadingTpl, setDownloadingTpl] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<{ batchId: string; total: number } | null>(null);
 
@@ -98,6 +99,28 @@ export default function BulkPage() {
       setError(err instanceof Error ? err.message : t("bulk.genericError"));
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function downloadTpl() {
+    setDownloadingTpl(true);
+    setError(null);
+    try {
+      const res = await authedFetch("batches/template");
+      if (!res.ok) throw new Error(t("bulk.templateError"));
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "certify-bulk-template.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("bulk.templateError"));
+    } finally {
+      setDownloadingTpl(false);
     }
   }
 
@@ -199,6 +222,15 @@ export default function BulkPage() {
             <div className="rounded-xl bg-brand-50 px-4 py-3 text-xs text-brand-700">
               <strong>{t("bulk.fileStructureLabel")}</strong> {t("bulk.colWord")} <code>name</code> {t("bulk.orWord")} <code>recipient_name</code> ({t("bulk.required")}) ·
               {" "}{t("bulk.colWord")} <code>email</code> ({t("bulk.optional")}) · {t("bulk.colWord")} <code>course_name</code> ({t("bulk.optional")}) · {t("bulk.colWord")} <code>phone</code> ({t("bulk.optional")})
+            </div>
+
+            {/* Downloadable, ready-to-fill Excel template */}
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed border-brand-200 bg-brand-50/40 px-4 py-3">
+              <span className="text-xs text-ink-soft">{t("bulk.templateHelp")}</span>
+              <button type="button" onClick={downloadTpl} disabled={downloadingTpl}
+                className="btn-ghost shrink-0 text-sm disabled:opacity-60">
+                <IconDownload className="h-4 w-4" /> {downloadingTpl ? t("bulk.downloadingTemplate") : t("bulk.downloadTemplate")}
+              </button>
             </div>
 
             {/* Fields */}

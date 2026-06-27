@@ -151,6 +151,45 @@ export async function getBatch(req, res) {
   }
 }
 
+/**
+ * GET /batches/template
+ * Download a ready-to-fill .xlsx template with the exact columns the parser
+ * accepts (name required; email/course_name/phone optional) plus one example
+ * row, so academies fill it and re-upload.
+ */
+export async function downloadTemplate(_req, res) {
+  try {
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Certify";
+    const sheet = wb.addWorksheet("Certificates");
+
+    sheet.columns = [
+      { header: "name", key: "name", width: 28 },
+      { header: "email", key: "email", width: 30 },
+      { header: "course_name", key: "course_name", width: 32 },
+      { header: "phone", key: "phone", width: 20 },
+    ];
+    // Example row (academies overwrite it). Phone in international format for WhatsApp.
+    sheet.addRow({ name: "Abdullah Mohammed", email: "student@example.com", course_name: "Digital Marketing Fundamentals", phone: "+9665XXXXXXXX" });
+
+    // Style the header row: bold on a brand fill, frozen so it stays visible.
+    const head = sheet.getRow(1);
+    head.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4F46E5" } };
+    head.alignment = { vertical: "middle", horizontal: "center" };
+    head.height = 22;
+    sheet.views = [{ state: "frozen", ySplit: 1 }];
+
+    const buffer = await wb.xlsx.writeBuffer();
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", 'attachment; filename="certify-bulk-template.xlsx"');
+    return res.send(Buffer.from(buffer));
+  } catch (err) {
+    console.error("[downloadTemplate]", err);
+    return res.status(500).json({ message: "تعذر إنشاء القالب." });
+  }
+}
+
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 /** Lightweight email sanity check; invalid addresses are dropped (email is optional). */
