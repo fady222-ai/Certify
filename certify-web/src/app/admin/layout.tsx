@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { getStoredUser, getToken, logout, type AuthUser } from "@/lib/auth";
-import { IconChart, IconBuilding, IconCreditCard, IconMail, IconLock } from "@/components/icons";
+import { IconChart, IconBuilding, IconCreditCard, IconMail, IconLock, IconWhatsapp } from "@/components/icons";
 import { useT } from "@/components/LocaleProvider";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -16,6 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { label: t("admin.nav.overview"), icon: IconChart, href: "/admin" },
     { label: t("admin.nav.organizations"), icon: IconBuilding, href: "/admin/organizations" },
     { label: t("admin.nav.gateways"), icon: IconCreditCard, href: "/admin/payment-gateways" },
+    { label: t("admin.nav.integrations"), icon: IconWhatsapp, href: "/admin/integrations" },
     { label: t("admin.nav.tickets"), icon: IconMail, href: "/admin/support" },
     { label: t("admin.nav.security"), icon: IconLock, href: "/admin/security" },
   ];

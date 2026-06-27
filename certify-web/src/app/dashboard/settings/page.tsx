@@ -9,6 +9,7 @@ import {
   type Organization,
 } from "@/lib/organization";
 import { useT } from "@/components/LocaleProvider";
+import { WhatsappSettingsCard } from "@/components/WhatsappSettingsCard";
 import { IconBadge, IconTrash, IconUpload } from "@/components/icons";
 
 const PRESET_COLORS = ["#4f46e5", "#0ea5e9", "#059669", "#d97706", "#dc2626", "#7c3aed", "#db2777", "#0f172a"];
@@ -183,6 +184,9 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+
+            {/* WhatsApp delivery (owner only; self-hides otherwise) */}
+            <WhatsappSettingsCard />
           </>
         )}
       </main>

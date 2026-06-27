@@ -627,6 +627,34 @@ cd certify-web && npm install && npm run dev
 
 ---
 
+## تسليم الشهادات تلقائياً عبر واتساب (WhatsApp Cloud API)
+
+إرسال الشهادة **آلياً** لواتساب المتدرّب فور الإصدار (مفرد وجماعي) — بخلاف أزرار المشاركة اليدوية.
+يعمل بنمط بوابات الدفع: مفاتيح مشفّرة لكل أكاديمية + تحكّم على مستويين.
+- **التحكّم على مستويين:** (1) **علم منصّة عام** يضبطه أدمن المنصّة (`PlatformSetting key="whatsapp_enabled"`)
+  عبر `/admin/integrations`؛ (2) **تفعيل لكل أكاديمية** + مفاتيحها من `/dashboard/settings`. الإتاحة
+  الفعلية = أربع بوابات في `isWhatsappAvailableForOrg`: علم المنصّة **و** تفعيل الأكاديمية **و** اكتمال
+  المفاتيح **و** وجود هاتف للمتدرّب.
+- **النماذج (schema):** `WhatsappConfig` (لكل org: `enabled` + `secrets` JSON مشفّر AES-GCM:
+  `phoneNumberId`/`accessToken`/`templateName`/`languageCode`) و`PlatformSetting` (key/value عام).
+  **شغّل `npx prisma db push` على النشر.**
+- **الخدمات:** `services/platformSettings.js` (كاش العلم العام، يُحمَّل بالإقلاع) ·
+  `services/whatsappConfig.js` (كاش لكل org، تشفير/تقنيع `maskSecret`/دمج جزئي/تحقق/أربع بوابات —
+  نمط `gatewayConfig`) · `services/certificateWhatsapp.js` (`sendCertificateWhatsapp`: رسالة قالب
+  Meta Graph `v21.0` مع رأس مستند PDF + 3 متغيّرات متن [اسم/دورة/رابط تحقق]، best-effort، يسجّل
+  حدث `whatsapped`). موصول في `issueCertificate` بجانب البريد (يُطلَق فقط إن وُجد `recipientPhone`).
+- **المسارات:** أدمن `GET/PUT /api/admin/whatsapp` (`requireAdmin`) · مالك `GET/PUT /api/whatsapp`
+  (`requireOwner`؛ يرفض التفعيل إن كان علم المنصّة مطفأً 403 أو نقصت الحقول 422). `whatsappController.js`.
+- **الواجهة:** `lib/whatsapp.ts` + صفحة أدمن `/admin/integrations` (مفتاح Switch + بند تنقّل «التكاملات»
+  IconWhatsapp) + مكوّن `WhatsappSettingsCard` في إعدادات المالك (يُخفي نفسه لغير المالك عبر 403؛ يعرض
+  لافتة «غير مفعّلة من المنصّة» عند إطفاء العلم). مفاتيح i18n: `admin.integrations.*` و`wa.*`.
+- **القيود/القرارات:** الكاش بالذاكرة لكل process (كـgatewayConfig — يلزم إبطال مشترك عند التوسّع
+  الأفقي). الأكاديمية تجهّز حساب WhatsApp Business + قالباً معتمداً من Meta بنفسها (نُدخل مفاتيحها فقط).
+  لا تقييد بالباقة حالياً (يمكن إضافته كعلم `hasWhatsapp` لاحقاً). اختبار `test/whatsapp-config.test.js`:
+  دورة التشفير/التقنيع، الدمج الجزئي، التحقق، والأربع بوابات (علم المنصّة + الأكاديمية + المفاتيح).
+
+---
+
 ## ملاحظات للجلسات الجديدة
 
 - المستودع نُظِّف من مشروع `branch-chat-server` غير المرتبط (كان في الجذر) — لا
