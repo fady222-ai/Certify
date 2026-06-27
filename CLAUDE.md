@@ -511,6 +511,12 @@ Stripe/SendGrid العالمي. محصور في باقات Pro/Business (`hasApi
 - **ترقيم صفحات الشهادات:** `GET /api/certificates` يقبل `page`/`pageSize`
   (افتراضي 50، سقف 100) ويُعيد `{ data, total, page, pageSize }`؛ الواجهة
   (`dashboard/certificates`) تعرض أزرار السابق/التالي.
+- **تحصين الإصدار الجماعي (`batchController.js`):** (1) تحليل CSV بـ`bom:true` فلا تنكسر ملفات
+  Excel ذات BOM (كان أول عمود يفشل فتُسقَط كل الصفوف). (2) **تقدّم حيّ:** `processBatchAsync` يكتب
+  `successCount`/`failedCount` كل 10 صفوف (لا مرة واحدة في النهاية) فيتحرّك شريط التقدّم في صفحة
+  متابعة الدفعة فعلياً. (3) حارس انهيار: أي خطأ غير صفّي يُنهي الدفعة بحالة نهائية بدل تعليقها على
+  «processing» للأبد، والنداء fire-and-forget ملفوف بـ`.catch`. (4) عمود هاتف اختياري للتسليم عبر
+  واتساب. السلوك التسلسلي مقصود (التزامن قد يتجاوز حصّة الباقة/العضو). مغطّى بـ`test/batch.test.js`.
 - **تسجيل أخطاء البريد:** `logMailFailure(context)` في `services/email/index.js`
   يحلّ محلّ `.catch(() => {})` الصامت في إرسال البريد (best-effort يبقى غير حاجب،
   لكن الفشل يظهر في السجلّ).
@@ -648,6 +654,10 @@ cd certify-web && npm install && npm run dev
 - **الواجهة:** `lib/whatsapp.ts` + صفحة أدمن `/admin/integrations` (مفتاح Switch + بند تنقّل «التكاملات»
   IconWhatsapp) + مكوّن `WhatsappSettingsCard` في إعدادات المالك (يُخفي نفسه لغير المالك عبر 403؛ يعرض
   لافتة «غير مفعّلة من المنصّة» عند إطفاء العلم). مفاتيح i18n: `admin.integrations.*` و`wa.*`.
+- **الإصدار الجماعي يدعم واتساب:** `parseFile` يقرأ عمود هاتف اختياري (`phone`/`recipient_phone`/
+  `mobile`/`whatsapp`/`الهاتف`/`الجوال`/`واتساب`) ويمرّره كـ`recipientPhone`، فتُسلَّم الدفعة عبر واتساب
+  تلقائياً (بنفس بوابات الإتاحة). **التقييد بالباقة:** الإرسال في `issueCertificate` مشروط بـ
+  `organization.plan?.hasWhatsapp` (Pro/Business).
 - **القيود/القرارات:** الكاش بالذاكرة لكل process (كـgatewayConfig — يلزم إبطال مشترك عند التوسّع
   الأفقي). الأكاديمية تجهّز حساب WhatsApp Business + قالباً معتمداً من Meta بنفسها (نُدخل مفاتيحها فقط).
   لا تقييد بالباقة حالياً (يمكن إضافته كعلم `hasWhatsapp` لاحقاً). اختبار `test/whatsapp-config.test.js`:

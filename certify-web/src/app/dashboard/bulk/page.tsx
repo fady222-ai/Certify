@@ -198,7 +198,7 @@ export default function BulkPage() {
             {/* Template hint */}
             <div className="rounded-xl bg-brand-50 px-4 py-3 text-xs text-brand-700">
               <strong>{t("bulk.fileStructureLabel")}</strong> {t("bulk.colWord")} <code>name</code> {t("bulk.orWord")} <code>recipient_name</code> ({t("bulk.required")}) ·
-              {" "}{t("bulk.colWord")} <code>email</code> ({t("bulk.optional")}) · {t("bulk.colWord")} <code>course_name</code> ({t("bulk.optional")})
+              {" "}{t("bulk.colWord")} <code>email</code> ({t("bulk.optional")}) · {t("bulk.colWord")} <code>course_name</code> ({t("bulk.optional")}) · {t("bulk.colWord")} <code>phone</code> ({t("bulk.optional")})
             </div>
 
             {/* Fields */}

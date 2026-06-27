@@ -46,7 +46,9 @@ export async function createBatch(req, res) {
     }
 
     const organization = req.organization;
-    const batchName = req.body.name?.trim() || `دفعة ${new Date().toLocaleDateString("ar-SA")}`;
+    const batchName =
+      req.body.name?.trim() ||
+      `دفعة ${new Date().toLocaleDateString("ar", { numberingSystem: "latn", dateStyle: "medium" })}`;
     const defaultCourse = req.body.courseName?.trim() || null;
     const templateId = req.body.templateId?.trim() || null;
 
@@ -63,8 +65,10 @@ export async function createBatch(req, res) {
       },
     });
 
-    // Process certificates asynchronously (non-blocking response)
-    processBatchAsync(batch.id, rows, organization, defaultCourse, templateId, issueCertificate, req.user.id);
+    // Process certificates asynchronously (non-blocking response). It guards its
+    // own errors, but attach a catch so a rejection can never go unhandled.
+    processBatchAsync(batch.id, rows, organization, defaultCourse, templateId, issueCertificate, req.user.id)
+      .catch((e) => console.error(`[batch ${batch.id}] unhandled:`, e.message));
 
     return res.status(202).json({
       message: "جارٍ معالجة الدفعة…",
@@ -172,9 +176,22 @@ export async function parseFile(file) {
         "";
       if (!name) return null;
       const email = norm["email"] || norm["البريد"] || "";
+      const phone =
+        norm["phone"] ||
+        norm["recipient_phone"] ||
+        norm["mobile"] ||
+        norm["whatsapp"] ||
+        norm["الهاتف"] ||
+        norm["الجوال"] ||
+        norm["رقم الهاتف"] ||
+        norm["واتساب"] ||
+        "";
       return {
         recipientName: name,
         recipientEmail: isValidEmail(email) ? email : undefined,
+        // Phone is optional; kept for WhatsApp delivery. The sender normalises
+        // to digits, so we only strip obvious empties here.
+        recipientPhone: phone || undefined,
         courseName:
           norm["course_name"] ||
           norm["course"] ||
@@ -230,6 +247,7 @@ function parseCsvBuffer(buffer) {
       skip_empty_lines: true,
       trim: true,
       relax_column_count: true,
+      bom: true, // strip the UTF-8 BOM Excel adds, else the first header breaks
     });
   } catch (e) {
     console.warn("[parseCsvBuffer] parse error:", e.message);
@@ -237,39 +255,58 @@ function parseCsvBuffer(buffer) {
   }
 }
 
+// How often to flush running counts to the DB so the polling UI's progress bar
+// actually moves during a long batch (instead of jumping 0→100% at the end).
+const PROGRESS_FLUSH_EVERY = 10;
+
 // `issue` is injectable so the aggregation logic can be unit-tested without
 // launching headless Chrome; production callers use the real issueCertificate.
+// Kept sequential on purpose: concurrent issuance could race the per-plan and
+// per-member monthly quota checks and overshoot the limit.
 export async function processBatchAsync(batchId, rows, organization, defaultCourse, templateId, issue = issueCertificate, actingUserId = null) {
   let successCount = 0;
   let failedCount = 0;
 
-  for (const row of rows) {
+  const flush = async (done) => {
     try {
-      await issue(
-        organization,
-        {
-          ...row,
-          courseName: row.courseName || defaultCourse || undefined,
-          templateId: templateId || undefined,
-          batchId,
-        },
-        true, // render PDF for each
-        { actingUserId } // count against the issuing member's monthly cap
-      );
-      successCount++;
-    } catch (err) {
-      failedCount++;
-      console.error(`[batch ${batchId}] Failed for "${row.recipientName}":`, err.message);
+      await prisma.batch.update({
+        where: { id: batchId },
+        data: done
+          ? { successCount, failedCount, status: failedCount === rows.length ? "failed" : "completed", completedAt: new Date() }
+          : { successCount, failedCount },
+      });
+    } catch (e) {
+      console.error(`[batch ${batchId}] progress flush failed:`, e.message);
     }
-  }
+  };
 
-  await prisma.batch.update({
-    where: { id: batchId },
-    data: {
-      successCount,
-      failedCount,
-      status: failedCount === rows.length ? "failed" : "completed",
-      completedAt: new Date(),
-    },
-  });
+  try {
+    for (const row of rows) {
+      try {
+        await issue(
+          organization,
+          {
+            ...row,
+            courseName: row.courseName || defaultCourse || undefined,
+            templateId: templateId || undefined,
+            batchId,
+          },
+          true, // render PDF for each
+          { actingUserId } // count against the issuing member's monthly cap
+        );
+        successCount++;
+      } catch (err) {
+        failedCount++;
+        console.error(`[batch ${batchId}] Failed for "${row.recipientName}":`, err.message);
+      }
+      // Periodically publish progress so the dashboard can show a live bar.
+      if ((successCount + failedCount) % PROGRESS_FLUSH_EVERY === 0) await flush(false);
+    }
+    await flush(true);
+  } catch (err) {
+    // A non-row failure (e.g. the DB went away) must still leave the batch in a
+    // terminal state rather than stuck "processing" forever.
+    console.error(`[batch ${batchId}] aborted:`, err.message);
+    await flush(true);
+  }
 }

@@ -41,23 +41,43 @@ test("parseFile (CSV): maps standard columns and drops invalid emails", async ()
     "Sara,not-an-email,Physics\n",
   ));
   assert.equal(rows.length, 2);
-  assert.deepEqual(rows[0], { recipientName: "Ahmed", recipientEmail: "ahmed@x.com", courseName: "Math" });
+  assert.deepEqual(rows[0], { recipientName: "Ahmed", recipientEmail: "ahmed@x.com", recipientPhone: undefined, courseName: "Math" });
   assert.equal(rows[1].recipientName, "Sara");
   assert.equal(rows[1].recipientEmail, undefined, "invalid email dropped but row kept");
 });
 
 test("parseFile (CSV): supports recipient_name and Arabic headers", async () => {
   const aliased = await parseFile(csvFile("recipient_name,course\nLayla,Chemistry\n"));
-  assert.deepEqual(aliased[0], { recipientName: "Layla", recipientEmail: undefined, courseName: "Chemistry" });
+  assert.deepEqual(aliased[0], { recipientName: "Layla", recipientEmail: undefined, recipientPhone: undefined, courseName: "Chemistry" });
 
   const arabic = await parseFile(csvFile("الاسم,البريد,الدورة\nمحمد,m@x.com,الرياضيات\n"));
-  assert.deepEqual(arabic[0], { recipientName: "محمد", recipientEmail: "m@x.com", courseName: "الرياضيات" });
+  assert.deepEqual(arabic[0], { recipientName: "محمد", recipientEmail: "m@x.com", recipientPhone: undefined, courseName: "الرياضيات" });
 });
 
 test("parseFile (CSV): skips rows with no name", async () => {
   const rows = await parseFile(csvFile("name,email\n,orphan@x.com\nReal,r@x.com\n"));
   assert.equal(rows.length, 1);
   assert.equal(rows[0].recipientName, "Real");
+});
+
+test("parseFile (CSV): parses a phone column for WhatsApp delivery (aliases)", async () => {
+  const rows = await parseFile(csvFile("name,phone\nAhmed,+966 50 123 4567\n"));
+  assert.equal(rows[0].recipientPhone, "+966 50 123 4567");
+
+  const wa = await parseFile(csvFile("name,whatsapp\nSara,201001234567\n"));
+  assert.equal(wa[0].recipientPhone, "201001234567");
+
+  const ar = await parseFile(csvFile("الاسم,الجوال\nمحمد,0500000000\n"));
+  assert.equal(ar[0].recipientPhone, "0500000000");
+
+  const none = await parseFile(csvFile("name\nNoPhone\n"));
+  assert.equal(none[0].recipientPhone, undefined);
+});
+
+test("parseFile (CSV): strips the UTF-8 BOM Excel adds so the first header still maps", async () => {
+  const rows = await parseFile(csvFile("﻿name,email\nAhmed,a@x.com\n"));
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].recipientName, "Ahmed", "BOM-prefixed header must still resolve to name");
 });
 
 test("parseFile (XLSX): reads the first sheet", async () => {
@@ -69,7 +89,7 @@ test("parseFile (XLSX): reads the first sheet", async () => {
 
   const rows = await parseFile({ originalname: "data.xlsx", mimetype: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", buffer });
   assert.equal(rows.length, 1);
-  assert.deepEqual(rows[0], { recipientName: "Omar", recipientEmail: "omar@x.com", courseName: "History" });
+  assert.deepEqual(rows[0], { recipientName: "Omar", recipientEmail: "omar@x.com", recipientPhone: undefined, courseName: "History" });
 });
 
 test("isValidEmail accepts well-formed and rejects malformed addresses", () => {
@@ -115,6 +135,31 @@ test("processBatchAsync: a per-row failure is counted but doesn't abort the batc
   assert.equal(update.successCount, 2);
   assert.equal(update.failedCount, 1);
   assert.equal(update.status, "completed", "partial failure still completes");
+});
+
+test("processBatchAsync: forwards recipientPhone to the issuer (WhatsApp path)", async () => {
+  installFakePrisma();
+  const issued = [];
+  const fakeIssue = async (org, data) => { issued.push(data); return { id: "c" }; };
+  await processBatchAsync("b-ph", [{ recipientName: "A", recipientPhone: "966500000000" }], { id: "o" }, null, null, fakeIssue);
+  assert.equal(issued[0].recipientPhone, "966500000000");
+});
+
+test("processBatchAsync: flushes incremental progress during a long batch", async () => {
+  installFakePrisma();
+  const fakeIssue = async () => ({ id: "ok" });
+  const rows = Array.from({ length: 25 }, (_, i) => ({ recipientName: `U${i}` }));
+  await processBatchAsync("b-prog", rows, { id: "o" }, null, null, fakeIssue);
+
+  // 25 rows → flushes at 10 and 20 (no status yet) plus a final terminal flush.
+  assert.ok(calls.batchUpdate.length >= 3, "progress should be published more than once");
+  const intermediate = calls.batchUpdate[0].data;
+  assert.equal(intermediate.successCount, 10);
+  assert.equal(intermediate.status, undefined, "intermediate flush carries no terminal status");
+  const final = calls.batchUpdate[calls.batchUpdate.length - 1].data;
+  assert.equal(final.successCount, 25);
+  assert.equal(final.status, "completed");
+  assert.ok(final.completedAt instanceof Date);
 });
 
 test("processBatchAsync: marks the batch failed when every row fails", async () => {
