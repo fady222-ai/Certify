@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import ExcelJS from "exceljs";
 import { parse as parseCsv } from "csv-parse/sync";
 import { prisma } from "../db/prisma.js";
-import { issueCertificate, PlanLimitError } from "../services/certificateIssuer.js";
+import { issueCertificate, PlanLimitError, reserveQuota, ensureUsageRow } from "../services/certificateIssuer.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const storageDir = path.join(__dirname, "../../storage/uploads");
@@ -46,6 +46,14 @@ export async function createBatch(req, res) {
     }
 
     const organization = req.organization;
+
+    // Fail fast if there's zero quota left, instead of creating a batch that
+    // would fail every row. (processBatchAsync re-reserves authoritatively.)
+    const { allowed } = await reserveQuota(organization, req.user.id, rows.length);
+    if (allowed === 0) {
+      return res.status(402).json({ message: "لا يوجد رصيد متبقٍّ في حصّتك الشهرية لإصدار هذه الدفعة." });
+    }
+
     const batchName =
       req.body.name?.trim() ||
       `دفعة ${new Date().toLocaleDateString("ar", { numberingSystem: "latn", dateStyle: "medium" })}`;
@@ -259,11 +267,19 @@ function parseCsvBuffer(buffer) {
 // actually moves during a long batch (instead of jumping 0→100% at the end).
 const PROGRESS_FLUSH_EVERY = 10;
 
+// How many certificates render in parallel. Each render is one headless-Chrome
+// page on a shared browser; a small pool gives a ~Nx speedup without exhausting
+// memory. Quota safety comes from reserving the exact count up front (below),
+// NOT from serialising — so concurrency can't overshoot the monthly limit.
+const CONCURRENCY = 4;
+
 // `issue` is injectable so the aggregation logic can be unit-tested without
 // launching headless Chrome; production callers use the real issueCertificate.
-// Kept sequential on purpose: concurrent issuance could race the per-plan and
-// per-member monthly quota checks and overshoot the limit.
-export async function processBatchAsync(batchId, rows, organization, defaultCourse, templateId, issue = issueCertificate, actingUserId = null) {
+// `deps` lets tests stub the quota helpers without a DB.
+export async function processBatchAsync(
+  batchId, rows, organization, defaultCourse, templateId, issue = issueCertificate, actingUserId = null, deps = {},
+) {
+  const { reserve = reserveQuota, ensureUsage = ensureUsageRow } = deps;
   let successCount = 0;
   let failedCount = 0;
 
@@ -281,27 +297,44 @@ export async function processBatchAsync(batchId, rows, organization, defaultCour
   };
 
   try {
-    for (const row of rows) {
-      try {
-        await issue(
-          organization,
-          {
-            ...row,
-            courseName: row.courseName || defaultCourse || undefined,
-            templateId: templateId || undefined,
-            batchId,
-          },
-          true, // render PDF for each
-          { actingUserId } // count against the issuing member's monthly cap
-        );
-        successCount++;
-      } catch (err) {
-        failedCount++;
-        console.error(`[batch ${batchId}] Failed for "${row.recipientName}":`, err.message);
-      }
-      // Periodically publish progress so the dashboard can show a live bar.
-      if ((successCount + failedCount) % PROGRESS_FLUSH_EVERY === 0) await flush(false);
+    // Reserve the exact quota up front: only the first `allowed` rows can be
+    // issued this month; the rest are counted failed without an attempt. This
+    // makes the concurrent issuance below safe against overshooting the cap.
+    const { allowed } = await reserve(organization, actingUserId, rows.length);
+    const toIssue = rows.slice(0, allowed);
+    const overflow = rows.length - toIssue.length;
+    if (overflow > 0) {
+      failedCount += overflow;
+      console.warn(`[batch ${batchId}] ${overflow} row(s) exceed the remaining monthly quota`);
     }
+
+    if (toIssue.length > 0) {
+      // Pre-create the usage row so concurrent increments don't race on create.
+      try { await ensureUsage(organization.id); } catch { /* best-effort */ }
+
+      let next = 0;
+      const worker = async () => {
+        for (let i = next++; i < toIssue.length; i = next++) {
+          const row = toIssue[i];
+          try {
+            await issue(
+              organization,
+              { ...row, courseName: row.courseName || defaultCourse || undefined, templateId: templateId || undefined, batchId },
+              true, // render PDF
+              { actingUserId, skipLimits: true }, // quota already reserved above
+            );
+            successCount++;
+          } catch (err) {
+            failedCount++;
+            console.error(`[batch ${batchId}] Failed for "${row.recipientName}":`, err.message);
+          }
+          // Publish progress periodically so the dashboard shows a live bar.
+          if ((successCount + failedCount) % PROGRESS_FLUSH_EVERY === 0) await flush(false);
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(CONCURRENCY, toIssue.length) }, worker));
+    }
+
     await flush(true);
   } catch (err) {
     // A non-row failure (e.g. the DB went away) must still leave the batch in a

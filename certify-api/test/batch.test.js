@@ -162,6 +162,35 @@ test("processBatchAsync: flushes incremental progress during a long batch", asyn
   assert.ok(final.completedAt instanceof Date);
 });
 
+test("processBatchAsync: reserves quota and marks overflow rows failed (no overshoot)", async () => {
+  installFakePrisma();
+  const issued = [];
+  const fakeIssue = async (org, data) => { issued.push(data); return { id: "c" }; };
+  const rows = Array.from({ length: 5 }, (_, i) => ({ recipientName: `U${i}` }));
+  // Only 2 of 5 fit the remaining quota.
+  await processBatchAsync("b-ov", rows, { id: "o" }, null, null, fakeIssue, null, {
+    reserve: async () => ({ allowed: 2 }),
+    ensureUsage: async () => {},
+  });
+  assert.equal(issued.length, 2, "never issues more than the reserved count");
+  const final = calls.batchUpdate[calls.batchUpdate.length - 1].data;
+  assert.equal(final.successCount, 2);
+  assert.equal(final.failedCount, 3, "the 3 overflow rows are counted failed");
+  assert.equal(final.status, "completed");
+});
+
+test("processBatchAsync: issues with skipLimits (quota already reserved)", async () => {
+  installFakePrisma();
+  let opts;
+  const fakeIssue = async (o, d, r, options) => { opts = options; return { id: "c" }; };
+  await processBatchAsync("b-sl", [{ recipientName: "A" }], { id: "o" }, null, null, fakeIssue, "u1", {
+    reserve: async () => ({ allowed: 1 }),
+    ensureUsage: async () => {},
+  });
+  assert.equal(opts.skipLimits, true);
+  assert.equal(opts.actingUserId, "u1");
+});
+
 test("processBatchAsync: marks the batch failed when every row fails", async () => {
   installFakePrisma();
   const fakeIssue = async () => { throw new Error("all fail"); };

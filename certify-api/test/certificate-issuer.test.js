@@ -12,6 +12,7 @@ import {
   issueCertificate,
   assertTemplateAccessible,
   PlanLimitError,
+  reserveQuota,
 } from "../src/services/certificateIssuer.js";
 
 let calls;
@@ -47,6 +48,27 @@ const ORG = { id: "org-1", planId: 1, defaultTemplateId: null };
 const FREE_PLAN = { id: 1, slug: "free", certificatesPerMonth: 10 };
 
 beforeEach(() => { calls = null; });
+
+// ── Quota reservation (bulk worker pool) ─────────────────────────────────────
+test("reserveQuota: caps the count to the org's remaining monthly quota", async () => {
+  installFakePrisma({ plans: [{ id: 1, certificatesPerMonth: 10 }], usage: { certificatesIssued: 7 } });
+  const r = await reserveQuota({ id: "o", planId: 1 }, null, 5);
+  assert.equal(r.allowed, 3, "only 3 of 5 fit (10 − 7 used)");
+});
+
+test("reserveQuota: unlimited when the plan has no monthly cap", async () => {
+  installFakePrisma({ plans: [{ id: 1, certificatesPerMonth: null }] });
+  const r = await reserveQuota({ id: "o", planId: 1 }, null, 50);
+  assert.equal(r.allowed, 50);
+});
+
+test("reserveQuota: also caps to the acting member's personal remaining", async () => {
+  installFakePrisma({ plans: [{ id: 1, certificatesPerMonth: 1000 }], usage: { certificatesIssued: 0 } });
+  prisma.organizationMember = { findFirst: async () => ({ monthlyLimit: 4 }) };
+  prisma.certificate.count = async () => 3; // member already issued 3 this month
+  const r = await reserveQuota({ id: "o", planId: 1 }, "u-member", 10);
+  assert.equal(r.allowed, 1, "4 − 3 = 1 left for this member");
+});
 
 // ── Tenant isolation (IDOR) via assertTemplateAccessible ─────────────────────
 test("assertTemplateAccessible: allows null, public, global, and own templates", async () => {

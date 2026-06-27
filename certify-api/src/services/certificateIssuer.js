@@ -127,6 +127,54 @@ async function incrementUsage(organizationId) {
   });
 }
 
+/** Pre-create this month's usage row so concurrent increments only ever hit the
+ * atomic `update` path (no two-create race on the unique [org, month]). */
+export async function ensureUsageRow(organizationId) {
+  await prisma.certificateUsage.upsert({
+    where: { organizationId_month: { organizationId, month: currentMonth() } },
+    create: { organizationId, month: currentMonth(), certificatesIssued: 0 },
+    update: {},
+  });
+}
+
+/**
+ * Compute how many of `requested` certificates may be issued right now without
+ * exceeding the org's monthly plan quota or the acting member's personal cap.
+ * Used by the bulk worker pool to reserve quota up front so concurrent issuance
+ * can never overshoot the limit (see issueCertificate's skipLimits).
+ *
+ * @returns {{ allowed: number, orgRemaining: number, memberRemaining: number }}
+ */
+export async function reserveQuota(organization, actingUserId, requested) {
+  let orgRemaining = Infinity;
+  const plan =
+    organization.plan ??
+    (organization.planId ? await prisma.plan.findUnique({ where: { id: organization.planId } }) : null);
+  if (plan?.certificatesPerMonth != null) {
+    const usage = await prisma.certificateUsage.findUnique({
+      where: { organizationId_month: { organizationId: organization.id, month: currentMonth() } },
+    });
+    orgRemaining = Math.max(0, plan.certificatesPerMonth - (usage?.certificatesIssued ?? 0));
+  }
+
+  let memberRemaining = Infinity;
+  if (actingUserId) {
+    const member = await prisma.organizationMember.findFirst({
+      where: { organizationId: organization.id, userId: actingUserId },
+      select: { monthlyLimit: true },
+    });
+    if (member?.monthlyLimit != null) {
+      const used = await prisma.certificate.count({
+        where: { organizationId: organization.id, issuedById: actingUserId, createdAt: { gte: monthStart() } },
+      });
+      memberRemaining = Math.max(0, member.monthlyLimit - used);
+    }
+  }
+
+  const allowed = Math.max(0, Math.min(requested, orgRemaining, memberRemaining));
+  return { allowed, orgRemaining, memberRemaining };
+}
+
 /**
  * Issue a single certificate: generates a unique code + tamper hash, enforces
  * the plan limit, tracks usage, logs an "issued" event, and (optionally)
@@ -139,14 +187,20 @@ async function incrementUsage(organizationId) {
  * @param {object} [options]     { sendMail?: boolean } — email the recipient (default true)
  */
 export async function issueCertificate(organization, data, render = true, options = {}) {
-  const { sendMail = true, actingUserId = null } = options;
+  const { sendMail = true, actingUserId = null, skipLimits = false } = options;
   // Fall back to the organization's assigned default template when the caller
   // doesn't specify one, so issuers (single + bulk) no longer pick a template
   // each time. Verified accessible to block cross-tenant template use (IDOR).
   const templateId = data.templateId ?? organization.defaultTemplateId ?? null;
   await assertTemplateAccessible(organization, templateId);
-  await assertWithinPlanLimit(organization);
-  await assertWithinMemberLimit(organization, actingUserId);
+  // `skipLimits` is used ONLY by the bulk worker pool, which reserves the exact
+  // quota up front (reserveQuota) before issuing concurrently — so the per-row
+  // read-then-check would be redundant and would race under concurrency. Never
+  // expose this option to untrusted/single-issue paths.
+  if (!skipLimits) {
+    await assertWithinPlanLimit(organization);
+    await assertWithinMemberLimit(organization, actingUserId);
+  }
 
   const id = crypto.randomUUID();
   const verificationCode = await generateCode();
